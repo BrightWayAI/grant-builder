@@ -127,6 +127,74 @@ src/
 6. **Refine with co-pilot** - select text and use quick actions or custom prompts
 7. **Export** to DOCX or copy sections to clipboard
 
+## Docker Deployment
+
+### Local Development with Docker
+
+```bash
+# Start the app with PostgreSQL
+docker-compose up --build
+
+# The app will be available at http://localhost:3000
+```
+
+### Production Deployment
+
+#### Option 1: Docker Compose (Simple)
+
+```bash
+# Create .env file with production values
+cp .env.template .env
+# Edit .env with your production credentials
+
+# Build and run
+docker-compose -f docker-compose.prod.yml up --build -d
+```
+
+#### Option 2: Deploy to Cloud Platforms
+
+**Vercel (Recommended for Next.js)**
+1. Push code to GitHub
+2. Import project at vercel.com
+3. Add environment variables in Vercel dashboard
+4. Deploy
+
+**Railway**
+1. Connect GitHub repo at railway.app
+2. Add PostgreSQL service
+3. Add environment variables
+4. Deploy
+
+**AWS/GCP/Azure with Docker**
+```bash
+# Build the image
+docker build -t brightway-grants .
+
+# Tag for your registry
+docker tag brightway-grants:latest YOUR_REGISTRY/brightway-grants:latest
+
+# Push to registry
+docker push YOUR_REGISTRY/brightway-grants:latest
+
+# Run with your cloud provider's container service
+```
+
+### Required Services for Production
+
+1. **PostgreSQL Database** - AWS RDS, Supabase, Railway, or Neon
+2. **Pinecone** - Vector database for RAG (pinecone.io)
+3. **OpenAI API** - For AI generation (platform.openai.com)
+4. **S3-compatible Storage** - AWS S3 or Cloudflare R2 for file uploads
+
+### Environment Variables for Production
+
+See `.env.template` for required environment variables. You'll need:
+- Database connection string
+- NextAuth secret and URL
+- OpenAI API key
+- Pinecone credentials
+- S3/R2 storage credentials
+
 ## License
 
 MIT
