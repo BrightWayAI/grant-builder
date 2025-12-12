@@ -16,12 +16,15 @@ model Organization {
   budgetRange     String?
   populationsServed String?
   programAreas    String[]
+  orgType         String?    // e.g., "501c3", "government", "tribal"
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   
   users           User[]
   documents       Document[]
   proposals       Proposal[]
+  savedGrants     SavedGrant[]
+  digestPreference GrantDigestPreference?
 }
 
 model User {
@@ -174,4 +177,33 @@ enum ProposalStatus {
   WON
   LOST
   ARCHIVED
+}
+
+model SavedGrant {
+  id              String       @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  grantId         String       // Grants.gov opportunity ID
+  title           String
+  funderName      String
+  deadline        DateTime?
+  awardFloor      Int?
+  awardCeiling    Int?
+  description     String?      @db.Text
+  eligibleTypes   String[]
+  categories      String[]
+  matchScore      Int          @default(0)
+  savedAt         DateTime     @default(now())
+
+  @@unique([organizationId, grantId])
+}
+
+model GrantDigestPreference {
+  id              String       @id @default(cuid())
+  organizationId  String       @unique
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  enabled         Boolean      @default(true)
+  lastSentAt      DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }

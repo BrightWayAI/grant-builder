@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/primitives/card";
 import { OrganizationSettings } from "@/components/settings/organization-settings";
+import { GrantDigestSettings } from "@/components/settings/grant-digest-settings";
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
@@ -24,11 +25,23 @@ export default async function SettingsPage() {
         <CardHeader>
           <CardTitle>Organization Profile</CardTitle>
           <CardDescription>
-            Update your organization details used in proposals
+            Update your organization details used in proposals and grant matching
           </CardDescription>
         </CardHeader>
         <CardContent>
           <OrganizationSettings organization={organization} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Notifications</CardTitle>
+          <CardDescription>
+            Manage how you receive updates about grant opportunities
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <GrantDigestSettings />
         </CardContent>
       </Card>
 
