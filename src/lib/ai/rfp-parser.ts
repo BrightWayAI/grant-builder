@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { openai, GENERATION_MODEL } from "./openai";
+import { getOpenAI, GENERATION_MODEL } from "./openai";
 
 export const RFPSectionSchema = z.object({
   name: z.string(),
@@ -57,7 +57,7 @@ For attachments, list all required supplementary documents (letters of support, 
 For eligibility, list all stated requirements (nonprofit status, geography, budget size, etc.).`;
 
 export async function parseRFP(rfpText: string): Promise<ParsedRFP> {
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: GENERATION_MODEL,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },

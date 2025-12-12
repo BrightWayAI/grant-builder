@@ -1,4 +1,4 @@
-import { openai, GENERATION_MODEL } from "./openai";
+import { getOpenAI, GENERATION_MODEL } from "./openai";
 import { retrieveRelevantChunks, formatContextForPrompt } from "./retrieval";
 import prisma from "@/lib/db";
 
@@ -61,7 +61,7 @@ export async function generateSectionDraft(
     fundingAmount: context.fundingAmount,
   });
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: GENERATION_MODEL,
     messages: [
       { role: "system", content: systemPrompt },
@@ -244,7 +244,7 @@ ${contextStr ? `\nRELEVANT CONTEXT FROM KNOWLEDGE BASE:\n${contextStr}` : ""}
 
 Modified text:`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: GENERATION_MODEL,
     messages: [
       { role: "system", content: systemPrompt },
