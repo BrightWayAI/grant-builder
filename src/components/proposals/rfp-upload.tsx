@@ -2,8 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/primitives/button";
+import { Progress } from "@/components/primitives/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { Upload, FileText, Loader2 } from "lucide-react";
 import { cn, formatFileSize } from "@/lib/utils";
@@ -88,31 +88,31 @@ export function RFPUpload({ onParsed }: RFPUploadProps) {
       <div
         {...getRootProps()}
         className={cn(
-          "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-          isDragActive ? "border-primary bg-primary/5" : "border-gray-300 hover:border-gray-400",
-          file && "border-primary bg-primary/5"
+          "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors duration-normal",
+          isDragActive ? "border-brand bg-brand-light" : "border-border hover:border-text-tertiary",
+          file && "border-brand bg-brand-light"
         )}
       >
         <input {...getInputProps()} />
         {file ? (
           <div className="flex items-center justify-center gap-3">
-            <FileText className="h-8 w-8 text-primary" />
+            <FileText className="h-8 w-8 text-brand" />
             <div className="text-left">
-              <p className="font-medium">{file.name}</p>
-              <p className="text-sm text-gray-500">{formatFileSize(file.size)}</p>
+              <p className="font-medium text-text-primary">{file.name}</p>
+              <p className="text-sm text-text-secondary">{formatFileSize(file.size)}</p>
             </div>
           </div>
         ) : (
           <>
-            <Upload className="h-10 w-10 text-gray-400 mx-auto mb-4" />
+            <Upload className="h-10 w-10 text-text-tertiary mx-auto mb-4" />
             {isDragActive ? (
-              <p className="text-primary">Drop the RFP here...</p>
+              <p className="text-brand">Drop the RFP here...</p>
             ) : (
               <>
-                <p className="text-gray-600 mb-1">
+                <p className="text-text-secondary mb-1">
                   Drag and drop your RFP here, or click to select
                 </p>
-                <p className="text-sm text-gray-400">PDF, DOCX, or TXT up to 50MB</p>
+                <p className="text-sm text-text-tertiary">PDF, DOCX, or TXT up to 50MB</p>
               </>
             )}
           </>
@@ -121,7 +121,7 @@ export function RFPUpload({ onParsed }: RFPUploadProps) {
 
       {isParsing && (
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-text-secondary">
             <Loader2 className="h-4 w-4 animate-spin" />
             Analyzing RFP and extracting requirements...
           </div>
@@ -131,7 +131,7 @@ export function RFPUpload({ onParsed }: RFPUploadProps) {
 
       {file && !isParsing && (
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setFile(null)}>
+          <Button variant="secondary" onClick={() => setFile(null)}>
             Remove
           </Button>
           <Button onClick={handleParse}>Parse RFP</Button>

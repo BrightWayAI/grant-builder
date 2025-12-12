@@ -2,7 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { DocumentUpload } from "@/components/documents/document-upload";
 import { DocumentList } from "@/components/documents/document-list";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/primitives/card";
 import { formatFileSize } from "@/lib/utils";
 
 const MAX_STORAGE_BYTES = 500 * 1024 * 1024; // 500MB
@@ -29,8 +29,8 @@ export default async function KnowledgeBasePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Knowledge Base</h1>
-        <p className="text-gray-600">
+        <h1 className="text-title">Knowledge Base</h1>
+        <p className="text-text-secondary">
           Upload documents to teach the AI about your organization
         </p>
       </div>
@@ -38,28 +38,28 @@ export default async function KnowledgeBasePage() {
       <div className="grid md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-sm text-gray-500">Total Documents</p>
+            <div className="text-2xl font-bold font-display">{stats.total}</div>
+            <p className="text-sm text-text-secondary">Total Documents</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-600">{stats.indexed}</div>
-            <p className="text-sm text-gray-500">Indexed</p>
+            <div className="text-2xl font-bold font-display text-status-success">{stats.indexed}</div>
+            <p className="text-sm text-text-secondary">Indexed</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-yellow-600">{stats.processing}</div>
-            <p className="text-sm text-gray-500">Processing</p>
+            <div className="text-2xl font-bold font-display text-status-warning">{stats.processing}</div>
+            <p className="text-sm text-text-secondary">Processing</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold font-display">
               {formatFileSize(totalSize)} / {formatFileSize(MAX_STORAGE_BYTES)}
             </div>
-            <p className="text-sm text-gray-500">Storage Used ({usagePercent}%)</p>
+            <p className="text-sm text-text-secondary">Storage Used ({usagePercent}%)</p>
           </CardContent>
         </Card>
       </div>

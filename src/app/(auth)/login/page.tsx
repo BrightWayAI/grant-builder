@@ -4,10 +4,10 @@ import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/primitives/button";
+import { Input } from "@/components/primitives/input";
+import { Label } from "@/components/primitives/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/primitives/card";
 import { useToast } from "@/components/ui/use-toast";
 
 function LoginForm() {
@@ -57,10 +57,10 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-surface-page px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardTitle className="font-display text-2xl">Welcome back</CardTitle>
           <CardDescription>Sign in to your Brightway Grants account</CardDescription>
         </CardHeader>
         <CardContent>
@@ -86,21 +86,21 @@ function LoginForm() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" loading={isLoading}>
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t"></div>
+              <div className="w-full border-t border-border"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500">Or continue with</span>
+              <span className="bg-surface-card px-2 text-text-secondary">Or continue with</span>
             </div>
           </div>
 
-          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+          <Button variant="secondary" className="w-full" onClick={handleGoogleSignIn}>
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -123,9 +123,9 @@ function LoginForm() {
           </Button>
         </CardContent>
         <CardFooter className="justify-center">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-text-secondary">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-primary hover:underline">
+            <Link href="/signup" className="text-brand hover:underline">
               Sign up
             </Link>
           </p>
@@ -137,7 +137,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-surface-page">Loading...</div>}>
       <LoginForm />
     </Suspense>
   );

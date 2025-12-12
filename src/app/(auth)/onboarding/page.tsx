@@ -3,14 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/primitives/button";
+import { Input } from "@/components/primitives/input";
+import { Label } from "@/components/primitives/label";
+import { Textarea } from "@/components/primitives/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/primitives/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/primitives/select";
+import { Progress } from "@/components/primitives/progress";
 import { useToast } from "@/components/ui/use-toast";
-import { Progress } from "@/components/ui/progress";
+import { PageContainer } from "@/components/layouts/page-container";
 
 const BUDGET_RANGES = [
   { value: "under_500k", label: "Under $500,000" },
@@ -115,11 +116,11 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-surface-page py-12 px-4">
+      <PageContainer size="narrow" padding="none">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">Set up your organization</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-title">Set up your organization</h1>
+          <p className="text-text-secondary mt-2">
             Tell us about your nonprofit so we can personalize your experience
           </p>
         </div>
@@ -159,7 +160,7 @@ export default function OnboardingPage() {
                     onChange={(e) => setFormData({ ...formData, ein: e.target.value })}
                     placeholder="XX-XXXXXXX"
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-text-tertiary">
                     Your Employer Identification Number helps us verify nonprofit status
                   </p>
                 </div>
@@ -222,7 +223,7 @@ export default function OnboardingPage() {
 
             {step === 3 && (
               <div className="space-y-4">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-text-secondary">
                   Select all that apply. This helps us match you with relevant grants.
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -230,7 +231,7 @@ export default function OnboardingPage() {
                     <Button
                       key={area}
                       type="button"
-                      variant={formData.programAreas.includes(area) ? "default" : "outline"}
+                      variant={formData.programAreas.includes(area) ? "primary" : "secondary"}
                       className="justify-start h-auto py-2 px-3"
                       onClick={() => toggleProgramArea(area)}
                     >
@@ -243,7 +244,7 @@ export default function OnboardingPage() {
 
             <div className="flex justify-between mt-8">
               {step > 1 ? (
-                <Button variant="outline" onClick={handleBack}>
+                <Button variant="secondary" onClick={handleBack}>
                   Back
                 </Button>
               ) : (
@@ -252,7 +253,7 @@ export default function OnboardingPage() {
               {step < totalSteps ? (
                 <Button onClick={handleNext}>Continue</Button>
               ) : (
-                <Button onClick={handleSubmit} disabled={isLoading}>
+                <Button onClick={handleSubmit} loading={isLoading}>
                   {isLoading ? "Creating..." : "Complete Setup"}
                 </Button>
               )}
@@ -260,10 +261,10 @@ export default function OnboardingPage() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-sm text-gray-500 mt-4">
+        <p className="text-center text-sm text-text-tertiary mt-4">
           Step {step} of {totalSteps}
         </p>
-      </div>
+      </PageContainer>
     </div>
   );
 }

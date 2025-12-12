@@ -3,9 +3,9 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/primitives/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/primitives/select";
+import { Progress } from "@/components/primitives/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { Upload, File, X, CheckCircle, AlertCircle } from "lucide-react";
 import { cn, formatFileSize } from "@/lib/utils";
@@ -146,20 +146,20 @@ export function DocumentUpload({ organizationId }: { organizationId: string }) {
       <div
         {...getRootProps()}
         className={cn(
-          "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-          isDragActive ? "border-primary bg-primary/5" : "border-gray-300 hover:border-gray-400"
+          "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors duration-normal",
+          isDragActive ? "border-brand bg-brand-light" : "border-border hover:border-text-tertiary"
         )}
       >
         <input {...getInputProps()} />
-        <Upload className="h-10 w-10 text-gray-400 mx-auto mb-4" />
+        <Upload className="h-10 w-10 text-text-tertiary mx-auto mb-4" />
         {isDragActive ? (
-          <p className="text-primary">Drop files here...</p>
+          <p className="text-brand">Drop files here...</p>
         ) : (
           <>
-            <p className="text-gray-600 mb-1">
+            <p className="text-text-secondary mb-1">
               Drag and drop files here, or click to select
             </p>
-            <p className="text-sm text-gray-400">PDF, DOCX, or TXT up to 50MB</p>
+            <p className="text-sm text-text-tertiary">PDF, DOCX, or TXT up to 50MB</p>
           </>
         )}
       </div>
@@ -169,13 +169,13 @@ export function DocumentUpload({ organizationId }: { organizationId: string }) {
           {files.map((fileWithMeta, index) => (
             <div
               key={index}
-              className="flex items-center gap-4 p-3 border rounded-lg bg-gray-50"
+              className="flex items-center gap-4 p-3 border border-border rounded-lg bg-surface-subtle"
             >
-              <File className="h-8 w-8 text-gray-400 flex-shrink-0" />
+              <File className="h-8 w-8 text-text-tertiary flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium truncate">{fileWithMeta.file.name}</span>
-                  <span className="text-sm text-gray-500">
+                  <span className="font-medium text-text-primary truncate">{fileWithMeta.file.name}</span>
+                  <span className="text-sm text-text-secondary">
                     ({formatFileSize(fileWithMeta.file.size)})
                   </span>
                 </div>
@@ -183,7 +183,7 @@ export function DocumentUpload({ organizationId }: { organizationId: string }) {
                   <Progress value={fileWithMeta.progress} className="h-1 mt-2" />
                 )}
                 {fileWithMeta.status === "error" && (
-                  <p className="text-sm text-red-600 mt-1">{fileWithMeta.error}</p>
+                  <p className="text-sm text-status-error mt-1">{fileWithMeta.error}</p>
                 )}
               </div>
               {fileWithMeta.status === "pending" && (
@@ -204,10 +204,10 @@ export function DocumentUpload({ organizationId }: { organizationId: string }) {
                 </Select>
               )}
               {fileWithMeta.status === "success" && (
-                <CheckCircle className="h-5 w-5 text-green-500" />
+                <CheckCircle className="h-5 w-5 text-status-success" />
               )}
               {fileWithMeta.status === "error" && (
-                <AlertCircle className="h-5 w-5 text-red-500" />
+                <AlertCircle className="h-5 w-5 text-status-error" />
               )}
               {fileWithMeta.status === "pending" && (
                 <Button
@@ -223,7 +223,7 @@ export function DocumentUpload({ organizationId }: { organizationId: string }) {
 
           {pendingFiles.length > 0 && (
             <div className="flex justify-end">
-              <Button onClick={uploadFiles} disabled={isUploading}>
+              <Button onClick={uploadFiles} loading={isUploading}>
                 {isUploading ? "Uploading..." : `Upload ${pendingFiles.length} file(s)`}
               </Button>
             </div>

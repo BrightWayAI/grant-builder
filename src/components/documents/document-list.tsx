@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/primitives/button";
+import { Badge } from "@/components/primitives/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -107,27 +107,27 @@ export function DocumentList({ documents }: { documents: Document[] }) {
 
   if (documents.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+      <div className="text-center py-8 text-text-secondary">
+        <FileText className="h-12 w-12 mx-auto mb-4 text-text-disabled" />
         <p>No documents uploaded yet</p>
-        <p className="text-sm">Upload documents above to get started</p>
+        <p className="text-sm text-text-tertiary">Upload documents above to get started</p>
       </div>
     );
   }
 
   return (
-    <div className="divide-y">
+    <div className="divide-y divide-border">
       {documents.map((doc) => (
         <div key={doc.id} className="py-4 flex items-center gap-4">
-          <FileText className="h-8 w-8 text-gray-400 flex-shrink-0" />
+          <FileText className="h-8 w-8 text-text-tertiary flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-medium truncate">{doc.filename}</span>
-              <Badge variant="outline" className="text-xs">
+              <span className="font-medium text-text-primary truncate">{doc.filename}</span>
+              <Badge variant="default" className="text-xs">
                 {TYPE_LABELS[doc.documentType]}
               </Badge>
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-text-secondary">
               {formatFileSize(doc.fileSize)} • Uploaded {formatDate(doc.createdAt)}
             </div>
           </div>
@@ -136,8 +136,8 @@ export function DocumentList({ documents }: { documents: Document[] }) {
               doc.status === "INDEXED"
                 ? "success"
                 : doc.status === "FAILED"
-                ? "destructive"
-                : "secondary"
+                ? "error"
+                : "default"
             }
           >
             {doc.status === "INDEXED" && "Indexed"}
@@ -162,7 +162,7 @@ export function DocumentList({ documents }: { documents: Document[] }) {
                   size="icon"
                   disabled={deletingId === doc.id}
                 >
-                  <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                  <Trash2 className="h-4 w-4 text-text-tertiary hover:text-status-error" />
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -177,7 +177,7 @@ export function DocumentList({ documents }: { documents: Document[] }) {
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => handleDelete(doc.id)}
-                    className="bg-red-600 hover:bg-red-700"
+                    className="bg-status-error hover:bg-status-error/90"
                   >
                     Delete
                   </AlertDialogAction>

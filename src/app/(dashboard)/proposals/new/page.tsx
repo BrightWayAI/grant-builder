@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/primitives/button";
+import { Input } from "@/components/primitives/input";
+import { Label } from "@/components/primitives/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/primitives/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/primitives/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { RFPUpload } from "@/components/proposals/rfp-upload";
 import { RFPRequirements } from "@/components/proposals/rfp-requirements";
@@ -94,8 +94,8 @@ export default function NewProposalPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Create New Proposal</h1>
-        <p className="text-gray-600">
+        <h1 className="text-title">Create New Proposal</h1>
+        <p className="text-text-secondary">
           Upload an RFP to extract requirements, or start from a template
         </p>
       </div>
@@ -167,13 +167,13 @@ export default function NewProposalPage() {
                 {parsedRFP?.funderName && (
                   <div className="space-y-2">
                     <Label>Funder</Label>
-                    <Input value={parsedRFP.funderName} readOnly className="bg-gray-50" />
+                    <Input value={parsedRFP.funderName} readOnly className="bg-gray-100" />
                   </div>
                 )}
                 {parsedRFP?.deadline && (
                   <div className="space-y-2">
                     <Label>Deadline</Label>
-                    <Input value={parsedRFP.deadline} readOnly className="bg-gray-50" />
+                    <Input value={parsedRFP.deadline} readOnly className="bg-gray-100" />
                   </div>
                 )}
                 {parsedRFP?.fundingAmount?.max && (
@@ -182,7 +182,7 @@ export default function NewProposalPage() {
                     <Input
                       value={`Up to $${parsedRFP.fundingAmount.max.toLocaleString()}`}
                       readOnly
-                      className="bg-gray-50"
+                      className="bg-gray-100"
                     />
                   </div>
                 )}
@@ -223,7 +223,7 @@ export default function NewProposalPage() {
           )}
 
           <div className="flex justify-between">
-            <Button variant="outline" onClick={() => setStep("upload")}>
+            <Button variant="secondary" onClick={() => setStep("upload")}>
               Back
             </Button>
             <Button onClick={handleCreateProposal} disabled={!title}>
@@ -236,9 +236,9 @@ export default function NewProposalPage() {
       {step === "generating" && (
         <Card>
           <CardContent className="py-12 text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+            <Loader2 className="h-12 w-12 animate-spin text-brand mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">Creating your proposal...</h3>
-            <p className="text-gray-500">
+            <p className="text-text-secondary">
               Setting up sections and preparing to generate content
             </p>
           </CardContent>

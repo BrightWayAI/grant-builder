@@ -1,19 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/primitives/button";
+import { Input } from "@/components/primitives/input";
+import { Label } from "@/components/primitives/label";
+import { Textarea } from "@/components/primitives/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/primitives/card";
+import { Badge } from "@/components/primitives/badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "@/components/primitives/dialog";
 import { GripVertical, Pencil, Trash2, Plus } from "lucide-react";
 import { RFPSection } from "@/lib/ai/rfp-parser";
 
@@ -72,7 +72,7 @@ export function RFPRequirements({ sections, onSectionsChange }: RFPRequirementsP
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Proposal Sections</CardTitle>
-          <Button variant="outline" size="sm" onClick={handleAddSection}>
+          <Button variant="secondary" size="sm" onClick={handleAddSection}>
             <Plus className="h-4 w-4 mr-1" />
             Add Section
           </Button>
@@ -82,43 +82,43 @@ export function RFPRequirements({ sections, onSectionsChange }: RFPRequirementsP
             {sections.map((section, index) => (
               <div
                 key={index}
-                className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50 group"
+                className="flex items-center gap-3 p-3 border border-border rounded-lg bg-surface-subtle group"
               >
                 <div className="flex flex-col gap-1">
                   <button
                     onClick={() => moveSection(index, index - 1)}
-                    className="p-0.5 hover:bg-gray-200 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="p-0.5 hover:bg-gray-200 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-normal"
                     disabled={index === 0}
                   >
-                    <GripVertical className="h-3 w-3 text-gray-400" />
+                    <GripVertical className="h-3 w-3 text-text-tertiary" />
                   </button>
                   <button
                     onClick={() => moveSection(index, index + 1)}
-                    className="p-0.5 hover:bg-gray-200 rounded opacity-0 group-hover:opacity-100 transition-opacity rotate-180"
+                    className="p-0.5 hover:bg-gray-200 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-normal rotate-180"
                     disabled={index === sections.length - 1}
                   >
-                    <GripVertical className="h-3 w-3 text-gray-400" />
+                    <GripVertical className="h-3 w-3 text-text-tertiary" />
                   </button>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{section.name}</span>
+                    <span className="font-medium text-text-primary">{section.name}</span>
                     {section.isRequired && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="default" className="text-xs">
                         Required
                       </Badge>
                     )}
                     {section.wordLimit && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="info" className="text-xs">
                         {section.wordLimit} words
                       </Badge>
                     )}
                   </div>
                   {section.description && (
-                    <p className="text-sm text-gray-500 truncate">{section.description}</p>
+                    <p className="text-sm text-text-secondary truncate">{section.description}</p>
                   )}
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-normal">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -131,7 +131,7 @@ export function RFPRequirements({ sections, onSectionsChange }: RFPRequirementsP
                     size="icon"
                     onClick={() => handleDelete(index)}
                   >
-                    <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                    <Trash2 className="h-4 w-4 text-text-tertiary hover:text-status-error" />
                   </Button>
                 </div>
               </div>
@@ -221,7 +221,7 @@ export function RFPRequirements({ sections, onSectionsChange }: RFPRequirementsP
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingSection(null)}>
+            <Button variant="secondary" onClick={() => setEditingSection(null)}>
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={!editingSection?.name}>

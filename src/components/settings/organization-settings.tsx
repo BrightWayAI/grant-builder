@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/primitives/button";
+import { Input } from "@/components/primitives/input";
+import { Label } from "@/components/primitives/label";
+import { Textarea } from "@/components/primitives/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/primitives/select";
 import { useToast } from "@/components/ui/use-toast";
 
 const BUDGET_RANGES = [
@@ -143,7 +143,7 @@ export function OrganizationSettings({ organization }: { organization: Organizat
         />
       </div>
 
-      <Button type="submit" disabled={isSaving}>
+      <Button type="submit" loading={isSaving}>
         {isSaving ? "Saving..." : "Save Changes"}
       </Button>
     </form>
