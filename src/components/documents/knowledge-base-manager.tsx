@@ -4,7 +4,6 @@ import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/primitives/button";
-import { Input } from "@/components/primitives/input";
 import { Label } from "@/components/primitives/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/primitives/select";
 import { Progress } from "@/components/primitives/progress";
@@ -35,7 +34,6 @@ import {
   ALL_DOCUMENT_TYPES, 
   FUNDER_TYPES,
   DocumentCategory,
-  DocumentTypeInfo,
   getMissingRecommendedTypes,
 } from "@/lib/document-categories";
 import { DocumentType } from "@prisma/client";
@@ -60,7 +58,6 @@ interface FileWithMeta {
   documentType: string;
   funderType?: string;
   isRfp?: boolean;
-  linkedProposalIndex?: number;
   status: "pending" | "uploading" | "success" | "error";
   progress: number;
   error?: string;
@@ -107,7 +104,6 @@ export function KnowledgeBaseManager({
   const selectCategory = (category: DocumentCategory) => {
     setSelectedCategory(category.id);
     setSelectedType(category.types[0].type);
-    // Scroll to upload area
     setTimeout(() => {
       uploadRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
@@ -123,24 +119,23 @@ export function KnowledgeBaseManager({
     );
   };
 
-  const addRfpForProposal = (proposalIndex: number) => {
-    // Add placeholder for RFP paired with this proposal
-    setFiles((prev) => [
-      ...prev,
-      {
-        file: null as unknown as File,
-        documentType: "PROPOSAL", // RFPs are stored with proposals
-        isRfp: true,
-        linkedProposalIndex: proposalIndex,
-        status: "pending",
-        progress: 0,
-      },
-    ]);
-  };
-
   const uploadFiles = async () => {
     const pendingFiles = files.filter((f) => f.status === "pending" && f.file);
     if (pendingFiles.length === 0) return;
+
+    // Validate: proposals require funder type
+    const isProposalCategory = selectedCategory === "proposals";
+    if (isProposalCategory) {
+      const missingFunderType = pendingFiles.some((f) => !f.isRfp && !f.funderType);
+      if (missingFunderType) {
+        toast({
+          title: "Funder type required",
+          description: "Please select a funder type for each proposal before uploading",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
 
     setIsUploading(true);
 
@@ -221,6 +216,10 @@ export function KnowledgeBaseManager({
   const pendingFiles = files.filter((f) => f.status === "pending" && f.file);
   const currentCategory = DOCUMENT_CATEGORIES.find((c) => c.id === selectedCategory);
   const isProposalCategory = selectedCategory === "proposals";
+
+  // Check if all proposals have funder type selected
+  const allProposalsHaveFunderType = !isProposalCategory || 
+    pendingFiles.every((f) => f.isRfp || f.funderType);
 
   return (
     <div className="space-y-6">
@@ -308,7 +307,7 @@ export function KnowledgeBaseManager({
                   )}
                 >
                   <div className={cn(
-                    "p-2 rounded-lg",
+                    "p-2 rounded-lg relative",
                     count > 0 ? "bg-status-success/10" : "bg-surface-secondary",
                     isSelected && "bg-brand/10"
                   )}>
@@ -317,6 +316,12 @@ export function KnowledgeBaseManager({
                       count > 0 ? "text-status-success" : "text-text-tertiary",
                       isSelected && "text-brand"
                     )} />
+                    {/* Document count badge on icon */}
+                    {count > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-status-success text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                        {count > 9 ? "9+" : count}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -333,20 +338,20 @@ export function KnowledgeBaseManager({
                     <p className="text-sm text-text-secondary mt-0.5 line-clamp-2">
                       {category.description}
                     </p>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="mt-2 text-xs">
                       {count > 0 ? (
-                        <Badge variant="success" className="text-xs">
-                          {count} uploaded
-                        </Badge>
+                        <span className="text-status-success font-medium">
+                          {count} document{count !== 1 ? "s" : ""} uploaded
+                        </span>
                       ) : (
-                        <span className="text-xs text-text-tertiary">
-                          {category.types.map((t) => t.label).join(", ")}
+                        <span className="text-text-tertiary">
+                          No documents yet
                         </span>
                       )}
                     </div>
                   </div>
                   <ChevronRight className={cn(
-                    "h-5 w-5 text-text-tertiary mt-1",
+                    "h-5 w-5 text-text-tertiary mt-1 flex-shrink-0",
                     isSelected && "text-brand"
                   )} />
                 </button>
@@ -403,13 +408,17 @@ export function KnowledgeBaseManager({
               </div>
             )}
 
-            {/* Funder type for proposals */}
+            {/* Funder type for proposals - REQUIRED */}
             {isProposalCategory && (
               <div className="bg-surface-secondary rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium">
+                <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-brand" />
-                  Funder Type (helps match to future RFPs)
+                  <span className="text-sm font-medium">Funder Type</span>
+                  <Badge variant="default" className="text-xs">Required</Badge>
                 </div>
+                <p className="text-xs text-text-secondary">
+                  Select the type of funder for each proposal to help match to future opportunities
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {FUNDER_TYPES.map((funder) => (
                     <button
@@ -427,8 +436,8 @@ export function KnowledgeBaseManager({
                       className={cn(
                         "px-3 py-1.5 rounded-md text-sm border transition-colors",
                         files.some((f) => f.funderType === funder.value)
-                          ? "border-brand bg-brand-light text-brand"
-                          : "border-border hover:border-text-tertiary"
+                          ? "border-brand bg-brand-light text-brand font-medium"
+                          : "border-border hover:border-text-tertiary bg-white"
                       )}
                     >
                       {funder.label}
@@ -482,6 +491,7 @@ export function KnowledgeBaseManager({
               <div className="space-y-3">
                 {files.map((fileWithMeta, index) => {
                   if (!fileWithMeta.file) return null;
+                  const needsFunderType = isProposalCategory && !fileWithMeta.isRfp && !fileWithMeta.funderType;
                   
                   return (
                     <div
@@ -490,14 +500,15 @@ export function KnowledgeBaseManager({
                         "p-4 rounded-lg border",
                         fileWithMeta.status === "success" && "bg-status-success/5 border-status-success/20",
                         fileWithMeta.status === "error" && "bg-status-error/5 border-status-error/20",
-                        fileWithMeta.status === "pending" && "border-border bg-surface-subtle",
+                        fileWithMeta.status === "pending" && needsFunderType && "border-status-warning bg-status-warning/5",
+                        fileWithMeta.status === "pending" && !needsFunderType && "border-border bg-surface-subtle",
                         fileWithMeta.status === "uploading" && "border-brand/20 bg-brand-light"
                       )}
                     >
                       <div className="flex items-start gap-3">
                         <File className="h-8 w-8 text-text-tertiary flex-shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-medium text-text-primary truncate">
                               {fileWithMeta.file.name}
                             </span>
@@ -506,6 +517,11 @@ export function KnowledgeBaseManager({
                             </span>
                             {fileWithMeta.isRfp && (
                               <Badge variant="outline" className="text-xs">RFP</Badge>
+                            )}
+                            {fileWithMeta.funderType && (
+                              <Badge variant="default" className="text-xs">
+                                {FUNDER_TYPES.find((f) => f.value === fileWithMeta.funderType)?.label}
+                              </Badge>
                             )}
                           </div>
                           
@@ -519,24 +535,35 @@ export function KnowledgeBaseManager({
                             </p>
                           )}
 
-                          {/* Funder type selector for proposals */}
+                          {/* Funder type selector for proposals - required inline */}
                           {isProposalCategory && fileWithMeta.status === "pending" && !fileWithMeta.isRfp && (
-                            <div className="mt-2 flex items-center gap-2">
+                            <div className="mt-2">
                               <Select
                                 value={fileWithMeta.funderType || ""}
                                 onValueChange={(value) => updateFile(index, { funderType: value })}
                               >
-                                <SelectTrigger className="w-48 h-8 text-sm">
-                                  <SelectValue placeholder="Select funder type" />
+                                <SelectTrigger className={cn(
+                                  "w-56 h-8 text-sm",
+                                  needsFunderType && "border-status-warning"
+                                )}>
+                                  <SelectValue placeholder="Select funder type (required)" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {FUNDER_TYPES.map((ft) => (
                                     <SelectItem key={ft.value} value={ft.value}>
-                                      {ft.label}
+                                      <div>
+                                        <div>{ft.label}</div>
+                                        <div className="text-xs text-text-tertiary">{ft.description}</div>
+                                      </div>
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
+                              {needsFunderType && (
+                                <p className="text-xs text-status-warning mt-1">
+                                  Funder type is required for proposals
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>
@@ -573,7 +600,6 @@ export function KnowledgeBaseManager({
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              // Just show another dropzone for RFP
                               toast({
                                 title: "Add RFP",
                                 description: "Drop the RFP file above - it will be linked to this proposal",
@@ -590,12 +616,24 @@ export function KnowledgeBaseManager({
                 })}
 
                 {pendingFiles.length > 0 && (
-                  <div className="flex justify-end pt-2">
-                    <Button onClick={uploadFiles} loading={isUploading}>
-                      {isUploading 
-                        ? "Uploading..." 
-                        : `Upload ${pendingFiles.length} file(s)`}
-                    </Button>
+                  <div className="flex items-center justify-between pt-2">
+                    {!allProposalsHaveFunderType && (
+                      <p className="text-sm text-status-warning flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" />
+                        Select funder type for all proposals
+                      </p>
+                    )}
+                    <div className="ml-auto">
+                      <Button 
+                        onClick={uploadFiles} 
+                        loading={isUploading}
+                        disabled={!allProposalsHaveFunderType}
+                      >
+                        {isUploading 
+                          ? "Uploading..." 
+                          : `Upload ${pendingFiles.length} file(s)`}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
