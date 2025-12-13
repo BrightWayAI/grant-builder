@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/primitives/button";
 import { Badge } from "@/components/primitives/badge";
 import { 
@@ -131,9 +130,180 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
+// Step 1 Mockup - Upload RFP
+function UploadMockup() {
+  return (
+    <div className="bg-surface rounded-lg p-6 h-full">
+      {/* Upload zone */}
+      <div className="border-2 border-dashed border-brand rounded-xl p-8 bg-brand/5 mb-6">
+        <div className="text-center">
+          <div className="h-16 w-16 rounded-full bg-brand/10 flex items-center justify-center mx-auto mb-4">
+            <Upload className="h-8 w-8 text-brand" />
+          </div>
+          <p className="font-medium text-text-primary mb-1">Drop your RFP here</p>
+          <p className="text-sm text-text-secondary">PDF, DOCX, or TXT up to 10MB</p>
+        </div>
+      </div>
+      
+      {/* Parsed result */}
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+            <Check className="h-5 w-5 text-green-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-green-900">NEA-Arts-Grant-2025.pdf</p>
+            <p className="text-sm text-green-700 mt-1">8 sections detected · Due March 15, 2025</p>
+            <div className="flex flex-wrap gap-2 mt-3">
+              <span className="px-2 py-1 bg-green-100 rounded text-xs text-green-800">$10K-$100K</span>
+              <span className="px-2 py-1 bg-green-100 rounded text-xs text-green-800">501(c)(3)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Step 2 Mockup - AI Generation
+function GenerateMockup() {
+  return (
+    <div className="bg-surface rounded-lg p-6 h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h4 className="font-semibold text-text-primary">Statement of Need</h4>
+          <p className="text-xs text-text-tertiary">Section 1 of 8</p>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-brand/10 rounded-full">
+          <Sparkles className="h-4 w-4 text-brand animate-pulse" />
+          <span className="text-sm font-medium text-brand">Generating...</span>
+        </div>
+      </div>
+      
+      {/* Word count */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex-1 h-2 bg-surface-secondary rounded-full overflow-hidden">
+          <div className="h-full w-[48%] bg-brand rounded-full" />
+        </div>
+        <span className="text-xs text-text-secondary">487 / 1000</span>
+      </div>
+      
+      {/* Generated text */}
+      <div className="bg-surface-secondary rounded-lg p-4 text-sm leading-relaxed text-text-primary space-y-3">
+        <p>
+          The Springfield Arts Council has served our community for over 25 years, 
+          reaching 15,000 residents annually through free public programs.
+        </p>
+        <p>
+          Our recent community needs assessment revealed that 67% of low-income 
+          families have never attended a professional arts performance
+          <span className="inline-block w-2 h-4 bg-brand ml-1 animate-pulse" />
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Step 3 Mockup - Edit with Copilot
+function EditMockup() {
+  return (
+    <div className="bg-surface rounded-lg p-6 h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="font-semibold text-text-primary">Project Description</h4>
+        <div className="px-3 py-1 bg-amber-100 rounded text-xs font-medium text-amber-800">
+          1,847 / 2,000 words
+        </div>
+      </div>
+      
+      {/* Text with selection */}
+      <div className="bg-surface-secondary rounded-lg p-4 text-sm leading-relaxed text-text-primary mb-4">
+        <p className="mb-3">
+          Our summer youth arts program will expand to serve 200 additional participants.
+        </p>
+        <p>
+          <span className="bg-brand/20 text-brand px-1 rounded">
+            The program includes weekly workshops and mentorship sessions.
+          </span>
+        </p>
+      </div>
+      
+      {/* Copilot popup */}
+      <div className="bg-white border border-border rounded-xl p-4 shadow-lg">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="h-6 w-6 rounded-full bg-brand flex items-center justify-center">
+            <Sparkles className="h-3 w-3 text-white" />
+          </div>
+          <span className="font-medium text-sm">AI Copilot</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button className="px-3 py-1.5 bg-surface-secondary hover:bg-surface-tertiary rounded-full text-xs font-medium transition-colors">
+            ✨ Expand
+          </button>
+          <button className="px-3 py-1.5 bg-surface-secondary hover:bg-surface-tertiary rounded-full text-xs font-medium transition-colors">
+            Add data
+          </button>
+          <button className="px-3 py-1.5 bg-surface-secondary hover:bg-surface-tertiary rounded-full text-xs font-medium transition-colors">
+            Strengthen
+          </button>
+          <button className="px-3 py-1.5 bg-surface-secondary hover:bg-surface-tertiary rounded-full text-xs font-medium transition-colors">
+            Shorten
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Step 4 Mockup - Export
+function ExportMockup() {
+  return (
+    <div className="bg-surface rounded-lg p-6 h-full">
+      {/* Success state */}
+      <div className="text-center mb-6">
+        <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+          <Check className="h-8 w-8 text-green-600" />
+        </div>
+        <h4 className="text-xl font-bold text-green-900 mb-1">Proposal Complete!</h4>
+        <p className="text-sm text-green-700">All 8 sections ready for submission</p>
+      </div>
+      
+      {/* File card */}
+      <div className="bg-surface-secondary rounded-lg p-4 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-lg bg-brand/10 flex items-center justify-center">
+            <FileText className="h-6 w-6 text-brand" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-text-primary truncate">NEA_Arts_Proposal_Final.docx</p>
+            <p className="text-xs text-text-secondary">8 sections · 4,823 words · 12 pages</p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Checklist */}
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        {["All sections complete", "Word limits met", "Formatting applied", "Ready to submit"].map((item, i) => (
+          <div key={i} className="flex items-center gap-2 text-sm text-text-secondary">
+            <Check className="h-4 w-4 text-green-600" />
+            <span>{item}</span>
+          </div>
+        ))}
+      </div>
+      
+      {/* Download button */}
+      <Button className="w-full">
+        <Download className="h-4 w-4 mr-2" />
+        Download DOCX
+      </Button>
+    </div>
+  );
+}
+
 // How it Works - Sticky scroll with image on right
 function HowItWorks() {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
   const [activeStep, setActiveStep] = useState(0);
   
   const steps = [
@@ -142,79 +312,74 @@ function HowItWorks() {
       title: "Upload your RFP",
       description: "Drop in any grant announcement, RFP, or NOFO. Our AI parses the document and extracts all requirements, deadlines, sections, and eligibility criteria automatically.",
       icon: Upload,
-      image: "/screenshots/step-1-upload.svg",
-      color: "from-blue-500 to-indigo-600",
+      mockup: <UploadMockup />,
     },
     {
       step: 2,
       title: "AI writes your draft",
       description: "Using your knowledge base, we generate each section in your organization's authentic voice. Real data from your past proposals, actual impact numbers, no hallucinations.",
       icon: Sparkles,
-      image: "/screenshots/step-2-generate.svg",
-      color: "from-purple-500 to-pink-600",
+      mockup: <GenerateMockup />,
     },
     {
       step: 3,
       title: "Review & refine",
       description: "Edit inline with our AI copilot. Select any text to expand, strengthen, or adjust tone. Real-time word count tracking keeps you within limits.",
       icon: PenTool,
-      image: "/screenshots/step-3-edit.svg",
-      color: "from-emerald-500 to-teal-600",
+      mockup: <EditMockup />,
     },
     {
       step: 4,
       title: "Export & submit",
       description: "Download your polished proposal as a professionally formatted DOCX. All sections complete, all requirements met, ready to submit to any portal.",
       icon: Download,
-      image: "/screenshots/step-4-export.svg",
-      color: "from-orange-500 to-red-600",
+      mockup: <ExportMockup />,
     },
   ];
 
   useEffect(() => {
     const handleScroll = () => {
-      if (!containerRef.current) return;
+      if (!sectionRef.current) return;
       
-      const container = containerRef.current;
-      const rect = container.getBoundingClientRect();
-      const containerTop = rect.top;
-      const containerHeight = container.offsetHeight;
+      const section = sectionRef.current;
+      const sectionTop = section.offsetTop;
+      const sectionHeight = section.offsetHeight;
+      const scrollY = window.scrollY;
       const windowHeight = window.innerHeight;
       
-      // Calculate how far we've scrolled into the container
-      // Progress goes from 0 (just entered) to 1 (about to leave)
-      const scrollIntoContainer = -containerTop;
-      const totalScrollDistance = containerHeight - windowHeight;
+      // How far into the section have we scrolled?
+      const scrolledPastTop = scrollY - sectionTop + windowHeight * 0.5;
       
-      if (totalScrollDistance <= 0) return;
+      // Total scrollable distance within the section
+      const scrollableHeight = sectionHeight - windowHeight;
       
-      const progress = Math.max(0, Math.min(1, scrollIntoContainer / totalScrollDistance));
+      if (scrollableHeight <= 0) return;
       
-      // Map progress to step index
-      const stepIndex = Math.min(
-        steps.length - 1,
-        Math.floor(progress * steps.length)
-      );
+      // Progress from 0 to 1
+      const progress = Math.max(0, Math.min(1, scrolledPastTop / scrollableHeight));
       
-      setActiveStep(stepIndex);
+      // Map to step index (0 to 3)
+      const stepIndex = Math.min(steps.length - 1, Math.floor(progress * steps.length));
+      
+      if (stepIndex !== activeStep) {
+        setActiveStep(stepIndex);
+      }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
+    handleScroll(); // Initial call
+    
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [steps.length]);
-
-  // Each step gets 100vh of scroll distance
-  const totalHeight = steps.length * 100;
+  }, [activeStep, steps.length]);
 
   return (
     <section 
-      ref={containerRef}
+      ref={sectionRef}
       className="relative bg-surface-subtle"
-      style={{ height: `${totalHeight}vh` }}
+      style={{ minHeight: `${steps.length * 100}vh` }}
     >
-      <div className="sticky top-0 h-screen overflow-hidden">
-        <div className="h-full max-w-7xl mx-auto px-6 flex flex-col justify-center">
+      <div className="sticky top-0 min-h-screen flex items-center py-12">
+        <div className="w-full max-w-7xl mx-auto px-6">
           {/* Header */}
           <div className="text-center mb-8 lg:mb-12">
             <Badge variant="outline" className="mb-4">How It Works</Badge>
@@ -226,32 +391,32 @@ function HowItWorks() {
             </p>
           </div>
           
-          {/* Content - Steps on left, Image on right */}
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
+          {/* Content */}
+          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
             {/* Steps list - left side */}
-            <div className="w-full lg:w-2/5 space-y-4">
+            <div className="w-full lg:w-2/5 space-y-3">
               {steps.map((step, index) => {
                 const Icon = step.icon;
                 const isActive = index === activeStep;
                 const isPast = index < activeStep;
                 
                 return (
-                  <div
+                  <button
                     key={index}
-                    className={cn(
-                      "relative p-4 lg:p-5 rounded-xl border-2 transition-all duration-300 cursor-pointer",
-                      isActive 
-                        ? "bg-brand text-white border-brand shadow-lg" 
-                        : isPast
-                          ? "bg-surface border-brand/30 opacity-60"
-                          : "bg-surface border-border opacity-40"
-                    )}
                     onClick={() => setActiveStep(index)}
+                    className={cn(
+                      "w-full text-left relative p-4 lg:p-5 rounded-xl border-2 transition-all duration-300",
+                      isActive 
+                        ? "bg-brand text-white border-brand shadow-lg scale-[1.02]" 
+                        : isPast
+                          ? "bg-surface border-brand/30 hover:border-brand/50"
+                          : "bg-surface border-border hover:border-brand/30"
+                    )}
                   >
                     <div className="flex items-start gap-4">
                       {/* Step number */}
                       <div className={cn(
-                        "flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center font-bold",
+                        "flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm",
                         isActive 
                           ? "bg-white text-brand" 
                           : isPast
@@ -276,24 +441,23 @@ function HowItWorks() {
                           </h3>
                         </div>
                         <p className={cn(
-                          "text-sm leading-relaxed",
-                          isActive ? "text-white/90" : "text-text-secondary",
-                          !isActive && "line-clamp-2"
+                          "text-sm leading-relaxed transition-all duration-300",
+                          isActive ? "text-white/90 max-h-40" : "text-text-secondary max-h-10 overflow-hidden"
                         )}>
                           {step.description}
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
             
-            {/* Screenshot - right side */}
-            <div className="w-full lg:w-3/5">
+            {/* Mockup - right side */}
+            <div className="w-full lg:w-3/5 lg:sticky lg:top-24">
               <div className="relative">
-                {/* Browser chrome mockup */}
-                <div className="rounded-xl border border-border bg-surface shadow-2xl overflow-hidden">
+                {/* Browser chrome */}
+                <div className="rounded-xl border border-border bg-white shadow-2xl overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-3 bg-surface-secondary border-b border-border">
                     <div className="flex gap-1.5">
                       <div className="w-3 h-3 rounded-full bg-red-400" />
@@ -307,44 +471,33 @@ function HowItWorks() {
                     </div>
                   </div>
                   
-                  {/* Screenshot area */}
-                  <div className="relative aspect-[16/10] bg-gradient-to-br from-surface-secondary to-surface">
+                  {/* Mockup content */}
+                  <div className="relative aspect-[4/3] bg-surface-secondary">
                     {steps.map((step, index) => (
                       <div
                         key={index}
                         className={cn(
-                          "absolute inset-0 transition-all duration-500",
+                          "absolute inset-0 p-4 transition-all duration-500",
                           index === activeStep 
-                            ? "opacity-100 scale-100" 
-                            : "opacity-0 scale-95 pointer-events-none"
+                            ? "opacity-100 translate-x-0" 
+                            : index < activeStep
+                              ? "opacity-0 -translate-x-8"
+                              : "opacity-0 translate-x-8"
                         )}
                       >
-                        {/* Placeholder gradient until real screenshots are added */}
-                        <div className={cn(
-                          "absolute inset-0 bg-gradient-to-br opacity-10",
-                          step.color
-                        )} />
-                        
-                        {/* Screenshot image */}
-                        <Image
-                          src={step.image}
-                          alt={step.title}
-                          fill
-                          className="object-contain"
-                          unoptimized
-                        />
+                        {step.mockup}
                       </div>
                     ))}
                   </div>
                 </div>
                 
-                {/* Decorative elements */}
-                <div className="absolute -z-10 -inset-4 bg-gradient-to-r from-brand/20 to-purple-500/20 rounded-2xl blur-2xl opacity-50" />
+                {/* Decorative blur */}
+                <div className="absolute -z-10 inset-0 -m-4 bg-gradient-to-r from-brand/20 to-purple-500/20 rounded-2xl blur-2xl opacity-50" />
               </div>
             </div>
           </div>
           
-          {/* Progress indicator */}
+          {/* Progress dots */}
           <div className="flex justify-center gap-2 mt-8">
             {steps.map((_, index) => (
               <button
@@ -355,7 +508,7 @@ function HowItWorks() {
                   index === activeStep 
                     ? "w-8 bg-brand" 
                     : index < activeStep 
-                      ? "w-2 bg-brand/50" 
+                      ? "w-2 bg-brand/50 hover:bg-brand/70" 
                       : "w-2 bg-border hover:bg-brand/30"
                 )}
               />
@@ -529,7 +682,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-surface overflow-x-hidden">
+    <div className="min-h-screen bg-surface">
       {/* Header */}
       <header className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
