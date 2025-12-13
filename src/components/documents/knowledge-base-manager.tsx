@@ -76,6 +76,7 @@ export function KnowledgeBaseManager({
 }: KnowledgeBaseManagerProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<DocumentType | null>(null);
+  const [selectedFunderType, setSelectedFunderType] = useState<string | null>(null);
   const [files, setFiles] = useState<FileWithMeta[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(true);
@@ -84,16 +85,18 @@ export function KnowledgeBaseManager({
   const { toast } = useToast();
 
   const missingRecommended = getMissingRecommendedTypes(existingTypes);
+  const isProposalCategory = selectedCategory === "proposals";
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newFiles = acceptedFiles.map((file) => ({
       file,
       documentType: selectedType || "PROPOSAL",
+      funderType: isProposalCategory ? selectedFunderType || undefined : undefined,
       status: "pending" as const,
       progress: 0,
     }));
     setFiles((prev) => [...prev, ...newFiles]);
-  }, [selectedType]);
+  }, [selectedType, selectedFunderType, isProposalCategory]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -102,8 +105,9 @@ export function KnowledgeBaseManager({
   });
 
   const selectCategory = (category: DocumentCategory) => {
-    // Clear files when switching categories
+    // Clear files and funder type when switching categories
     setFiles([]);
+    setSelectedFunderType(null);
     setSelectedCategory(category.id);
     setSelectedType(category.types[0].type);
     setTimeout(() => {
@@ -126,7 +130,6 @@ export function KnowledgeBaseManager({
     if (pendingFiles.length === 0) return;
 
     // Validate: proposals require funder type
-    const isProposalCategory = selectedCategory === "proposals";
     if (isProposalCategory) {
       const missingFunderType = pendingFiles.some((f) => !f.isRfp && !f.funderType);
       if (missingFunderType) {
@@ -222,7 +225,6 @@ export function KnowledgeBaseManager({
 
   const pendingFiles = files.filter((f) => f.status === "pending" && f.file);
   const currentCategory = DOCUMENT_CATEGORIES.find((c) => c.id === selectedCategory);
-  const isProposalCategory = selectedCategory === "proposals";
 
   // Check if all proposals have funder type selected
   const allProposalsHaveFunderType = !isProposalCategory || 
@@ -424,13 +426,16 @@ export function KnowledgeBaseManager({
                   <Badge variant="default" className="text-xs">Required</Badge>
                 </div>
                 <p className="text-xs text-text-secondary">
-                  Select the type of funder for each proposal to help match to future opportunities
+                  Select the type of funder for proposals to help match to future opportunities
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {FUNDER_TYPES.map((funder) => (
                     <button
                       key={funder.value}
+                      type="button"
                       onClick={() => {
+                        // Set the selected funder type for new files
+                        setSelectedFunderType(funder.value);
                         // Update all pending proposal files with this funder type
                         setFiles((prev) =>
                           prev.map((f) =>
@@ -442,7 +447,7 @@ export function KnowledgeBaseManager({
                       }}
                       className={cn(
                         "px-3 py-1.5 rounded-md text-sm border transition-colors",
-                        files.some((f) => f.funderType === funder.value)
+                        selectedFunderType === funder.value
                           ? "border-brand bg-brand-light text-brand font-medium"
                           : "border-border hover:border-text-tertiary bg-white"
                       )}
@@ -451,6 +456,11 @@ export function KnowledgeBaseManager({
                     </button>
                   ))}
                 </div>
+                {selectedFunderType && (
+                  <p className="text-xs text-status-success">
+                    Selected: {FUNDER_TYPES.find((f) => f.value === selectedFunderType)?.description}
+                  </p>
+                )}
               </div>
             )}
 
