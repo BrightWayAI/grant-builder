@@ -20,8 +20,11 @@ export const maxDuration = 30; // Allow up to 30s for Grants.gov API
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
-    if (!user?.organizationId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ error: "Not logged in" }, { status: 401 });
+    }
+    if (!user.organizationId) {
+      return NextResponse.json({ error: "Please complete onboarding to set up your organization" }, { status: 401 });
     }
 
     const searchParams = request.nextUrl.searchParams;
