@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireOrganization } from "@/lib/auth";
 import prisma from "@/lib/db";
-import { uploadFile } from "@/lib/storage";
+import { uploadDocument } from "@/lib/storage";
 import { isValidFileType, getFileTypeFromMime } from "@/lib/ai/document-processor";
 import { indexDocument } from "@/lib/ai/embeddings";
 import { DocumentType } from "@prisma/client";
@@ -37,13 +37,13 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload to storage
-    const { url } = await uploadFile(
+    // Upload to storage with organized folder structure
+    const { url } = await uploadDocument(
       buffer,
       file.name,
       file.type,
       organizationId,
-      "documents"
+      documentType as DocumentType
     );
 
     // Create document record
