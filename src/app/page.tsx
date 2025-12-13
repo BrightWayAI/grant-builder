@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, ReactNode } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/primitives/button";
 import { Badge } from "@/components/primitives/badge";
 import { 
@@ -130,7 +131,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
-// How it Works - Vertical timeline with horizontal scroll cards
+// How it Works - Sticky scroll with image on right
 function HowItWorks() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeStep, setActiveStep] = useState(0);
@@ -139,46 +140,34 @@ function HowItWorks() {
     {
       step: 1,
       title: "Upload your RFP",
-      description: "Drop in any grant announcement, RFP, or NOFO. Our AI parses it instantly.",
+      description: "Drop in any grant announcement, RFP, or NOFO. Our AI parses the document and extracts all requirements, deadlines, sections, and eligibility criteria automatically.",
       icon: Upload,
-      details: [
-        "Extracts all required sections automatically",
-        "Identifies deadlines, eligibility, and award amounts",
-        "Works with PDFs, Word docs, and web pages",
-      ],
+      image: "/screenshots/step-1-upload.svg",
+      color: "from-blue-500 to-indigo-600",
     },
     {
       step: 2,
       title: "AI writes your draft",
-      description: "We generate each section using your knowledge base and organizational voice.",
+      description: "Using your knowledge base, we generate each section in your organization's authentic voice. Real data from your past proposals, actual impact numbers, no hallucinations.",
       icon: Sparkles,
-      details: [
-        "Pulls relevant data from your past proposals",
-        "Matches your organization's writing style",
-        "Cites your actual impact numbers and stats",
-      ],
+      image: "/screenshots/step-2-generate.svg",
+      color: "from-purple-500 to-pink-600",
     },
     {
       step: 3,
       title: "Review & refine",
-      description: "Edit inline with AI assistance. Expand, strengthen, or adjust any section.",
+      description: "Edit inline with our AI copilot. Select any text to expand, strengthen, or adjust tone. Real-time word count tracking keeps you within limits.",
       icon: PenTool,
-      details: [
-        "Inline copilot for quick refinements",
-        "Real-time word count tracking",
-        "Suggestions grounded in funder priorities",
-      ],
+      image: "/screenshots/step-3-edit.svg",
+      color: "from-emerald-500 to-teal-600",
     },
     {
       step: 4,
       title: "Export & submit",
-      description: "Download your polished proposal as DOCX, ready for submission.",
+      description: "Download your polished proposal as a professionally formatted DOCX. All sections complete, all requirements met, ready to submit to any portal.",
       icon: Download,
-      details: [
-        "Professional formatting preserved",
-        "All sections complete and within limits",
-        "Ready to submit to any portal",
-      ],
+      image: "/screenshots/step-4-export.svg",
+      color: "from-orange-500 to-red-600",
     },
   ];
 
@@ -186,16 +175,28 @@ function HowItWorks() {
     const handleScroll = () => {
       if (!containerRef.current) return;
       
-      const rect = containerRef.current.getBoundingClientRect();
-      const containerHeight = containerRef.current.offsetHeight;
+      const container = containerRef.current;
+      const rect = container.getBoundingClientRect();
+      const containerTop = rect.top;
+      const containerHeight = container.offsetHeight;
       const windowHeight = window.innerHeight;
       
-      const scrollableDistance = containerHeight - windowHeight;
-      const scrolled = -rect.top;
+      // Calculate how far we've scrolled into the container
+      // Progress goes from 0 (just entered) to 1 (about to leave)
+      const scrollIntoContainer = -containerTop;
+      const totalScrollDistance = containerHeight - windowHeight;
       
-      const progress = Math.max(0, Math.min(1, scrolled / scrollableDistance));
-      const step = Math.min(steps.length - 1, Math.floor(progress * steps.length));
-      setActiveStep(step);
+      if (totalScrollDistance <= 0) return;
+      
+      const progress = Math.max(0, Math.min(1, scrollIntoContainer / totalScrollDistance));
+      
+      // Map progress to step index
+      const stepIndex = Math.min(
+        steps.length - 1,
+        Math.floor(progress * steps.length)
+      );
+      
+      setActiveStep(stepIndex);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -203,18 +204,21 @@ function HowItWorks() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [steps.length]);
 
+  // Each step gets 100vh of scroll distance
+  const totalHeight = steps.length * 100;
+
   return (
     <section 
       ref={containerRef}
       className="relative bg-surface-subtle"
-      style={{ height: `${steps.length * 80}vh` }}
+      style={{ height: `${totalHeight}vh` }}
     >
-      <div className="sticky top-0 h-screen flex items-center">
-        <div className="w-full max-w-6xl mx-auto px-6">
+      <div className="sticky top-0 h-screen overflow-hidden">
+        <div className="h-full max-w-7xl mx-auto px-6 flex flex-col justify-center">
           {/* Header */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-8 lg:mb-12">
             <Badge variant="outline" className="mb-4">How It Works</Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold mb-3">
               From RFP to draft in four steps
             </h2>
             <p className="text-text-secondary text-lg">
@@ -222,87 +226,137 @@ function HowItWorks() {
             </p>
           </div>
           
-          {/* Steps - horizontal cards */}
-          <div className="grid md:grid-cols-4 gap-4">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              const isActive = index === activeStep;
-              const isPast = index < activeStep;
-              
-              return (
-                <div
-                  key={index}
-                  className={cn(
-                    "relative p-6 rounded-2xl border-2 transition-all duration-500",
-                    isActive 
-                      ? "bg-brand text-white border-brand shadow-xl scale-105" 
-                      : isPast
-                        ? "bg-surface border-brand/30"
-                        : "bg-surface border-border"
-                  )}
-                >
-                  {/* Step number */}
-                  <div className={cn(
-                    "absolute -top-3 -left-3 h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold",
-                    isActive 
-                      ? "bg-white text-brand" 
-                      : isPast
-                        ? "bg-brand text-white"
-                        : "bg-surface-secondary text-text-secondary border border-border"
-                  )}>
-                    {isPast ? <Check className="h-4 w-4" /> : step.step}
+          {/* Content - Steps on left, Image on right */}
+          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
+            {/* Steps list - left side */}
+            <div className="w-full lg:w-2/5 space-y-4">
+              {steps.map((step, index) => {
+                const Icon = step.icon;
+                const isActive = index === activeStep;
+                const isPast = index < activeStep;
+                
+                return (
+                  <div
+                    key={index}
+                    className={cn(
+                      "relative p-4 lg:p-5 rounded-xl border-2 transition-all duration-300 cursor-pointer",
+                      isActive 
+                        ? "bg-brand text-white border-brand shadow-lg" 
+                        : isPast
+                          ? "bg-surface border-brand/30 opacity-60"
+                          : "bg-surface border-border opacity-40"
+                    )}
+                    onClick={() => setActiveStep(index)}
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Step number */}
+                      <div className={cn(
+                        "flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center font-bold",
+                        isActive 
+                          ? "bg-white text-brand" 
+                          : isPast
+                            ? "bg-brand text-white"
+                            : "bg-surface-secondary text-text-secondary"
+                      )}>
+                        {isPast ? <Check className="h-5 w-5" /> : step.step}
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Icon className={cn(
+                            "h-5 w-5 flex-shrink-0",
+                            isActive ? "text-white" : "text-brand"
+                          )} />
+                          <h3 className={cn(
+                            "font-semibold text-lg",
+                            isActive ? "text-white" : "text-text-primary"
+                          )}>
+                            {step.title}
+                          </h3>
+                        </div>
+                        <p className={cn(
+                          "text-sm leading-relaxed",
+                          isActive ? "text-white/90" : "text-text-secondary",
+                          !isActive && "line-clamp-2"
+                        )}>
+                          {step.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Screenshot - right side */}
+            <div className="w-full lg:w-3/5">
+              <div className="relative">
+                {/* Browser chrome mockup */}
+                <div className="rounded-xl border border-border bg-surface shadow-2xl overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-3 bg-surface-secondary border-b border-border">
+                    <div className="flex gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-red-400" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                      <div className="w-3 h-3 rounded-full bg-green-400" />
+                    </div>
+                    <div className="flex-1 mx-4">
+                      <div className="bg-surface rounded-md px-3 py-1 text-xs text-text-tertiary text-center max-w-xs mx-auto">
+                        app.brightwayai.com
+                      </div>
+                    </div>
                   </div>
                   
-                  {/* Icon */}
-                  <div className={cn(
-                    "h-12 w-12 rounded-xl flex items-center justify-center mb-4",
-                    isActive ? "bg-white/20" : "bg-brand-light"
-                  )}>
-                    <Icon className={cn(
-                      "h-6 w-6",
-                      isActive ? "text-white" : "text-brand"
-                    )} />
-                  </div>
-                  
-                  {/* Content */}
-                  <h3 className={cn(
-                    "text-lg font-semibold mb-2",
-                    isActive ? "text-white" : "text-text-primary"
-                  )}>
-                    {step.title}
-                  </h3>
-                  <p className={cn(
-                    "text-sm mb-4",
-                    isActive ? "text-white/80" : "text-text-secondary"
-                  )}>
-                    {step.description}
-                  </p>
-                  
-                  {/* Details - only show on active */}
-                  <div className={cn(
-                    "space-y-2 transition-all duration-300 overflow-hidden",
-                    isActive ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
-                  )}>
-                    {step.details.map((detail, i) => (
-                      <div key={i} className="flex items-start gap-2 text-sm text-white/90">
-                        <Check className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                        <span>{detail}</span>
+                  {/* Screenshot area */}
+                  <div className="relative aspect-[16/10] bg-gradient-to-br from-surface-secondary to-surface">
+                    {steps.map((step, index) => (
+                      <div
+                        key={index}
+                        className={cn(
+                          "absolute inset-0 transition-all duration-500",
+                          index === activeStep 
+                            ? "opacity-100 scale-100" 
+                            : "opacity-0 scale-95 pointer-events-none"
+                        )}
+                      >
+                        {/* Placeholder gradient until real screenshots are added */}
+                        <div className={cn(
+                          "absolute inset-0 bg-gradient-to-br opacity-10",
+                          step.color
+                        )} />
+                        
+                        {/* Screenshot image */}
+                        <Image
+                          src={step.image}
+                          alt={step.title}
+                          fill
+                          className="object-contain"
+                          unoptimized
+                        />
                       </div>
                     ))}
                   </div>
                 </div>
-              );
-            })}
+                
+                {/* Decorative elements */}
+                <div className="absolute -z-10 -inset-4 bg-gradient-to-r from-brand/20 to-purple-500/20 rounded-2xl blur-2xl opacity-50" />
+              </div>
+            </div>
           </div>
           
-          {/* Progress bar */}
+          {/* Progress indicator */}
           <div className="flex justify-center gap-2 mt-8">
             {steps.map((_, index) => (
-              <div
+              <button
                 key={index}
+                onClick={() => setActiveStep(index)}
                 className={cn(
                   "h-2 rounded-full transition-all duration-300",
-                  index === activeStep ? "w-8 bg-brand" : index < activeStep ? "w-2 bg-brand/50" : "w-2 bg-border"
+                  index === activeStep 
+                    ? "w-8 bg-brand" 
+                    : index < activeStep 
+                      ? "w-2 bg-brand/50" 
+                      : "w-2 bg-border hover:bg-brand/30"
                 )}
               />
             ))}
@@ -313,7 +367,7 @@ function HowItWorks() {
   );
 }
 
-// Features section - simple grid, no fancy animations
+// Features section
 function Features() {
   const features = [
     {
