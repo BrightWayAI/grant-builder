@@ -5,9 +5,9 @@ export interface DocumentCategory {
   name: string;
   description: string;
   types: DocumentTypeInfo[];
-  icon: string; // Lucide icon name
-  priority: number; // For RAG retrieval weighting
-  s3Folder: string; // Organized storage path
+  icon: string;
+  priority: number;
+  s3Folder: string;
 }
 
 export interface DocumentTypeInfo {
@@ -19,11 +19,22 @@ export interface DocumentTypeInfo {
   tips: string[];
 }
 
+// Funder types for proposals and RFPs
+export const FUNDER_TYPES = [
+  { value: "federal", label: "Federal Government", description: "NIH, NSF, DOE, etc." },
+  { value: "state", label: "State Government", description: "State agencies and programs" },
+  { value: "local", label: "Local Government", description: "City, county, municipal" },
+  { value: "foundation", label: "Private Foundation", description: "Gates, Ford, MacArthur, etc." },
+  { value: "corporate", label: "Corporate", description: "Corporate giving programs" },
+  { value: "community", label: "Community Foundation", description: "Regional community foundations" },
+  { value: "other", label: "Other", description: "Other funder types" },
+];
+
 export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
   {
     id: "proposals",
-    name: "Past Proposals",
-    description: "Successful grant applications that showcase your writing style and approach",
+    name: "Past Proposals & RFPs",
+    description: "Upload successful grant applications along with their RFPs to help the AI learn your writing style and how you respond to requirements",
     icon: "FileText",
     priority: 1,
     s3Folder: "proposals",
@@ -36,7 +47,8 @@ export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
         ragPriority: "high",
         tips: [
           "Upload your most successful proposals first",
-          "Include proposals from different funders for variety",
+          "Include the matching RFP if you have it",
+          "Tag with funder type for better matching",
           "Recent proposals (last 2-3 years) are most relevant",
         ],
       },
@@ -45,7 +57,7 @@ export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
   {
     id: "organization",
     name: "Organization Info",
-    description: "Documents that describe who you are and what you do",
+    description: "Documents that describe who you are, your mission, and your team",
     icon: "Building2",
     priority: 2,
     s3Folder: "organization",
@@ -83,7 +95,6 @@ export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
         tips: [
           "Include credentials and relevant experience",
           "Focus on staff who lead grant-funded programs",
-          "Update when staff changes occur",
         ],
       },
       {
@@ -102,7 +113,7 @@ export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
   {
     id: "programs",
     name: "Programs & Services",
-    description: "Details about what your organization delivers",
+    description: "Details about what your organization delivers and how",
     icon: "Target",
     priority: 3,
     s3Folder: "programs",
@@ -128,7 +139,6 @@ export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
         tips: [
           "Include inputs, activities, outputs, and outcomes",
           "Make sure text is extractable (not just images)",
-          "Update when program model changes",
         ],
       },
     ],
@@ -136,7 +146,7 @@ export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
   {
     id: "impact",
     name: "Impact & Outcomes",
-    description: "Evidence of your organization's effectiveness",
+    description: "Evidence of your organization's effectiveness and results",
     icon: "TrendingUp",
     priority: 4,
     s3Folder: "impact",
@@ -162,7 +172,6 @@ export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
         tips: [
           "Include methodology and findings",
           "Note any evidence of effectiveness",
-          "Add recommendations and how you addressed them",
         ],
       },
       {
@@ -174,7 +183,6 @@ export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
         tips: [
           "Most recent reports are most useful",
           "Include financial highlights if available",
-          "Add major accomplishments and milestones",
         ],
       },
     ],
@@ -196,7 +204,6 @@ export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
         tips: [
           "Upload most recent filing",
           "Some funders require multiple years",
-          "Useful for organizational data points",
         ],
       },
       {
@@ -208,7 +215,6 @@ export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
         tips: [
           "Upload most recent audit",
           "Include any management letter if available",
-          "Useful for demonstrating financial health",
         ],
       },
     ],
@@ -216,7 +222,7 @@ export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
   {
     id: "other",
     name: "Other Documents",
-    description: "Additional supporting materials",
+    description: "Additional supporting materials that don't fit other categories",
     icon: "Folder",
     priority: 6,
     s3Folder: "other",
@@ -229,14 +235,12 @@ export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
         ragPriority: "low",
         tips: [
           "Use for documents that don't fit other categories",
-          "Consider if the content is relevant for proposals",
         ],
       },
     ],
   },
 ];
 
-// Flat list of all document types with full info
 export const ALL_DOCUMENT_TYPES = DOCUMENT_CATEGORIES.flatMap((cat) =>
   cat.types.map((t) => ({
     ...t,
@@ -246,33 +250,25 @@ export const ALL_DOCUMENT_TYPES = DOCUMENT_CATEGORIES.flatMap((cat) =>
   }))
 );
 
-// Get info for a specific document type
 export function getDocumentTypeInfo(type: DocumentType) {
   return ALL_DOCUMENT_TYPES.find((t) => t.type === type);
 }
 
-// Get S3 folder for a document type
 export function getS3FolderForType(type: DocumentType): string {
   const info = getDocumentTypeInfo(type);
   return info?.s3Folder || "other";
 }
 
-// Get RAG priority weight for scoring
 export function getRagWeight(type: DocumentType): number {
   const info = getDocumentTypeInfo(type);
   switch (info?.ragPriority) {
-    case "high":
-      return 1.0;
-    case "medium":
-      return 0.7;
-    case "low":
-      return 0.4;
-    default:
-      return 0.5;
+    case "high": return 1.0;
+    case "medium": return 0.7;
+    case "low": return 0.4;
+    default: return 0.5;
   }
 }
 
-// Check what document types are missing for an org
 export function getMissingRecommendedTypes(existingTypes: DocumentType[]): DocumentTypeInfo[] {
   const highPriorityTypes = ALL_DOCUMENT_TYPES.filter((t) => t.ragPriority === "high");
   return highPriorityTypes.filter((t) => !existingTypes.includes(t.type));
