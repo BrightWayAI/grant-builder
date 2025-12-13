@@ -1,8 +1,8 @@
 // Grants.gov API integration
-// Using the public search API
+// Using the public search and detail APIs
 
 const GRANTS_GOV_SEARCH_URL = "https://www.grants.gov/grantsws/rest/opportunities/search";
-const GRANTS_GOV_DETAIL_URL = "https://www.grants.gov/grantsws/rest/opportunity/details";
+const GRANTS_GOV_DETAIL_URL = "https://apply07.grants.gov/grantsws/rest/opportunity/details";
 
 export interface GrantsGovOpportunity {
   id: string;
@@ -37,15 +37,13 @@ interface GrantsGovHit {
   openDate: string;
   closeDate: string | null;
   oppStatus: string;
-  awardCeiling: number;
-  awardFloor: number;
-  synopsis?: string;
+  docType: string;
   cfdaList?: string[];
 }
 
 interface GrantsGovSearchResponse {
-  oppHits: GrantsGovHit[];
-  hitCount: number;
+  oppHits?: GrantsGovHit[];
+  hitCount?: number;
 }
 
 // Map organization types to Grants.gov eligibility codes
@@ -94,30 +92,71 @@ const ELIGIBILITY_DESCRIPTIONS: Record<string, string> = {
 
 /**
  * Search for grants from Grants.gov
- * Always returns results - uses broad search if specific filters return nothing
+ * Returns grants with details fetched for top results
  */
 export async function searchGrants(params: GrantSearchParams = {}): Promise<GrantsGovOpportunity[]> {
-  const rows = params.rows || 50;
+  const rows = params.rows || 25;
   
   // Try with filters first
-  let grants = await executeSearch(params, rows);
+  let hits = await executeSearch(params, rows);
   
   // If no results with filters, try broader search
-  if (grants.length === 0 && (params.fundingCategories || params.eligibilities)) {
+  if (hits.length === 0 && (params.fundingCategories || params.eligibilities || params.keyword)) {
     console.log("No results with filters, trying broader search...");
-    grants = await executeSearch({ keyword: params.keyword, rows }, rows);
+    hits = await executeSearch({}, rows);
   }
   
-  // If still no results, get featured/recent grants
-  if (grants.length === 0) {
-    console.log("Fetching featured grants...");
-    grants = await executeSearch({}, rows);
+  if (hits.length === 0) {
+    return [];
+  }
+  
+  // Fetch details for grants (limit to avoid rate limiting)
+  const detailLimit = Math.min(hits.length, 12);
+  const grants: GrantsGovOpportunity[] = [];
+  
+  for (let i = 0; i < detailLimit; i++) {
+    const hit = hits[i];
+    try {
+      const detail = await getGrantDetail(hit.id);
+      if (detail) {
+        grants.push(detail);
+      } else {
+        // Fallback to basic info from search
+        grants.push(hitToBasicGrant(hit));
+      }
+    } catch (err) {
+      console.error(`Error fetching detail for ${hit.id}:`, err);
+      grants.push(hitToBasicGrant(hit));
+    }
+    
+    // Small delay between requests to avoid rate limiting
+    if (i < detailLimit - 1) {
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
   }
   
   return grants;
 }
 
-async function executeSearch(params: GrantSearchParams, rows: number): Promise<GrantsGovOpportunity[]> {
+function hitToBasicGrant(hit: GrantsGovHit): GrantsGovOpportunity {
+  return {
+    id: hit.id,
+    number: hit.number,
+    title: hit.title,
+    agency: hit.agency,
+    agencyCode: hit.agencyCode,
+    openDate: hit.openDate,
+    closeDate: hit.closeDate || null,
+    awardFloor: 0,
+    awardCeiling: 0,
+    description: "",
+    opportunityCategory: "",
+    eligibleApplicants: [],
+    cfdaList: hit.cfdaList || [],
+  };
+}
+
+async function executeSearch(params: GrantSearchParams, rows: number): Promise<GrantsGovHit[]> {
   try {
     const searchBody: Record<string, unknown> = {
       oppStatuses: "posted",
@@ -141,6 +180,8 @@ async function executeSearch(params: GrantSearchParams, rows: number): Promise<G
       searchBody.agencies = params.agencies.join("|");
     }
 
+    console.log("Searching Grants.gov with params:", JSON.stringify(searchBody));
+
     const response = await fetch(GRANTS_GOV_SEARCH_URL, {
       method: "POST",
       headers: {
@@ -152,33 +193,15 @@ async function executeSearch(params: GrantSearchParams, rows: number): Promise<G
     });
 
     if (!response.ok) {
-      console.error(`Grants.gov API error: ${response.status}`);
+      console.error(`Grants.gov API error: ${response.status} ${response.statusText}`);
       return [];
     }
 
     const data: GrantsGovSearchResponse = await response.json();
     
-    if (!data.oppHits || data.oppHits.length === 0) {
-      return [];
-    }
-
-    // Map hits to our format - use data from search results directly
-    // Avoid making individual detail calls to prevent rate limiting
-    return data.oppHits.map((hit) => ({
-      id: hit.id,
-      number: hit.number,
-      title: hit.title,
-      agency: hit.agency,
-      agencyCode: hit.agencyCode,
-      openDate: hit.openDate,
-      closeDate: hit.closeDate,
-      awardFloor: hit.awardFloor || 0,
-      awardCeiling: hit.awardCeiling || 0,
-      description: hit.synopsis || "",
-      opportunityCategory: "",
-      eligibleApplicants: [],
-      cfdaList: hit.cfdaList || [],
-    }));
+    console.log(`Grants.gov returned ${data.hitCount || 0} total hits, ${data.oppHits?.length || 0} in response`);
+    
+    return data.oppHits || [];
   } catch (error) {
     console.error("Error searching Grants.gov:", error);
     return [];
@@ -187,36 +210,72 @@ async function executeSearch(params: GrantSearchParams, rows: number): Promise<G
 
 /**
  * Get detailed information about a specific grant
+ * Uses POST to apply07.grants.gov with form-encoded data
  */
 export async function getGrantDetail(opportunityId: string): Promise<GrantsGovOpportunity | null> {
   try {
-    const response = await fetch(`${GRANTS_GOV_DETAIL_URL}?oppId=${opportunityId}`, {
-      headers: { "Accept": "application/json" },
+    const response = await fetch(GRANTS_GOV_DETAIL_URL, {
+      method: "POST",
+      headers: { 
+        "Accept": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: `oppId=${opportunityId}`,
       cache: "no-store",
     });
 
     if (!response.ok) {
+      console.error(`Detail fetch failed for ${opportunityId}: ${response.status}`);
       return null;
     }
 
     const data = await response.json();
+    
+    // Check for errors
+    if (data.errorMessages && data.errorMessages.length > 0) {
+      console.error(`Grant ${opportunityId} errors:`, data.errorMessages);
+      return null;
+    }
+
+    const synopsis = data.synopsis || {};
+    
+    // Parse award amounts - they could be numbers or strings like "none"
+    let awardCeiling = 0;
+    let awardFloor = 0;
+    if (synopsis.awardCeiling && synopsis.awardCeiling !== "none") {
+      awardCeiling = parseInt(String(synopsis.awardCeiling), 10) || 0;
+    }
+    if (synopsis.awardFloor && synopsis.awardFloor !== "none") {
+      awardFloor = parseInt(String(synopsis.awardFloor), 10) || 0;
+    }
+    
+    // Extract eligibility types
+    const eligibleApplicants = (synopsis.applicantTypes || []).map(
+      (t: { description?: string }) => t.description || ""
+    ).filter(Boolean);
+
+    // Extract CFDA numbers
+    const cfdaList = (data.cfdas || []).map(
+      (c: { programNumber?: string }) => c.programNumber || ""
+    ).filter(Boolean);
 
     return {
-      id: data.id,
-      number: data.number,
-      title: data.title,
-      agency: data.agency,
-      agencyCode: data.agencyCode,
-      openDate: data.openDate,
-      closeDate: data.closeDate,
-      awardFloor: data.awardFloor || 0,
-      awardCeiling: data.awardCeiling || 0,
-      description: data.synopsis?.synopsisDesc || "",
-      opportunityCategory: data.opportunityCategory?.category || "",
-      eligibleApplicants: data.eligibilities?.map((e: { description: string }) => e.description) || [],
-      cfdaList: data.cfdaList || [],
+      id: String(data.id || opportunityId),
+      number: data.opportunityNumber || "",
+      title: data.opportunityTitle || "Untitled Grant",
+      agency: synopsis.agencyName || "Unknown Agency",
+      agencyCode: synopsis.agencyCode || data.owningAgencyCode || "",
+      openDate: synopsis.postingDate || "",
+      closeDate: synopsis.responseDate || synopsis.archiveDate || null,
+      awardFloor,
+      awardCeiling,
+      description: synopsis.synopsisDesc || synopsis.fundingActivityCategoryDesc || "",
+      opportunityCategory: data.opportunityCategory?.description || "",
+      eligibleApplicants,
+      cfdaList,
     };
-  } catch {
+  } catch (error) {
+    console.error(`Error fetching grant detail for ${opportunityId}:`, error);
     return null;
   }
 }
@@ -239,7 +298,6 @@ export function calculateMatchScore(
   orgProfile: OrganizationProfile
 ): number {
   let score = 50; // Base score - all grants start with 50%
-  let maxBonus = 50; // Maximum additional points from matching
 
   // Program area / category matching (up to +20 points)
   if (orgProfile.programAreas.length > 0) {
@@ -254,9 +312,10 @@ export function calculateMatchScore(
     
     // Check title/description for keyword matches
     const titleLower = grant.title.toLowerCase();
+    const descLower = (grant.description || "").toLowerCase();
     const hasKeywordMatch = orgProfile.programAreas.some((area) => {
       const keywords = area.toLowerCase().split(/[&\s]+/);
-      return keywords.some((kw) => kw.length > 3 && titleLower.includes(kw));
+      return keywords.some((kw) => kw.length > 3 && (titleLower.includes(kw) || descLower.includes(kw)));
     });
     
     if (hasCategoryMatch) {
@@ -278,7 +337,8 @@ export function calculateMatchScore(
         return eligDescriptions.some((ed) => eaLower.includes(ed.toLowerCase())) ||
           eaLower.includes("nonprofit") ||
           eaLower.includes("501(c)(3)") ||
-          eaLower.includes("any");
+          eaLower.includes("any") ||
+          eaLower.includes("other");
       });
     
     if (isEligible) {
@@ -335,7 +395,7 @@ function getBudgetMax(budgetRange?: string | null): number {
  */
 export function getSearchParamsForOrg(orgProfile: OrganizationProfile): GrantSearchParams {
   const params: GrantSearchParams = {
-    rows: 50,
+    rows: 25,
   };
 
   // Get funding categories from program areas
@@ -361,20 +421,4 @@ export function getSearchParamsForOrg(orgProfile: OrganizationProfile): GrantSea
   }
 
   return params;
-}
-
-/**
- * Get featured grants - recent high-value opportunities open to nonprofits
- */
-export async function getFeaturedGrants(limit: number = 10): Promise<GrantsGovOpportunity[]> {
-  const grants = await searchGrants({
-    eligibilities: ["25"], // 501(c)(3) eligible
-    rows: limit * 2, // Get more to filter
-  });
-  
-  // Sort by award ceiling and return top grants
-  return grants
-    .filter((g) => g.awardCeiling > 0)
-    .sort((a, b) => b.awardCeiling - a.awardCeiling)
-    .slice(0, limit);
 }
