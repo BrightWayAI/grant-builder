@@ -109,11 +109,19 @@ Writing Guidelines:
 6. Match the organization's existing writing style when context is provided
 7. Focus on outcomes and impact, not just activities
 
+FORMATTING RULES:
+- Write in clean, readable prose - NO markdown formatting
+- Do NOT use ** for bold, * for italic, or # for headers
+- Use plain paragraphs separated by blank lines
+- For lists, use simple dashes (-) or numbers (1. 2. 3.)
+- Write as if for a formal printed document
+
 DO NOT:
 - Make up statistics or specific numbers not in the context
 - Use generic filler language
 - Exceed specified word/character limits
-- Include information you're not confident about`;
+- Include information you're not confident about
+- Use any markdown syntax (**, *, #, etc.)`;
 }
 
 function buildUserPrompt(params: {
