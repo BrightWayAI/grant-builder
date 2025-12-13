@@ -22,15 +22,29 @@ export async function DELETE(
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
-    await deleteDocumentIndex(document.id);
+    // Try to delete from Pinecone (don't fail if it errors - vectors may not exist)
+    try {
+      await deleteDocumentIndex(document.id);
+    } catch (error) {
+      console.error("Failed to delete vectors (may not exist):", error);
+      // Continue with deletion even if Pinecone fails
+    }
 
+    // Try to delete from S3
     try {
       const key = getKeyFromUrl(document.fileUrl);
       await deleteFile(key);
     } catch (error) {
       console.error("Failed to delete file from storage:", error);
+      // Continue with deletion even if S3 fails
     }
 
+    // Delete chunks from database
+    await prisma.documentChunk.deleteMany({
+      where: { documentId: document.id },
+    });
+
+    // Delete document from database
     await prisma.document.delete({
       where: { id: document.id },
     });

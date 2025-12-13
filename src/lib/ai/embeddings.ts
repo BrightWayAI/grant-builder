@@ -224,9 +224,17 @@ export async function indexDocumentLegacy(
 
 /**
  * Delete document from index
+ * This is safe to call even if the document was never indexed
  */
 export async function deleteDocumentIndex(documentId: string): Promise<void> {
-  await deleteVectorsByDocumentId(documentId);
+  try {
+    await deleteVectorsByDocumentId(documentId);
+  } catch (error) {
+    // Log but don't throw - vectors may not exist
+    console.error(`Failed to delete vectors for ${documentId}:`, error);
+  }
+  
+  // Always clean up database chunks
   await prisma.documentChunk.deleteMany({
     where: { documentId },
   });
