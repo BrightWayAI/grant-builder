@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/primitives/button";
 import { Card, CardContent } from "@/components/primitives/card";
 import { Badge } from "@/components/primitives/badge";
@@ -10,14 +11,9 @@ import {
   Sparkles, 
   Upload, 
   Download, 
-  ChevronRight,
   Check,
   ArrowRight,
-  Building2,
-  Target,
   Brain,
-  Zap,
-  Clock,
   Shield,
   ChevronDown,
   Search,
@@ -25,6 +21,56 @@ import {
   PenTool,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Scroll-triggered fade in animation
+function FadeInOnScroll({ 
+  children, 
+  className,
+  delay = 0,
+  direction = "up" 
+}: { 
+  children: ReactNode; 
+  className?: string;
+  delay?: number;
+  direction?: "up" | "down" | "left" | "right";
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => setIsVisible(true), delay);
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+    );
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [delay]);
+
+  const directionStyles = {
+    up: "translate-y-8",
+    down: "-translate-y-8",
+    left: "translate-x-8",
+    right: "-translate-x-8",
+  };
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "transition-all duration-700 ease-out",
+        isVisible ? "opacity-100 translate-x-0 translate-y-0" : `opacity-0 ${directionStyles[direction]}`,
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
 
 // Typewriter effect for hero
 function TypewriterText({ texts, className }: { texts: string[]; className?: string }) {
@@ -74,7 +120,6 @@ function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: str
       ([entry]) => {
         if (entry.isIntersecting && !hasAnimated) {
           setHasAnimated(true);
-          let start = 0;
           const duration = 2000;
           const startTime = performance.now();
           
@@ -132,187 +177,93 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
-// Interactive Feature Demo
-function FeatureDemo() {
-  const [activeStep, setActiveStep] = useState(0);
-  
-  const steps = [
-    {
-      title: "Upload your RFP",
-      description: "Drop in any grant announcement, RFP, or NOFO. Our AI extracts requirements, deadlines, and sections automatically.",
-      icon: Upload,
-      visual: (
-        <div className="bg-surface-secondary rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-3 p-4 bg-white rounded-lg border-2 border-dashed border-brand animate-pulse">
-            <FileText className="h-8 w-8 text-brand" />
-            <div>
-              <p className="font-medium">NEA-Arts-Grant-2025.pdf</p>
-              <p className="text-sm text-text-secondary">Analyzing requirements...</p>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>Deadline: March 15, 2025</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>8 sections identified</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>Award: $10,000 - $100,000</span>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "AI generates your draft",
-      description: "Using your knowledge base, we write each section in your organization's voice with real data from your past work.",
-      icon: Sparkles,
-      visual: (
-        <div className="bg-surface-secondary rounded-xl p-6">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="h-5 w-5 text-brand animate-pulse" />
-              <span className="text-sm font-medium">Generating Statement of Need...</span>
-            </div>
-            <div className="bg-white rounded-lg p-4 space-y-2 text-sm">
-              <p className="text-text-primary leading-relaxed">
-                The Springfield Arts Council has served our community for over 25 years, 
-                reaching 15,000 residents annually through free public programs. 
-                Our recent impact study shows that 89% of participants report increased 
-                engagement with local arts...
-              </p>
-              <span className="inline-block animate-pulse">▊</span>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "Review & refine",
-      description: "Edit with our inline AI copilot. Expand sections, strengthen arguments, or adjust tone—all while staying within word limits.",
-      icon: PenTool,
-      visual: (
-        <div className="bg-surface-secondary rounded-xl p-6">
-          <div className="bg-white rounded-lg p-4 space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">Project Description</span>
-              <span className="text-text-tertiary">487 / 500 words</span>
-            </div>
-            <div className="text-sm leading-relaxed">
-              <span className="bg-brand-light text-brand px-1 rounded">Our summer youth program</span>
-              {" "}will expand to serve 200 additional participants through partnerships 
-              with three new community centers...
-            </div>
-            <div className="flex gap-2">
-              <Badge variant="outline" className="cursor-pointer hover:bg-brand-light">
-                <Sparkles className="h-3 w-3 mr-1" /> Expand
-              </Badge>
-              <Badge variant="outline" className="cursor-pointer hover:bg-brand-light">
-                Strengthen
-              </Badge>
-              <Badge variant="outline" className="cursor-pointer hover:bg-brand-light">
-                Add data
-              </Badge>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "Export & submit",
-      description: "Download your polished proposal as DOCX, ready for submission. All formatting preserved, all requirements met.",
-      icon: Download,
-      visual: (
-        <div className="bg-surface-secondary rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-4 p-4 bg-white rounded-lg border">
-            <FileCheck className="h-10 w-10 text-status-success" />
-            <div className="flex-1">
-              <p className="font-medium">NEA_Arts_Proposal_Final.docx</p>
-              <p className="text-sm text-status-success">Ready for submission</p>
-            </div>
-            <Button size="sm">
-              <Download className="h-4 w-4 mr-1" />
-              Download
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>All sections complete</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>Word limits met</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>Formatting applied</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>Citations included</span>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-  ];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveStep((prev) => (prev + 1) % steps.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
+// Screenshot mockup component
+function ScreenshotMockup({ 
+  children, 
+  className 
+}: { 
+  children: ReactNode; 
+  className?: string;
+}) {
   return (
-    <div className="grid lg:grid-cols-2 gap-12 items-center">
-      <div className="space-y-4">
-        {steps.map((step, index) => (
-          <button
-            key={index}
-            onClick={() => setActiveStep(index)}
-            className={cn(
-              "w-full text-left p-4 rounded-xl transition-all duration-300",
-              activeStep === index 
-                ? "bg-brand-light border-2 border-brand" 
-                : "bg-surface-subtle hover:bg-surface-secondary border-2 border-transparent"
-            )}
-          >
-            <div className="flex items-start gap-4">
-              <div className={cn(
-                "p-2 rounded-lg",
-                activeStep === index ? "bg-brand text-white" : "bg-surface-secondary text-text-secondary"
-              )}>
-                <step.icon className="h-5 w-5" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className={cn(
-                    "text-sm font-medium",
-                    activeStep === index ? "text-brand" : "text-text-tertiary"
-                  )}>
-                    Step {index + 1}
-                  </span>
-                </div>
-                <h3 className="font-semibold mt-1">{step.title}</h3>
-                {activeStep === index && (
-                  <p className="text-sm text-text-secondary mt-2">{step.description}</p>
-                )}
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-      <div className="relative">
-        <div className="aspect-[4/3] relative">
-          {steps[activeStep].visual}
+    <div className={cn(
+      "rounded-xl border border-border bg-surface shadow-2xl overflow-hidden",
+      className
+    )}>
+      {/* Browser chrome */}
+      <div className="flex items-center gap-2 px-4 py-3 bg-surface-secondary border-b border-border">
+        <div className="flex gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-red-400" />
+          <div className="w-3 h-3 rounded-full bg-yellow-400" />
+          <div className="w-3 h-3 rounded-full bg-green-400" />
+        </div>
+        <div className="flex-1 mx-4">
+          <div className="bg-surface rounded-md px-3 py-1 text-xs text-text-tertiary text-center">
+            app.brightwayai.com
+          </div>
         </div>
       </div>
+      {/* Content */}
+      <div className="p-1 bg-surface-secondary">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// Feature showcase with screenshot
+function FeatureShowcase({
+  badge,
+  title,
+  description,
+  features,
+  screenshot,
+  reversed = false,
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  features: string[];
+  screenshot: ReactNode;
+  reversed?: boolean;
+}) {
+  return (
+    <div className={cn(
+      "grid lg:grid-cols-2 gap-12 lg:gap-20 items-center",
+      reversed && "lg:grid-flow-dense"
+    )}>
+      <FadeInOnScroll 
+        direction={reversed ? "right" : "left"}
+        className={reversed ? "lg:col-start-2" : ""}
+      >
+        <Badge variant="outline" className="mb-4">{badge}</Badge>
+        <h3 className="text-3xl md:text-4xl font-display font-bold mb-4">
+          {title}
+        </h3>
+        <p className="text-lg text-text-secondary mb-6">
+          {description}
+        </p>
+        <ul className="space-y-3">
+          {features.map((feature, index) => (
+            <li key={index} className="flex items-start gap-3">
+              <div className="p-1 bg-brand-light rounded-full mt-0.5">
+                <Check className="h-4 w-4 text-brand" />
+              </div>
+              <span className="text-text-secondary">{feature}</span>
+            </li>
+          ))}
+        </ul>
+      </FadeInOnScroll>
+      
+      <FadeInOnScroll 
+        direction={reversed ? "left" : "right"} 
+        delay={200}
+        className={reversed ? "lg:col-start-1 lg:row-start-1" : ""}
+      >
+        <ScreenshotMockup>
+          {screenshot}
+        </ScreenshotMockup>
+      </FadeInOnScroll>
     </div>
   );
 }
@@ -350,7 +301,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-surface overflow-x-hidden">
       {/* Header */}
       <header className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
@@ -379,161 +330,377 @@ export default function Home() {
       {/* Hero */}
       <section className="pt-32 pb-20 px-6">
         <div className="max-w-5xl mx-auto text-center">
-          <Badge variant="outline" className="mb-6 px-4 py-1.5">
-            <Sparkles className="h-3 w-3 mr-2" />
-            AI-Powered Grant Writing
-          </Badge>
+          <FadeInOnScroll>
+            <Badge variant="outline" className="mb-6 px-4 py-1.5">
+              <Sparkles className="h-3 w-3 mr-2" />
+              AI-Powered Grant Writing
+            </Badge>
+          </FadeInOnScroll>
           
-          <h1 className="text-5xl md:text-7xl font-display font-bold leading-tight mb-6">
-            Write winning grants<br />
-            <span className="text-brand">
-              <TypewriterText 
-                texts={["in minutes", "with your voice", "using your data", "confidently"]} 
-              />
-            </span>
-          </h1>
+          <FadeInOnScroll delay={100}>
+            <h1 className="text-5xl md:text-7xl font-display font-bold leading-tight mb-6">
+              Write winning grants<br />
+              <span className="text-brand">
+                <TypewriterText 
+                  texts={["in minutes", "with your voice", "using your data", "confidently"]} 
+                />
+              </span>
+            </h1>
+          </FadeInOnScroll>
           
-          <p className="text-xl text-text-secondary max-w-2xl mx-auto mb-10">
-            Upload an RFP. Get a complete draft. Powered by your organization's 
-            knowledge base, written in your authentic voice.
-          </p>
+          <FadeInOnScroll delay={200}>
+            <p className="text-xl text-text-secondary max-w-2xl mx-auto mb-10">
+              Upload an RFP. Get a complete draft. Powered by your organization&apos;s 
+              knowledge base, written in your authentic voice.
+            </p>
+          </FadeInOnScroll>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/signup">
-              <Button size="lg" className="text-lg px-8 h-14">
-                Start Writing Free
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-            </Link>
-            <Link href="#how-it-works">
-              <Button size="lg" variant="outline" className="text-lg px-8 h-14">
-                See How It Works
-              </Button>
-            </Link>
-          </div>
-          
-          <p className="text-sm text-text-tertiary mt-6">
-            No credit card required · 3 free proposals
-          </p>
+          <FadeInOnScroll delay={300}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/signup">
+                <Button size="lg" className="text-lg px-8 h-14">
+                  Start Writing Free
+                  <ArrowRight className="h-5 w-5 ml-2" />
+                </Button>
+              </Link>
+              <Link href="#features">
+                <Button size="lg" variant="outline" className="text-lg px-8 h-14">
+                  See How It Works
+                </Button>
+              </Link>
+            </div>
+            <p className="text-sm text-text-tertiary mt-6">
+              No credit card required · 3 free proposals
+            </p>
+          </FadeInOnScroll>
         </div>
+      </section>
+
+      {/* Hero Screenshot */}
+      <section className="px-6 pb-20">
+        <FadeInOnScroll delay={400}>
+          <div className="max-w-5xl mx-auto">
+            <ScreenshotMockup>
+              <div className="bg-surface p-6 min-h-[400px]">
+                {/* Dashboard mockup */}
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="bg-brand-light rounded-lg p-4">
+                    <p className="text-sm text-text-secondary">Active Proposals</p>
+                    <p className="text-3xl font-bold text-brand">3</p>
+                  </div>
+                  <div className="bg-surface-secondary rounded-lg p-4">
+                    <p className="text-sm text-text-secondary">Documents</p>
+                    <p className="text-3xl font-bold">24</p>
+                  </div>
+                  <div className="bg-surface-secondary rounded-lg p-4">
+                    <p className="text-sm text-text-secondary">Matching Grants</p>
+                    <p className="text-3xl font-bold">12</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <h3 className="font-semibold">Recent Proposals</h3>
+                    {["NEA Arts Education Grant", "Ford Foundation Climate", "Robert Wood Johnson Health"].map((name, i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 bg-surface-secondary rounded-lg">
+                        <FileText className="h-5 w-5 text-brand" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{name}</p>
+                          <p className="text-xs text-text-tertiary">Draft · Updated 2h ago</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="font-semibold">Recommended Grants</h3>
+                    {[
+                      { name: "Community Arts Grant", match: 92 },
+                      { name: "Youth Development Fund", match: 87 },
+                      { name: "Environmental Justice", match: 84 },
+                    ].map((grant, i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 bg-surface-secondary rounded-lg">
+                        <div className="h-10 w-10 bg-brand-light rounded-full flex items-center justify-center">
+                          <span className="text-sm font-bold text-brand">{grant.match}%</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{grant.name}</p>
+                          <p className="text-xs text-text-tertiary">Deadline: Mar 15</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </ScreenshotMockup>
+          </div>
+        </FadeInOnScroll>
       </section>
 
       {/* Social Proof */}
       <section className="py-16 px-6 border-y border-border bg-surface-subtle">
         <div className="max-w-5xl mx-auto">
-          <p className="text-center text-text-tertiary mb-8">
-            Built for nonprofit teams who write grants
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <AnimatedCounter target={50} suffix="%" />
-              <p className="text-text-secondary mt-2">Less time per proposal</p>
-            </div>
-            <div>
-              <AnimatedCounter target={10} suffix="min" />
-              <p className="text-text-secondary mt-2">To first draft</p>
-            </div>
-            <div>
-              <AnimatedCounter target={100} suffix="%" />
-              <p className="text-text-secondary mt-2">Your voice & data</p>
-            </div>
-            <div>
-              <AnimatedCounter target={920} suffix="+" />
-              <p className="text-text-secondary mt-2">Grants discoverable</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section id="how-it-works" className="py-24 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4">How It Works</Badge>
-            <h2 className="text-4xl font-display font-bold mb-4">
-              From RFP to draft in four steps
-            </h2>
-            <p className="text-text-secondary text-lg max-w-2xl mx-auto">
-              No prompt engineering. No copy-pasting. Just upload your RFP and 
-              let your knowledge base do the heavy lifting.
+          <FadeInOnScroll>
+            <p className="text-center text-text-tertiary mb-8">
+              Built for nonprofit teams who write grants
             </p>
-          </div>
-          
-          <FeatureDemo />
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section className="py-24 px-6 bg-surface-subtle">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4">Features</Badge>
-            <h2 className="text-4xl font-display font-bold mb-4">
-              Everything you need to write better grants
-            </h2>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          </FadeInOnScroll>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
-              {
-                icon: Brain,
-                title: "Knowledge Base",
-                description: "Upload past proposals, reports, and org docs. Our AI learns your voice and pulls relevant data automatically.",
-              },
-              {
-                icon: Search,
-                title: "Grant Discovery",
-                description: "Find matching federal grants from Grants.gov. Filter by program area, eligibility, and funding amount.",
-              },
-              {
-                icon: FileText,
-                title: "Smart RFP Parser",
-                description: "Upload any RFP format. We extract sections, requirements, deadlines, and word limits automatically.",
-              },
-              {
-                icon: Sparkles,
-                title: "AI Generation",
-                description: "Generate complete drafts section by section. Each grounded in your data, written in your voice.",
-              },
-              {
-                icon: PenTool,
-                title: "Inline Copilot",
-                description: "Select any text and refine with AI. Expand, condense, strengthen, or add supporting data.",
-              },
-              {
-                icon: Shield,
-                title: "Secure & Private",
-                description: "Your data is encrypted and never used for training. Built for organizations handling sensitive info.",
-              },
-            ].map((feature, index) => (
-              <Card key={index} className="group hover:shadow-lg transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="p-3 bg-brand-light rounded-xl w-fit mb-4 group-hover:bg-brand group-hover:text-white transition-colors">
-                    <feature.icon className="h-6 w-6 text-brand group-hover:text-white" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-text-secondary text-sm leading-relaxed">
-                    {feature.description}
-                  </p>
-                </CardContent>
-              </Card>
+              { target: 50, suffix: "%", label: "Less time per proposal" },
+              { target: 10, suffix: "min", label: "To first draft" },
+              { target: 100, suffix: "%", label: "Your voice & data" },
+              { target: 920, suffix: "+", label: "Grants discoverable" },
+            ].map((stat, index) => (
+              <FadeInOnScroll key={index} delay={index * 100}>
+                <div>
+                  <AnimatedCounter target={stat.target} suffix={stat.suffix} />
+                  <p className="text-text-secondary mt-2">{stat.label}</p>
+                </div>
+              </FadeInOnScroll>
             ))}
           </div>
         </div>
       </section>
 
+      {/* Feature Showcases */}
+      <section id="features" className="py-24 px-6">
+        <div className="max-w-6xl mx-auto space-y-32">
+          
+          {/* Feature 1: Knowledge Base */}
+          <FeatureShowcase
+            badge="Knowledge Base"
+            title="Your organization's brain, always ready"
+            description="Upload past proposals, annual reports, impact data, and organizational documents. Our AI learns your voice and pulls the most relevant information when writing."
+            features={[
+              "Smart document categorization (proposals, reports, financials)",
+              "Automatic text extraction from PDF, DOCX, and TXT",
+              "Semantic search finds the right context for each section",
+              "Your data stays private and is never used for training",
+            ]}
+            screenshot={
+              <div className="bg-surface p-6 min-h-[350px]">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-semibold">Knowledge Base</h3>
+                  <Badge>24 documents</Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  {[
+                    { name: "Past Proposals", count: 8, icon: FileText, color: "text-brand" },
+                    { name: "Organization Info", count: 6, icon: Brain, color: "text-purple-500" },
+                    { name: "Impact Reports", count: 5, icon: Search, color: "text-green-500" },
+                    { name: "Financial Docs", count: 5, icon: Shield, color: "text-orange-500" },
+                  ].map((cat, i) => (
+                    <div key={i} className="p-4 bg-surface-secondary rounded-lg">
+                      <cat.icon className={cn("h-6 w-6 mb-2", cat.color)} />
+                      <p className="font-medium text-sm">{cat.name}</p>
+                      <p className="text-xs text-text-tertiary">{cat.count} documents</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="p-3 bg-brand-light rounded-lg border-2 border-dashed border-brand flex items-center justify-center gap-2">
+                  <Upload className="h-5 w-5 text-brand" />
+                  <span className="text-sm text-brand font-medium">Drop files to upload</span>
+                </div>
+              </div>
+            }
+          />
+
+          {/* Feature 2: Grant Discovery */}
+          <FeatureShowcase
+            badge="Grant Discovery"
+            title="Find grants that match your mission"
+            description="Search 900+ federal grants from Grants.gov. Our matching algorithm scores each opportunity based on your organization's profile, program areas, and funding needs."
+            features={[
+              "Real-time Grants.gov integration",
+              "Smart matching based on your org profile",
+              "Filter by program area, eligibility, and amount",
+              "Save grants to your watchlist for tracking",
+            ]}
+            reversed
+            screenshot={
+              <div className="bg-surface p-6 min-h-[350px]">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex-1 bg-surface-secondary rounded-lg px-4 py-2 flex items-center gap-2">
+                    <Search className="h-4 w-4 text-text-tertiary" />
+                    <span className="text-sm text-text-tertiary">Search grants...</span>
+                  </div>
+                  <Button size="sm">Search</Button>
+                </div>
+                <div className="space-y-3">
+                  {[
+                    { name: "NEA Arts Education Partnership", agency: "NEA", match: 94, amount: "$50K-$150K" },
+                    { name: "Community Development Block Grant", agency: "HUD", match: 89, amount: "$100K-$500K" },
+                    { name: "Environmental Justice Collaborative", agency: "EPA", match: 85, amount: "$75K-$200K" },
+                  ].map((grant, i) => (
+                    <div key={i} className="p-4 bg-surface-secondary rounded-lg flex items-center gap-4">
+                      <div className="h-12 w-12 bg-brand-light rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-lg font-bold text-brand">{grant.match}%</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{grant.name}</p>
+                        <p className="text-xs text-text-tertiary">{grant.agency} · {grant.amount}</p>
+                      </div>
+                      <Button size="sm" variant="outline">View</Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            }
+          />
+
+          {/* Feature 3: RFP Parser */}
+          <FeatureShowcase
+            badge="Smart RFP Parser"
+            title="Upload any RFP, we handle the rest"
+            description="Drop in a grant announcement, RFP, or NOFO. Our AI extracts all requirements, deadlines, sections, and word limits automatically—no manual data entry."
+            features={[
+              "Supports PDF, DOCX, and text formats",
+              "Extracts deadlines, amounts, and eligibility",
+              "Identifies all narrative sections automatically",
+              "Detects word and character limits per section",
+            ]}
+            screenshot={
+              <div className="bg-surface p-6 min-h-[350px]">
+                <div className="flex items-center gap-3 mb-4">
+                  <FileText className="h-6 w-6 text-brand" />
+                  <div>
+                    <p className="font-medium">NEA-Arts-Grant-2025.pdf</p>
+                    <p className="text-xs text-status-success">Parsed successfully</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="p-3 bg-surface-secondary rounded-lg">
+                    <p className="text-xs text-text-tertiary">Deadline</p>
+                    <p className="font-medium text-sm">Mar 15, 2025</p>
+                  </div>
+                  <div className="p-3 bg-surface-secondary rounded-lg">
+                    <p className="text-xs text-text-tertiary">Award Range</p>
+                    <p className="font-medium text-sm">$10K-$100K</p>
+                  </div>
+                  <div className="p-3 bg-surface-secondary rounded-lg">
+                    <p className="text-xs text-text-tertiary">Sections</p>
+                    <p className="font-medium text-sm">8 identified</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium mb-2">Sections Detected:</p>
+                  {["Executive Summary (500 words)", "Statement of Need (1000 words)", "Project Description (2000 words)", "Evaluation Plan (750 words)"].map((section, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-status-success" />
+                      <span>{section}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            }
+          />
+
+          {/* Feature 4: AI Generation */}
+          <FeatureShowcase
+            badge="AI Generation"
+            title="First drafts in minutes, not days"
+            description="Generate complete proposal sections using your knowledge base. Each draft is grounded in your real data, written in your voice, and respects word limits."
+            features={[
+              "Section-by-section generation with streaming",
+              "Pulls relevant context from your knowledge base",
+              "Respects word and character limits",
+              "Flags missing information with placeholders",
+            ]}
+            reversed
+            screenshot={
+              <div className="bg-surface p-6 min-h-[350px]">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="font-medium">Statement of Need</p>
+                    <p className="text-xs text-text-tertiary">487 / 1000 words</p>
+                  </div>
+                  <Badge variant="outline" className="gap-1">
+                    <Sparkles className="h-3 w-3" /> Generating...
+                  </Badge>
+                </div>
+                <div className="bg-surface-secondary rounded-lg p-4 text-sm leading-relaxed">
+                  <p>
+                    The Springfield Arts Council has served our community for over 25 years, 
+                    reaching 15,000 residents annually through free public programs. Despite 
+                    this reach, significant gaps remain in arts access for underserved 
+                    populations.
+                  </p>
+                  <p className="mt-3">
+                    Our recent community needs assessment revealed that 67% of low-income 
+                    families have never attended a professional arts performance, citing cost 
+                    and transportation as primary barriers. This represents over 3,200 families 
+                    in our service area who lack meaningful connection to cultural resources...
+                  </p>
+                  <span className="inline-block mt-2 animate-pulse text-brand">▊</span>
+                </div>
+              </div>
+            }
+          />
+
+          {/* Feature 5: Inline Editor */}
+          <FeatureShowcase
+            badge="Inline Copilot"
+            title="Refine with AI assistance"
+            description="Select any text and use the copilot to expand, condense, strengthen, or adjust tone. Get suggestions grounded in your knowledge base data."
+            features={[
+              "Expand sections with more detail and examples",
+              "Condense to meet strict word limits",
+              "Strengthen arguments with supporting data",
+              "Adjust tone for different funders",
+            ]}
+            screenshot={
+              <div className="bg-surface p-6 min-h-[350px]">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="font-medium">Project Description</p>
+                  <p className="text-xs text-text-tertiary">1,847 / 2,000 words</p>
+                </div>
+                <div className="bg-surface-secondary rounded-lg p-4 text-sm leading-relaxed">
+                  <p>
+                    Our summer youth program will expand to serve 200 additional participants 
+                    through partnerships with three new community centers. 
+                    <span className="bg-brand/20 text-brand px-1 rounded mx-1">
+                      The program includes weekly workshops, mentorship sessions, and a 
+                      culminating showcase event.
+                    </span>
+                  </p>
+                  <div className="mt-4 p-3 bg-white rounded-lg border shadow-lg">
+                    <p className="text-xs font-medium mb-2">AI Copilot</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="cursor-pointer hover:bg-brand-light text-xs">
+                        <Sparkles className="h-3 w-3 mr-1" /> Expand with details
+                      </Badge>
+                      <Badge variant="outline" className="cursor-pointer hover:bg-brand-light text-xs">
+                        Add impact data
+                      </Badge>
+                      <Badge variant="outline" className="cursor-pointer hover:bg-brand-light text-xs">
+                        Strengthen
+                      </Badge>
+                      <Badge variant="outline" className="cursor-pointer hover:bg-brand-light text-xs">
+                        Make concise
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          />
+
+        </div>
+      </section>
+
       {/* Principles */}
-      <section className="py-24 px-6">
+      <section className="py-24 px-6 bg-surface-subtle">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4">Our Principles</Badge>
-            <h2 className="text-4xl font-display font-bold mb-4">
-              AI that writes with integrity
-            </h2>
-            <p className="text-text-secondary text-lg">
-              Every proposal Brightway generates follows these rules
-            </p>
-          </div>
+          <FadeInOnScroll>
+            <div className="text-center mb-16">
+              <Badge variant="outline" className="mb-4">Our Principles</Badge>
+              <h2 className="text-4xl font-display font-bold mb-4">
+                AI that writes with integrity
+              </h2>
+              <p className="text-text-secondary text-lg">
+                Every proposal Brightway generates follows these rules
+              </p>
+            </div>
+          </FadeInOnScroll>
           
           <div className="grid sm:grid-cols-2 gap-4">
             {[
@@ -546,67 +713,74 @@ export default function Home() {
               "We will flag when information is missing",
               "We will let you review everything before export",
             ].map((principle, index) => (
-              <div 
-                key={index}
-                className={cn(
-                  "flex items-center gap-3 p-4 rounded-lg",
-                  principle.startsWith("We won't") 
-                    ? "bg-red-50 text-red-900" 
-                    : "bg-green-50 text-green-900"
-                )}
-              >
-                <div className={cn(
-                  "p-1 rounded-full",
-                  principle.startsWith("We won't") ? "bg-red-200" : "bg-green-200"
-                )}>
-                  {principle.startsWith("We won't") ? (
-                    <span className="block h-4 w-4 text-center leading-4 text-red-600 font-bold">×</span>
-                  ) : (
-                    <Check className="h-4 w-4 text-green-600" />
+              <FadeInOnScroll key={index} delay={index * 50}>
+                <div 
+                  className={cn(
+                    "flex items-center gap-3 p-4 rounded-lg",
+                    principle.startsWith("We won't") 
+                      ? "bg-red-50 text-red-900" 
+                      : "bg-green-50 text-green-900"
                   )}
+                >
+                  <div className={cn(
+                    "p-1 rounded-full flex-shrink-0",
+                    principle.startsWith("We won't") ? "bg-red-200" : "bg-green-200"
+                  )}>
+                    {principle.startsWith("We won't") ? (
+                      <span className="block h-4 w-4 text-center leading-4 text-red-600 font-bold">×</span>
+                    ) : (
+                      <Check className="h-4 w-4 text-green-600" />
+                    )}
+                  </div>
+                  <span className="font-medium">{principle}</span>
                 </div>
-                <span className="font-medium">{principle}</span>
-              </div>
+              </FadeInOnScroll>
             ))}
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="py-24 px-6 bg-surface-subtle">
+      <section className="py-24 px-6">
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4">FAQ</Badge>
-            <h2 className="text-4xl font-display font-bold">
-              Questions & Answers
-            </h2>
-          </div>
+          <FadeInOnScroll>
+            <div className="text-center mb-16">
+              <Badge variant="outline" className="mb-4">FAQ</Badge>
+              <h2 className="text-4xl font-display font-bold">
+                Questions & Answers
+              </h2>
+            </div>
+          </FadeInOnScroll>
           
-          <div>
-            {faqs.map((faq, index) => (
-              <FAQItem key={index} question={faq.question} answer={faq.answer} />
-            ))}
-          </div>
+          <FadeInOnScroll delay={200}>
+            <div>
+              {faqs.map((faq, index) => (
+                <FAQItem key={index} question={faq.question} answer={faq.answer} />
+              ))}
+            </div>
+          </FadeInOnScroll>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-24 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
-            Stop spending weeks on proposals
-          </h2>
-          <p className="text-xl text-text-secondary mb-10 max-w-2xl mx-auto">
-            Join nonprofit teams who are writing better grants in less time. 
-            Start free, no credit card required.
-          </p>
-          <Link href="/signup">
-            <Button size="lg" className="text-lg px-10 h-14">
-              Start Writing Free
-              <ArrowRight className="h-5 w-5 ml-2" />
-            </Button>
-          </Link>
-        </div>
+      <section className="py-24 px-6 bg-surface-subtle">
+        <FadeInOnScroll>
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
+              Stop spending weeks on proposals
+            </h2>
+            <p className="text-xl text-text-secondary mb-10 max-w-2xl mx-auto">
+              Join nonprofit teams who are writing better grants in less time. 
+              Start free, no credit card required.
+            </p>
+            <Link href="/signup">
+              <Button size="lg" className="text-lg px-10 h-14">
+                Start Writing Free
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </FadeInOnScroll>
       </section>
 
       {/* Footer */}
