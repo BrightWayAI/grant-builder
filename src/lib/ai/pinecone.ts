@@ -1,4 +1,5 @@
 import { Pinecone, Index } from "@pinecone-database/pinecone";
+import prisma from "@/lib/db";
 
 let pineconeClient: Pinecone | null = null;
 let pineconeIndex: Index | null = null;
@@ -52,7 +53,13 @@ export async function upsertVectors(
     values: v.values,
     metadata: v.metadata as unknown as Record<string, string | number | boolean | string[]>,
   }));
-  await index.upsert(records);
+  
+  // Upsert in batches of 100
+  const batchSize = 100;
+  for (let i = 0; i < records.length; i += batchSize) {
+    const batch = records.slice(i, i + batchSize);
+    await index.upsert(batch);
+  }
 }
 
 export async function queryVectors(
@@ -76,22 +83,60 @@ export async function queryVectors(
   return results.matches || [];
 }
 
-export async function deleteVectorsByDocumentId(documentId: string) {
-  const index = getIndex();
-  await index.deleteMany({
-    filter: {
-      documentId: { $eq: documentId },
-    },
-  });
+/**
+ * Delete vectors by document ID
+ * For serverless Pinecone, we need to look up the vector IDs from our database
+ * since deleteMany with filters isn't supported
+ */
+export async function deleteVectorsByDocumentId(documentId: string): Promise<void> {
+  try {
+    // Get vector IDs from our database
+    const chunks = await prisma.documentChunk.findMany({
+      where: { documentId },
+      select: { pineconeId: true },
+    });
+
+    if (chunks.length === 0) {
+      console.log(`No chunks found for document ${documentId}`);
+      return;
+    }
+
+    const vectorIds = chunks.map((c) => c.pineconeId);
+    console.log(`Deleting ${vectorIds.length} vectors for document ${documentId}`);
+
+    // Delete by IDs in batches
+    const index = getIndex();
+    const batchSize = 100;
+    
+    for (let i = 0; i < vectorIds.length; i += batchSize) {
+      const batch = vectorIds.slice(i, i + batchSize);
+      await index.deleteMany(batch);
+    }
+  } catch (error) {
+    // If deletion fails, log but don't throw - the vectors will be orphaned but won't break anything
+    console.error(`Error deleting vectors for document ${documentId}:`, error);
+  }
 }
 
-export async function deleteVectorsByOrganizationId(organizationId: string) {
-  const index = getIndex();
-  await index.deleteMany({
-    filter: {
-      organizationId: { $eq: organizationId },
-    },
-  });
+/**
+ * Delete vectors by organization ID
+ * This queries our database for all vector IDs belonging to the org
+ */
+export async function deleteVectorsByOrganizationId(organizationId: string): Promise<void> {
+  try {
+    // Get all documents for this org
+    const documents = await prisma.document.findMany({
+      where: { organizationId },
+      select: { id: true },
+    });
+
+    // Delete vectors for each document
+    for (const doc of documents) {
+      await deleteVectorsByDocumentId(doc.id);
+    }
+  } catch (error) {
+    console.error(`Error deleting vectors for organization ${organizationId}:`, error);
+  }
 }
 
 /**
@@ -107,7 +152,7 @@ export async function checkPineconeHealth(): Promise<{ ok: boolean; error?: stri
     }
     
     const index = getIndex();
-    const stats = await index.describeIndexStats();
+    await index.describeIndexStats();
     return { ok: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
