@@ -35,17 +35,21 @@ function FadeInOnScroll({
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    const currentRef = ref.current;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setTimeout(() => setIsVisible(true), delay);
+          observer.disconnect();
         }
       },
-      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+      { threshold: 0.05, rootMargin: "50px 0px 0px 0px" }
     );
 
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
+    if (currentRef) observer.observe(currentRef);
+    return () => {
+      if (currentRef) observer.unobserve(currentRef);
+    };
   }, [delay]);
 
   const directionStyles = {
@@ -357,15 +361,15 @@ function HorizontalScrollFeatures() {
       if (!containerRef.current) return;
       
       const rect = containerRef.current.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
       const containerHeight = containerRef.current.offsetHeight;
+      const windowHeight = window.innerHeight;
       
-      // Start when container enters viewport, end when it exits
-      const start = windowHeight;
-      const end = containerHeight;
-      const current = -rect.top + windowHeight;
+      // Progress starts when top of container hits top of viewport
+      // and ends when bottom of container hits bottom of viewport
+      const scrollableDistance = containerHeight - windowHeight;
+      const scrolled = -rect.top;
       
-      const progress = Math.max(0, Math.min(1, current / end));
+      const progress = Math.max(0, Math.min(1, scrolled / scrollableDistance));
       setScrollProgress(progress);
     };
 
@@ -375,14 +379,20 @@ function HorizontalScrollFeatures() {
   }, []);
 
   // Calculate horizontal translation based on scroll progress
-  // We want to scroll through (steps.length - 1) cards worth of distance
-  const translateX = scrollProgress * (steps.length - 1) * -100;
+  // Apply easing for smoother feel
+  const easedProgress = scrollProgress < 0.5 
+    ? 2 * scrollProgress * scrollProgress 
+    : 1 - Math.pow(-2 * scrollProgress + 2, 2) / 2;
+  const translateX = easedProgress * (steps.length - 1) * -100;
+
+  // Taller section = more scroll distance = slower horizontal movement
+  const sectionHeight = (steps.length * 2) * 100; // 800vh for 4 steps
 
   return (
     <section 
       ref={containerRef}
       className="relative bg-surface-subtle"
-      style={{ height: `${(steps.length + 1) * 100}vh` }}
+      style={{ height: `${sectionHeight}vh` }}
     >
       <div className="sticky top-0 h-screen overflow-hidden">
         <div className="h-full flex flex-col justify-center">
@@ -453,8 +463,29 @@ function HorizontalScrollFeatures() {
   );
 }
 
-// Features grid (simpler, non-sticky version)
+// Features grid - always visible, no scroll trigger
 function FeaturesGrid() {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const currentRef = ref.current;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (currentRef) observer.observe(currentRef);
+    return () => {
+      if (currentRef) observer.unobserve(currentRef);
+    };
+  }, []);
+
   const features = [
     {
       icon: Brain,
@@ -489,30 +520,39 @@ function FeaturesGrid() {
   ];
 
   return (
-    <section className="py-24 px-6">
+    <section ref={ref} className="py-24 px-6 bg-surface">
       <div className="max-w-6xl mx-auto">
-        <FadeInOnScroll>
-          <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4">Features</Badge>
-            <h2 className="text-4xl font-display font-bold mb-4">
-              Everything you need to write better grants
-            </h2>
-          </div>
-        </FadeInOnScroll>
+        <div className={cn(
+          "text-center mb-16 transition-all duration-700",
+          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        )}>
+          <Badge variant="outline" className="mb-4">Features</Badge>
+          <h2 className="text-4xl font-display font-bold mb-4">
+            Everything you need to write better grants
+          </h2>
+        </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
-            <FadeInOnScroll key={index} delay={index * 100}>
-              <div className="p-6 rounded-xl border border-border bg-surface hover:shadow-lg transition-all group">
-                <div className="p-3 bg-brand-light rounded-xl w-fit mb-4 group-hover:bg-brand transition-colors">
-                  <feature.icon className="h-6 w-6 text-brand group-hover:text-white transition-colors" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                <p className="text-text-secondary text-sm leading-relaxed">
-                  {feature.description}
-                </p>
+            <div 
+              key={index}
+              className={cn(
+                "p-6 rounded-xl border border-border bg-surface hover:shadow-lg transition-all group",
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+              )}
+              style={{ 
+                transitionDelay: isVisible ? `${index * 100}ms` : "0ms",
+                transitionDuration: "700ms"
+              }}
+            >
+              <div className="p-3 bg-brand-light rounded-xl w-fit mb-4 group-hover:bg-brand transition-colors">
+                <feature.icon className="h-6 w-6 text-brand group-hover:text-white transition-colors" />
               </div>
-            </FadeInOnScroll>
+              <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+              <p className="text-text-secondary text-sm leading-relaxed">
+                {feature.description}
+              </p>
+            </div>
           ))}
         </div>
       </div>
@@ -591,10 +631,16 @@ export default function Home() {
           
           <FadeInOnScroll delay={100}>
             <h1 className="text-5xl md:text-7xl font-display font-bold leading-tight mb-6">
-              Write winning grants<br />
+              Draft grant proposals<br />
               <span className="text-brand">
                 <TypewriterText 
-                  texts={["in minutes", "with your voice", "using your data", "confidently"]} 
+                  texts={[
+                    "in minutes, not weeks",
+                    "in your authentic voice", 
+                    "grounded in your data",
+                    "that win funding",
+                    "without the blank page"
+                  ]} 
                 />
               </span>
             </h1>
