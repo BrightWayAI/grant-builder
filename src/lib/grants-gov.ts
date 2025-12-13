@@ -166,37 +166,38 @@ function hitToBasicGrant(hit: GrantsGovHit): GrantsGovOpportunity {
 
 async function executeSearch(params: GrantSearchParams, rows: number): Promise<GrantsGovHit[]> {
   try {
-    // Build form-encoded body (Grants.gov API prefers this format)
-    const formParams = new URLSearchParams();
-    formParams.append("oppStatuses", "posted");
-    formParams.append("sortBy", "openDate|desc");
-    formParams.append("rows", String(rows));
+    // Build JSON body for Grants.gov API
+    const searchBody: Record<string, string | number> = {
+      oppStatuses: "posted",
+      sortBy: "openDate|desc",
+      rows,
+    };
 
     if (params.keyword) {
-      formParams.append("keyword", params.keyword);
+      searchBody.keyword = params.keyword;
     }
 
     if (params.fundingCategories && params.fundingCategories.length > 0) {
-      formParams.append("fundingCategories", params.fundingCategories.join("|"));
+      searchBody.fundingCategories = params.fundingCategories.join("|");
     }
 
     if (params.eligibilities && params.eligibilities.length > 0) {
-      formParams.append("eligibilities", params.eligibilities.join("|"));
+      searchBody.eligibilities = params.eligibilities.join("|");
     }
 
     if (params.agencies && params.agencies.length > 0) {
-      formParams.append("agencies", params.agencies.join("|"));
+      searchBody.agencies = params.agencies.join("|");
     }
 
-    console.log("Searching Grants.gov:", formParams.toString());
+    console.log("Searching Grants.gov:", JSON.stringify(searchBody));
 
     const response = await fetch(GRANTS_GOV_SEARCH_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type": "application/json",
         "Accept": "application/json",
       },
-      body: formParams.toString(),
+      body: JSON.stringify(searchBody),
       cache: "no-store",
     });
 
