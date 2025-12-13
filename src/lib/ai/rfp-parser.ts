@@ -4,11 +4,11 @@ import { getOpenAI, GENERATION_MODEL } from "./openai";
 export const RFPSectionSchema = z.object({
   name: z.string(),
   description: z.string(),
-  wordLimit: z.number().optional(),
-  charLimit: z.number().optional(),
-  pageLimit: z.number().optional(),
+  wordLimit: z.number().nullable().optional(),
+  charLimit: z.number().nullable().optional(),
+  pageLimit: z.number().nullable().optional(),
   isRequired: z.boolean(),
-  pointValue: z.number().optional(),
+  pointValue: z.number().nullable().optional(),
 });
 
 export const ParsedRFPSchema = z.object({
