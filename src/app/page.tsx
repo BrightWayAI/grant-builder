@@ -36,9 +36,28 @@ function ScrollReveal({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  // Track mount state
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   useEffect(() => {
+    if (!hasMounted) return;
+    
     const currentRef = ref.current;
+    if (!currentRef) return;
+
+    // Check if already in view on mount
+    const rect = currentRef.getBoundingClientRect();
+    const isInView = rect.top < window.innerHeight && rect.bottom > 0;
+    
+    if (isInView) {
+      setTimeout(() => setIsVisible(true), delay);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -46,21 +65,28 @@ function ScrollReveal({
           observer.disconnect();
         }
       },
-      { threshold: 0.2, rootMargin: "0px 0px -100px 0px" }
+      { threshold: 0.1, rootMargin: "50px 0px 0px 0px" }
     );
 
-    if (currentRef) observer.observe(currentRef);
-    return () => {
-      if (currentRef) observer.unobserve(currentRef);
-    };
-  }, [delay]);
+    observer.observe(currentRef);
+    return () => observer.disconnect();
+  }, [delay, hasMounted]);
+
+  // Before hydration, render visible to avoid flash
+  if (!hasMounted) {
+    return (
+      <div className={className}>
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div
       ref={ref}
       className={cn(
         "transition-all duration-700 ease-out",
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8",
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12",
         className
       )}
     >
