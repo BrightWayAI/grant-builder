@@ -16,62 +16,11 @@ import {
   ChevronDown,
   Search,
   PenTool,
+  Clock,
+  Target,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// Scroll-triggered fade in animation
-function FadeInOnScroll({ 
-  children, 
-  className,
-  delay = 0,
-  direction = "up" 
-}: { 
-  children: ReactNode; 
-  className?: string;
-  delay?: number;
-  direction?: "up" | "down" | "left" | "right";
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const currentRef = ref.current;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => setIsVisible(true), delay);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.05, rootMargin: "50px 0px 0px 0px" }
-    );
-
-    if (currentRef) observer.observe(currentRef);
-    return () => {
-      if (currentRef) observer.unobserve(currentRef);
-    };
-  }, [delay]);
-
-  const directionStyles = {
-    up: "translate-y-8",
-    down: "-translate-y-8",
-    left: "translate-x-8",
-    right: "-translate-x-8",
-  };
-
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "transition-all duration-700 ease-out",
-        isVisible ? "opacity-100 translate-x-0 translate-y-0" : `opacity-0 ${directionStyles[direction]}`,
-        className
-      )}
-    >
-      {children}
-    </div>
-  );
-}
 
 // Typewriter effect for hero
 function TypewriterText({ texts, className }: { texts: string[]; className?: string }) {
@@ -117,6 +66,7 @@ function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: str
   const [hasAnimated, setHasAnimated] = useState(false);
 
   useEffect(() => {
+    const currentRef = ref.current;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !hasAnimated) {
@@ -141,8 +91,10 @@ function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: str
       { threshold: 0.5 }
     );
 
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
+    if (currentRef) observer.observe(currentRef);
+    return () => {
+      if (currentRef) observer.unobserve(currentRef);
+    };
   }, [target, hasAnimated]);
 
   return (
@@ -178,181 +130,55 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
-// Screenshot mockup component
-function ScreenshotMockup({ 
-  children, 
-  className 
-}: { 
-  children: ReactNode; 
-  className?: string;
-}) {
-  return (
-    <div className={cn(
-      "rounded-xl border border-border bg-surface shadow-2xl overflow-hidden",
-      className
-    )}>
-      <div className="flex items-center gap-2 px-4 py-3 bg-surface-secondary border-b border-border">
-        <div className="flex gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-red-400" />
-          <div className="w-3 h-3 rounded-full bg-yellow-400" />
-          <div className="w-3 h-3 rounded-full bg-green-400" />
-        </div>
-        <div className="flex-1 mx-4">
-          <div className="bg-surface rounded-md px-3 py-1 text-xs text-text-tertiary text-center">
-            app.brightwayai.com
-          </div>
-        </div>
-      </div>
-      <div className="bg-surface-secondary">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-// Horizontal scroll "How it Works" section
-function HorizontalScrollFeatures() {
+// How it Works - Vertical timeline with horizontal scroll cards
+function HowItWorks() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
+  const [activeStep, setActiveStep] = useState(0);
   
   const steps = [
     {
       step: 1,
       title: "Upload your RFP",
-      description: "Drop in any grant announcement, RFP, or NOFO. Our AI extracts requirements, deadlines, and sections automatically.",
+      description: "Drop in any grant announcement, RFP, or NOFO. Our AI parses it instantly.",
       icon: Upload,
-      screenshot: (
-        <div className="bg-surface p-6 h-[380px]">
-          <div className="flex items-center gap-3 p-4 bg-brand-light rounded-lg border-2 border-dashed border-brand mb-4">
-            <FileText className="h-8 w-8 text-brand" />
-            <div>
-              <p className="font-medium">NEA-Arts-Grant-2025.pdf</p>
-              <p className="text-sm text-text-secondary">Analyzing requirements...</p>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>Deadline: March 15, 2025</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>8 sections identified</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>Award: $10,000 - $100,000</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>Eligibility: 501(c)(3) nonprofits</span>
-            </div>
-          </div>
-        </div>
-      ),
+      details: [
+        "Extracts all required sections automatically",
+        "Identifies deadlines, eligibility, and award amounts",
+        "Works with PDFs, Word docs, and web pages",
+      ],
     },
     {
       step: 2,
       title: "AI writes your draft",
-      description: "Using your knowledge base, we generate each section in your organization's voice with real data from your past work.",
+      description: "We generate each section using your knowledge base and organizational voice.",
       icon: Sparkles,
-      screenshot: (
-        <div className="bg-surface p-6 h-[380px]">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="font-medium">Statement of Need</p>
-              <p className="text-xs text-text-tertiary">487 / 1000 words</p>
-            </div>
-            <Badge variant="outline" className="gap-1">
-              <Sparkles className="h-3 w-3 animate-pulse" /> Generating
-            </Badge>
-          </div>
-          <div className="bg-surface-secondary rounded-lg p-4 text-sm leading-relaxed">
-            <p>
-              The Springfield Arts Council has served our community for over 25 years, 
-              reaching 15,000 residents annually through free public programs. Despite 
-              this reach, significant gaps remain in arts access.
-            </p>
-            <p className="mt-3">
-              Our recent community needs assessment revealed that 67% of low-income 
-              families have never attended a professional arts performance...
-            </p>
-            <span className="inline-block mt-2 animate-pulse text-brand">▊</span>
-          </div>
-        </div>
-      ),
+      details: [
+        "Pulls relevant data from your past proposals",
+        "Matches your organization's writing style",
+        "Cites your actual impact numbers and stats",
+      ],
     },
     {
       step: 3,
       title: "Review & refine",
-      description: "Edit with our inline AI copilot. Expand sections, strengthen arguments, or adjust tone—all while staying within limits.",
+      description: "Edit inline with AI assistance. Expand, strengthen, or adjust any section.",
       icon: PenTool,
-      screenshot: (
-        <div className="bg-surface p-6 h-[380px]">
-          <div className="flex items-center justify-between mb-4">
-            <p className="font-medium">Project Description</p>
-            <p className="text-xs text-text-tertiary">1,847 / 2,000 words</p>
-          </div>
-          <div className="bg-surface-secondary rounded-lg p-4 text-sm leading-relaxed">
-            <p>
-              Our summer youth program will expand to serve 200 additional participants.
-              <span className="bg-brand/20 text-brand px-1 rounded mx-1">
-                The program includes weekly workshops and mentorship.
-              </span>
-            </p>
-            <div className="mt-4 p-3 bg-white rounded-lg border shadow-lg">
-              <p className="text-xs font-medium mb-2">AI Copilot</p>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="text-xs">
-                  <Sparkles className="h-3 w-3 mr-1" /> Expand
-                </Badge>
-                <Badge variant="outline" className="text-xs">Add data</Badge>
-                <Badge variant="outline" className="text-xs">Strengthen</Badge>
-              </div>
-            </div>
-          </div>
-        </div>
-      ),
+      details: [
+        "Inline copilot for quick refinements",
+        "Real-time word count tracking",
+        "Suggestions grounded in funder priorities",
+      ],
     },
     {
       step: 4,
       title: "Export & submit",
-      description: "Download your polished proposal as DOCX, ready for submission. All formatting preserved, all requirements met.",
+      description: "Download your polished proposal as DOCX, ready for submission.",
       icon: Download,
-      screenshot: (
-        <div className="bg-surface p-6 h-[380px]">
-          <div className="flex items-center gap-4 p-4 bg-surface-secondary rounded-lg mb-4">
-            <div className="h-12 w-12 bg-status-success/10 rounded-lg flex items-center justify-center">
-              <FileText className="h-6 w-6 text-status-success" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium">NEA_Arts_Proposal_Final.docx</p>
-              <p className="text-sm text-status-success">Ready for submission</p>
-            </div>
-            <Button size="sm">
-              <Download className="h-4 w-4 mr-1" /> Download
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>All sections complete</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>Word limits met</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>Formatting applied</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-status-success" />
-              <span>Ready to submit</span>
-            </div>
-          </div>
-        </div>
-      ),
+      details: [
+        "Professional formatting preserved",
+        "All sections complete and within limits",
+        "Ready to submit to any portal",
+      ],
     },
   ];
 
@@ -364,98 +190,122 @@ function HorizontalScrollFeatures() {
       const containerHeight = containerRef.current.offsetHeight;
       const windowHeight = window.innerHeight;
       
-      // Progress starts when top of container hits top of viewport
-      // and ends when bottom of container hits bottom of viewport
       const scrollableDistance = containerHeight - windowHeight;
       const scrolled = -rect.top;
       
       const progress = Math.max(0, Math.min(1, scrolled / scrollableDistance));
-      setScrollProgress(progress);
+      const step = Math.min(steps.length - 1, Math.floor(progress * steps.length));
+      setActiveStep(step);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Calculate horizontal translation based on scroll progress
-  // Apply easing for smoother feel
-  const easedProgress = scrollProgress < 0.5 
-    ? 2 * scrollProgress * scrollProgress 
-    : 1 - Math.pow(-2 * scrollProgress + 2, 2) / 2;
-  const translateX = easedProgress * (steps.length - 1) * -100;
-
-  // Taller section = more scroll distance = slower horizontal movement
-  const sectionHeight = (steps.length * 2) * 100; // 800vh for 4 steps
+  }, [steps.length]);
 
   return (
     <section 
       ref={containerRef}
       className="relative bg-surface-subtle"
-      style={{ height: `${sectionHeight}vh` }}
+      style={{ height: `${steps.length * 80}vh` }}
     >
-      <div className="sticky top-0 h-screen overflow-hidden">
-        <div className="h-full flex flex-col justify-center">
+      <div className="sticky top-0 h-screen flex items-center">
+        <div className="w-full max-w-6xl mx-auto px-6">
           {/* Header */}
-          <div className="text-center mb-12 px-6">
+          <div className="text-center mb-12">
             <Badge variant="outline" className="mb-4">How It Works</Badge>
             <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
               From RFP to draft in four steps
             </h2>
-            <p className="text-text-secondary text-lg max-w-2xl mx-auto">
+            <p className="text-text-secondary text-lg">
               No prompt engineering. No copy-pasting. Just upload and generate.
             </p>
           </div>
           
-          {/* Horizontal scrolling cards */}
-          <div className="relative overflow-hidden">
-            <div 
-              className="flex transition-transform duration-100 ease-out"
-              style={{ transform: `translateX(calc(${translateX}% + ${50 - (100 / steps.length / 2)}%))` }}
-            >
-              {steps.map((step, index) => (
-                <div 
-                  key={index}
-                  className="flex-shrink-0 px-4"
-                  style={{ width: `${100 / steps.length}%` }}
-                >
-                  <div className="max-w-lg mx-auto">
-                    <ScreenshotMockup>
-                      {step.screenshot}
-                    </ScreenshotMockup>
-                    <div className="mt-6 text-center">
-                      <div className="flex items-center justify-center gap-3 mb-2">
-                        <div className="h-10 w-10 rounded-full bg-brand text-white flex items-center justify-center font-bold">
-                          {step.step}
-                        </div>
-                        <step.icon className="h-5 w-5 text-brand" />
-                      </div>
-                      <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                      <p className="text-text-secondary text-sm max-w-sm mx-auto">
-                        {step.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Progress indicator */}
-          <div className="flex justify-center gap-2 mt-8">
-            {steps.map((_, index) => {
-              const stepProgress = scrollProgress * (steps.length - 1);
-              const isActive = Math.round(stepProgress) === index;
+          {/* Steps - horizontal cards */}
+          <div className="grid md:grid-cols-4 gap-4">
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              const isActive = index === activeStep;
+              const isPast = index < activeStep;
+              
               return (
                 <div
                   key={index}
                   className={cn(
-                    "h-2 rounded-full transition-all duration-300",
-                    isActive ? "w-8 bg-brand" : "w-2 bg-border"
+                    "relative p-6 rounded-2xl border-2 transition-all duration-500",
+                    isActive 
+                      ? "bg-brand text-white border-brand shadow-xl scale-105" 
+                      : isPast
+                        ? "bg-surface border-brand/30"
+                        : "bg-surface border-border"
                   )}
-                />
+                >
+                  {/* Step number */}
+                  <div className={cn(
+                    "absolute -top-3 -left-3 h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold",
+                    isActive 
+                      ? "bg-white text-brand" 
+                      : isPast
+                        ? "bg-brand text-white"
+                        : "bg-surface-secondary text-text-secondary border border-border"
+                  )}>
+                    {isPast ? <Check className="h-4 w-4" /> : step.step}
+                  </div>
+                  
+                  {/* Icon */}
+                  <div className={cn(
+                    "h-12 w-12 rounded-xl flex items-center justify-center mb-4",
+                    isActive ? "bg-white/20" : "bg-brand-light"
+                  )}>
+                    <Icon className={cn(
+                      "h-6 w-6",
+                      isActive ? "text-white" : "text-brand"
+                    )} />
+                  </div>
+                  
+                  {/* Content */}
+                  <h3 className={cn(
+                    "text-lg font-semibold mb-2",
+                    isActive ? "text-white" : "text-text-primary"
+                  )}>
+                    {step.title}
+                  </h3>
+                  <p className={cn(
+                    "text-sm mb-4",
+                    isActive ? "text-white/80" : "text-text-secondary"
+                  )}>
+                    {step.description}
+                  </p>
+                  
+                  {/* Details - only show on active */}
+                  <div className={cn(
+                    "space-y-2 transition-all duration-300 overflow-hidden",
+                    isActive ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                  )}>
+                    {step.details.map((detail, i) => (
+                      <div key={i} className="flex items-start gap-2 text-sm text-white/90">
+                        <Check className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <span>{detail}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               );
             })}
+          </div>
+          
+          {/* Progress bar */}
+          <div className="flex justify-center gap-2 mt-8">
+            {steps.map((_, index) => (
+              <div
+                key={index}
+                className={cn(
+                  "h-2 rounded-full transition-all duration-300",
+                  index === activeStep ? "w-8 bg-brand" : index < activeStep ? "w-2 bg-brand/50" : "w-2 bg-border"
+                )}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -463,29 +313,8 @@ function HorizontalScrollFeatures() {
   );
 }
 
-// Features grid - always visible, no scroll trigger
-function FeaturesGrid() {
-  const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    const currentRef = ref.current;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (currentRef) observer.observe(currentRef);
-    return () => {
-      if (currentRef) observer.unobserve(currentRef);
-    };
-  }, []);
-
+// Features section - simple grid, no fancy animations
+function Features() {
   const features = [
     {
       icon: Brain,
@@ -520,12 +349,9 @@ function FeaturesGrid() {
   ];
 
   return (
-    <section ref={ref} className="py-24 px-6 bg-surface">
+    <section className="py-24 px-6 bg-surface">
       <div className="max-w-6xl mx-auto">
-        <div className={cn(
-          "text-center mb-16 transition-all duration-700",
-          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-        )}>
+        <div className="text-center mb-16">
           <Badge variant="outline" className="mb-4">Features</Badge>
           <h2 className="text-4xl font-display font-bold mb-4">
             Everything you need to write better grants
@@ -533,27 +359,74 @@ function FeaturesGrid() {
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <div 
-              key={index}
-              className={cn(
-                "p-6 rounded-xl border border-border bg-surface hover:shadow-lg transition-all group",
-                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-              )}
-              style={{ 
-                transitionDelay: isVisible ? `${index * 100}ms` : "0ms",
-                transitionDuration: "700ms"
-              }}
-            >
-              <div className="p-3 bg-brand-light rounded-xl w-fit mb-4 group-hover:bg-brand transition-colors">
-                <feature.icon className="h-6 w-6 text-brand group-hover:text-white transition-colors" />
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            return (
+              <div 
+                key={index}
+                className="p-6 rounded-xl border border-border bg-surface hover:shadow-lg hover:border-brand/30 transition-all group"
+              >
+                <div className="p-3 bg-brand-light rounded-xl w-fit mb-4 group-hover:bg-brand transition-colors">
+                  <Icon className="h-6 w-6 text-brand group-hover:text-white transition-colors" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                <p className="text-text-secondary text-sm leading-relaxed">
+                  {feature.description}
+                </p>
               </div>
-              <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-              <p className="text-text-secondary text-sm leading-relaxed">
-                {feature.description}
-              </p>
-            </div>
-          ))}
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Why Brightway section
+function WhyBrightway() {
+  const benefits = [
+    {
+      icon: Clock,
+      stat: "10x",
+      label: "faster first drafts",
+      description: "What takes days now takes minutes",
+    },
+    {
+      icon: Target,
+      stat: "100%",
+      label: "your voice",
+      description: "AI trained on your actual documents",
+    },
+    {
+      icon: Zap,
+      stat: "Zero",
+      label: "hallucinations",
+      description: "Every stat grounded in your data",
+    },
+  ];
+
+  return (
+    <section className="py-24 px-6 bg-brand text-white">
+      <div className="max-w-5xl mx-auto text-center">
+        <Badge variant="outline" className="mb-4 border-white/30 text-white">Why Brightway</Badge>
+        <h2 className="text-4xl md:text-5xl font-display font-bold mb-16">
+          Stop starting from scratch
+        </h2>
+        
+        <div className="grid md:grid-cols-3 gap-8">
+          {benefits.map((benefit, index) => {
+            const Icon = benefit.icon;
+            return (
+              <div key={index} className="text-center">
+                <div className="h-16 w-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-4">
+                  <Icon className="h-8 w-8" />
+                </div>
+                <div className="text-5xl font-bold font-display mb-2">{benefit.stat}</div>
+                <div className="text-lg font-medium mb-2">{benefit.label}</div>
+                <p className="text-white/70">{benefit.description}</p>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -592,6 +465,15 @@ export default function Home() {
     },
   ];
 
+  const principles = [
+    { text: "We won't make up statistics or data", negative: true },
+    { text: "We will use your real program data", negative: false },
+    { text: "We won't use generic AI filler language", negative: true },
+    { text: "We will match your organization's voice", negative: false },
+    { text: "We won't exceed your word limits", negative: true },
+    { text: "We will cite your actual impact numbers", negative: false },
+  ];
+
   return (
     <div className="min-h-screen bg-surface overflow-x-hidden">
       {/* Header */}
@@ -622,66 +504,56 @@ export default function Home() {
       {/* Hero */}
       <section className="pt-32 pb-20 px-6">
         <div className="max-w-5xl mx-auto text-center">
-          <FadeInOnScroll>
-            <Badge variant="outline" className="mb-6 px-4 py-1.5">
-              <Sparkles className="h-3 w-3 mr-2" />
-              AI-Powered Grant Writing
-            </Badge>
-          </FadeInOnScroll>
+          <Badge variant="outline" className="mb-6 px-4 py-1.5">
+            <Sparkles className="h-3 w-3 mr-2" />
+            AI-Powered Grant Writing
+          </Badge>
           
-          <FadeInOnScroll delay={100}>
-            <h1 className="text-5xl md:text-7xl font-display font-bold leading-tight mb-6">
-              Draft grant proposals<br />
-              <span className="text-brand">
-                <TypewriterText 
-                  texts={[
-                    "in minutes, not weeks",
-                    "in your authentic voice", 
-                    "grounded in your data",
-                    "that win funding",
-                    "without the blank page"
-                  ]} 
-                />
-              </span>
-            </h1>
-          </FadeInOnScroll>
+          <h1 className="text-5xl md:text-7xl font-display font-bold leading-tight mb-6">
+            Draft grant proposals<br />
+            <span className="text-brand">
+              <TypewriterText 
+                texts={[
+                  "in minutes, not weeks",
+                  "in your authentic voice", 
+                  "grounded in your data",
+                  "that win funding",
+                  "without the blank page"
+                ]} 
+              />
+            </span>
+          </h1>
           
-          <FadeInOnScroll delay={200}>
-            <p className="text-xl text-text-secondary max-w-2xl mx-auto mb-10">
-              Upload an RFP. Get a complete draft. Powered by your organization&apos;s 
-              knowledge base, written in your authentic voice.
-            </p>
-          </FadeInOnScroll>
+          <p className="text-xl text-text-secondary max-w-2xl mx-auto mb-10">
+            Upload an RFP. Get a complete draft. Powered by your organization&apos;s 
+            knowledge base, written in your authentic voice.
+          </p>
           
-          <FadeInOnScroll delay={300}>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/signup">
-                <Button size="lg" className="text-lg px-8 h-14">
-                  Start Writing Free
-                  <ArrowRight className="h-5 w-5 ml-2" />
-                </Button>
-              </Link>
-              <Link href="#how-it-works">
-                <Button size="lg" variant="outline" className="text-lg px-8 h-14">
-                  See How It Works
-                </Button>
-              </Link>
-            </div>
-            <p className="text-sm text-text-tertiary mt-6">
-              No credit card required · 3 free proposals
-            </p>
-          </FadeInOnScroll>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/signup">
+              <Button size="lg" className="text-lg px-8 h-14">
+                Start Writing Free
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Button>
+            </Link>
+            <Link href="#how-it-works">
+              <Button size="lg" variant="outline" className="text-lg px-8 h-14">
+                See How It Works
+              </Button>
+            </Link>
+          </div>
+          <p className="text-sm text-text-tertiary mt-6">
+            No credit card required · 3 free proposals
+          </p>
         </div>
       </section>
 
       {/* Social Proof */}
       <section className="py-16 px-6 border-y border-border bg-surface-subtle">
         <div className="max-w-5xl mx-auto">
-          <FadeInOnScroll>
-            <p className="text-center text-text-tertiary mb-8">
-              Built for nonprofit teams who write grants
-            </p>
-          </FadeInOnScroll>
+          <p className="text-center text-text-tertiary mb-8">
+            Built for nonprofit teams who write grants
+          </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
               { target: 50, suffix: "%", label: "Less time per proposal" },
@@ -689,119 +561,102 @@ export default function Home() {
               { target: 100, suffix: "%", label: "Your voice & data" },
               { target: 920, suffix: "+", label: "Grants discoverable" },
             ].map((stat, index) => (
-              <FadeInOnScroll key={index} delay={index * 100}>
-                <div>
-                  <AnimatedCounter target={stat.target} suffix={stat.suffix} />
-                  <p className="text-text-secondary mt-2">{stat.label}</p>
-                </div>
-              </FadeInOnScroll>
+              <div key={index}>
+                <AnimatedCounter target={stat.target} suffix={stat.suffix} />
+                <p className="text-text-secondary mt-2">{stat.label}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How It Works - Horizontal Scroll */}
+      {/* How It Works */}
       <div id="how-it-works">
-        <HorizontalScrollFeatures />
+        <HowItWorks />
       </div>
 
-      {/* Features Grid */}
-      <FeaturesGrid />
+      {/* Features */}
+      <Features />
+
+      {/* Why Brightway */}
+      <WhyBrightway />
 
       {/* Principles */}
-      <section className="py-24 px-6 bg-surface-subtle">
+      <section className="py-24 px-6 bg-surface">
         <div className="max-w-4xl mx-auto">
-          <FadeInOnScroll>
-            <div className="text-center mb-16">
-              <Badge variant="outline" className="mb-4">Our Principles</Badge>
-              <h2 className="text-4xl font-display font-bold mb-4">
-                AI that writes with integrity
-              </h2>
-              <p className="text-text-secondary text-lg">
-                Every proposal Brightway generates follows these rules
-              </p>
-            </div>
-          </FadeInOnScroll>
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="mb-4">Our Principles</Badge>
+            <h2 className="text-4xl font-display font-bold mb-4">
+              AI that writes with integrity
+            </h2>
+            <p className="text-text-secondary text-lg">
+              Every proposal Brightway generates follows these rules
+            </p>
+          </div>
           
           <div className="grid sm:grid-cols-2 gap-4">
-            {[
-              "We won't make up statistics or data",
-              "We won't use generic AI filler language", 
-              "We won't exceed your word limits",
-              "We will use your real program data",
-              "We will match your organization's voice",
-              "We will cite your actual impact numbers",
-              "We will flag when information is missing",
-              "We will let you review everything before export",
-            ].map((principle, index) => (
-              <FadeInOnScroll key={index} delay={index * 50}>
-                <div 
-                  className={cn(
-                    "flex items-center gap-3 p-4 rounded-lg",
-                    principle.startsWith("We won't") 
-                      ? "bg-red-50 text-red-900" 
-                      : "bg-green-50 text-green-900"
+            {principles.map((principle, index) => (
+              <div 
+                key={index}
+                className={cn(
+                  "flex items-center gap-3 p-4 rounded-lg",
+                  principle.negative 
+                    ? "bg-red-50 text-red-900" 
+                    : "bg-green-50 text-green-900"
+                )}
+              >
+                <div className={cn(
+                  "p-1 rounded-full flex-shrink-0",
+                  principle.negative ? "bg-red-200" : "bg-green-200"
+                )}>
+                  {principle.negative ? (
+                    <span className="block h-4 w-4 text-center leading-4 text-red-600 font-bold">×</span>
+                  ) : (
+                    <Check className="h-4 w-4 text-green-600" />
                   )}
-                >
-                  <div className={cn(
-                    "p-1 rounded-full flex-shrink-0",
-                    principle.startsWith("We won't") ? "bg-red-200" : "bg-green-200"
-                  )}>
-                    {principle.startsWith("We won't") ? (
-                      <span className="block h-4 w-4 text-center leading-4 text-red-600 font-bold">×</span>
-                    ) : (
-                      <Check className="h-4 w-4 text-green-600" />
-                    )}
-                  </div>
-                  <span className="font-medium">{principle}</span>
                 </div>
-              </FadeInOnScroll>
+                <span className="font-medium">{principle.text}</span>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="py-24 px-6">
+      <section className="py-24 px-6 bg-surface-subtle">
         <div className="max-w-3xl mx-auto">
-          <FadeInOnScroll>
-            <div className="text-center mb-16">
-              <Badge variant="outline" className="mb-4">FAQ</Badge>
-              <h2 className="text-4xl font-display font-bold">
-                Questions & Answers
-              </h2>
-            </div>
-          </FadeInOnScroll>
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="mb-4">FAQ</Badge>
+            <h2 className="text-4xl font-display font-bold">
+              Questions & Answers
+            </h2>
+          </div>
           
-          <FadeInOnScroll delay={200}>
-            <div>
-              {faqs.map((faq, index) => (
-                <FAQItem key={index} question={faq.question} answer={faq.answer} />
-              ))}
-            </div>
-          </FadeInOnScroll>
+          <div>
+            {faqs.map((faq, index) => (
+              <FAQItem key={index} question={faq.question} answer={faq.answer} />
+            ))}
+          </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-24 px-6 bg-surface-subtle">
-        <FadeInOnScroll>
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
-              Stop spending weeks on proposals
-            </h2>
-            <p className="text-xl text-text-secondary mb-10 max-w-2xl mx-auto">
-              Join nonprofit teams who are writing better grants in less time. 
-              Start free, no credit card required.
-            </p>
-            <Link href="/signup">
-              <Button size="lg" className="text-lg px-10 h-14">
-                Start Writing Free
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-            </Link>
-          </div>
-        </FadeInOnScroll>
+      <section className="py-24 px-6 bg-surface">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
+            Stop spending weeks on proposals
+          </h2>
+          <p className="text-xl text-text-secondary mb-10 max-w-2xl mx-auto">
+            Join nonprofit teams who are writing better grants in less time. 
+            Start free, no credit card required.
+          </p>
+          <Link href="/signup">
+            <Button size="lg" className="text-lg px-10 h-14">
+              Start Writing Free
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+          </Link>
+        </div>
       </section>
 
       {/* Footer */}
