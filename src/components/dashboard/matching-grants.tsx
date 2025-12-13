@@ -13,6 +13,7 @@ import {
   DollarSign,
   Building2,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -31,25 +32,22 @@ interface Grant {
 }
 
 function MatchScoreBadge({ score }: { score: number }) {
-  const variant = score >= 70 ? "success" : score >= 40 ? "warning" : "default";
+  const variant = score >= 70 ? "success" : score >= 50 ? "warning" : "default";
   return (
-    <Badge variant={variant} className="font-medium">
-      {score}% match
+    <Badge variant={variant} className="font-medium text-xs">
+      {score}%
     </Badge>
   );
 }
 
 function formatAmount(floor: number | null, ceiling: number | null): string {
   if (ceiling && ceiling > 0) {
-    if (floor && floor > 0) {
-      return `$${floor.toLocaleString()} - $${ceiling.toLocaleString()}`;
-    }
-    return `Up to $${ceiling.toLocaleString()}`;
+    return `$${(ceiling / 1000).toFixed(0)}K`;
   }
   if (floor && floor > 0) {
-    return `From $${floor.toLocaleString()}`;
+    return `$${(floor / 1000).toFixed(0)}K+`;
   }
-  return "Amount TBD";
+  return "TBD";
 }
 
 export function MatchingGrantsSection() {
@@ -63,16 +61,23 @@ export function MatchingGrantsSection() {
   }, []);
 
   const fetchGrants = async () => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      const response = await fetch("/api/grants/search");
-      if (!response.ok) throw new Error("Failed to fetch grants");
+      const response = await fetch("/api/grants/search?featured=true");
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to fetch grants");
+      }
 
       const data = await response.json();
       // Show top 5 grants sorted by match score
-      setGrants(data.grants.slice(0, 5));
+      setGrants(data.grants?.slice(0, 5) || []);
     } catch (err) {
-      setError("Unable to load grant recommendations");
       console.error("Error fetching grants:", err);
+      setError(err instanceof Error ? err.message : "Unable to load grants");
     } finally {
       setIsLoading(false);
     }
@@ -152,9 +157,10 @@ export function MatchingGrantsSection() {
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-text-secondary">{error}</p>
-        <Button variant="secondary" size="sm" onClick={fetchGrants} className="mt-2">
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <AlertCircle className="h-8 w-8 text-status-warning mb-2" />
+        <p className="text-text-secondary mb-2">{error}</p>
+        <Button variant="secondary" size="sm" onClick={fetchGrants}>
           Try Again
         </Button>
       </div>
@@ -164,9 +170,9 @@ export function MatchingGrantsSection() {
   if (grants.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-text-secondary">No matching grants found at this time.</p>
+        <p className="text-text-secondary mb-3">No grants found at this time. Check back soon!</p>
         <Link href="/discover">
-          <Button variant="secondary" size="sm" className="mt-2">
+          <Button variant="secondary" size="sm">
             Browse All Grants
           </Button>
         </Link>
@@ -175,44 +181,47 @@ export function MatchingGrantsSection() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {grants.map((grant) => (
         <div
           key={grant.id}
-          className="flex items-start justify-between gap-4 p-3 rounded-lg border border-border hover:border-text-tertiary transition-colors"
+          className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border hover:border-text-tertiary transition-colors"
         >
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h4 className="font-medium text-text-primary truncate">{grant.title}</h4>
+            <div className="flex items-center gap-2 mb-0.5">
+              <h4 className="font-medium text-text-primary text-sm truncate flex-1">
+                {grant.title}
+              </h4>
               <MatchScoreBadge score={grant.matchScore} />
             </div>
-            <div className="flex items-center gap-4 text-sm text-text-secondary">
-              <span className="flex items-center gap-1">
-                <Building2 className="h-3.5 w-3.5" />
-                {grant.agency}
+            <div className="flex items-center gap-3 text-xs text-text-secondary">
+              <span className="flex items-center gap-1 truncate">
+                <Building2 className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{grant.agency}</span>
               </span>
               {grant.closeDate && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  Due {formatDate(new Date(grant.closeDate))}
+                <span className="flex items-center gap-1 flex-shrink-0">
+                  <Calendar className="h-3 w-3" />
+                  {formatDate(new Date(grant.closeDate))}
                 </span>
               )}
-              <span className="flex items-center gap-1">
-                <DollarSign className="h-3.5 w-3.5" />
+              <span className="flex items-center gap-1 flex-shrink-0">
+                <DollarSign className="h-3 w-3" />
                 {formatAmount(grant.awardFloor, grant.awardCeiling)}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"
+              className="h-8 w-8"
               onClick={() =>
                 grant.isSaved
                   ? handleUnsaveGrant(grant.id)
                   : handleSaveGrant(grant)
               }
-              title={grant.isSaved ? "Remove from watchlist" : "Add to watchlist"}
+              title={grant.isSaved ? "Remove from watchlist" : "Save to watchlist"}
             >
               {grant.isSaved ? (
                 <BookmarkCheck className="h-4 w-4 text-brand" />
@@ -225,13 +234,21 @@ export function MatchingGrantsSection() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Button variant="secondary" size="sm">
+              <Button variant="ghost" size="icon" className="h-8 w-8">
                 <ExternalLink className="h-4 w-4" />
               </Button>
             </a>
           </div>
         </div>
       ))}
+      
+      <div className="pt-2 text-center">
+        <Link href="/discover">
+          <Button variant="link" size="sm" className="text-brand">
+            View all opportunities →
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

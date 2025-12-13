@@ -7,6 +7,8 @@ import {
   getSearchParamsForOrg,
 } from "@/lib/grants-gov";
 
+export const dynamic = "force-dynamic";
+
 // This endpoint should be called by a cron job (e.g., Railway cron, Vercel cron)
 // Weekly on Mondays at 9am
 export async function POST(request: NextRequest) {
@@ -55,9 +57,6 @@ export async function POST(request: NextRequest) {
           orgType: org.orgType,
         });
 
-        // Only get grants posted in the last week
-        searchParams.dateRange = 7;
-
         const grants = await searchGrants(searchParams);
 
         // Calculate scores and filter top matches
@@ -71,7 +70,7 @@ export async function POST(request: NextRequest) {
               orgType: org.orgType,
             }),
           }))
-          .filter((g) => g.matchScore >= 30) // Only include decent matches
+          .filter((g) => g.matchScore >= 40) // Only include good matches
           .sort((a, b) => b.matchScore - a.matchScore)
           .slice(0, 10); // Top 10
 
