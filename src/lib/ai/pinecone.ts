@@ -31,6 +31,9 @@ export interface VectorMetadata {
   documentType: string;
   programArea?: string;
   filename: string;
+  // New fields for improved retrieval
+  sectionTitle?: string;
+  isComplete?: boolean;
 }
 
 export async function upsertVectors(

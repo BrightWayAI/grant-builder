@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireOrganization } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { getFileBuffer } from "@/lib/storage";
-import { extractTextFromFile } from "@/lib/ai/document-parser";
 import { deleteDocumentIndex, indexDocument } from "@/lib/ai/embeddings";
+import { DocumentType } from "@prisma/client";
 
 export async function POST(
   request: NextRequest,
@@ -45,25 +45,35 @@ async function reindexDocumentAsync(document: {
   fileUrl: string;
   fileType: string;
   organizationId: string;
-  documentType: string;
+  documentType: DocumentType;
   filename: string;
   programArea: string | null;
 }) {
   try {
+    // Delete existing index
     await deleteDocumentIndex(document.id);
 
+    // Get file from storage
     const urlObj = new URL(document.fileUrl);
     const key = urlObj.pathname.replace(/^\//, "");
     const buffer = await getFileBuffer(key);
 
-    const text = await extractTextFromFile(buffer, document.fileType);
-    
+    // Get mime type from file type
+    const mimeTypes: Record<string, string> = {
+      pdf: "application/pdf",
+      docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      txt: "text/plain",
+    };
+    const mimeType = mimeTypes[document.fileType] || "text/plain";
+
+    // Re-index with new processor
     await indexDocument(
       document.id,
-      text,
-      document.organizationId,
-      document.documentType as import("@prisma/client").DocumentType,
+      buffer,
+      mimeType,
       document.filename,
+      document.organizationId,
+      document.documentType,
       document.programArea || undefined
     );
   } catch (error) {

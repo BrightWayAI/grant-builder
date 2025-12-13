@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireOrganization } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { uploadFile } from "@/lib/storage";
-import { extractTextFromFile, isValidFileType, getFileTypeFromMime } from "@/lib/ai/document-parser";
+import { isValidFileType, getFileTypeFromMime } from "@/lib/ai/document-processor";
 import { indexDocument } from "@/lib/ai/embeddings";
 import { DocumentType } from "@prisma/client";
 
@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const documentType = formData.get("documentType") as string;
+    const programArea = formData.get("programArea") as string | null;
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
+    // Upload to storage
     const { url } = await uploadFile(
       buffer,
       file.name,
@@ -44,6 +46,7 @@ export async function POST(request: NextRequest) {
       "documents"
     );
 
+    // Create document record
     const document = await prisma.document.create({
       data: {
         organizationId,
@@ -52,11 +55,21 @@ export async function POST(request: NextRequest) {
         fileUrl: url,
         fileSize: file.size,
         documentType: documentType as DocumentType,
+        programArea: programArea || null,
         status: "PROCESSING",
       },
     });
 
-    processDocumentAsync(document.id, buffer, file.type, organizationId, documentType as DocumentType, file.name);
+    // Process asynchronously (don't await)
+    processDocumentAsync(
+      document.id, 
+      buffer, 
+      file.type, 
+      file.name,
+      organizationId, 
+      documentType as DocumentType,
+      programArea || undefined
+    );
 
     return NextResponse.json(document);
   } catch (error) {
@@ -75,22 +88,24 @@ async function processDocumentAsync(
   documentId: string,
   buffer: Buffer,
   mimeType: string,
+  filename: string,
   organizationId: string,
   documentType: DocumentType,
-  filename: string
+  programArea?: string
 ) {
   try {
-    const text = await extractTextFromFile(buffer, mimeType);
-    await indexDocument(documentId, text, organizationId, documentType, filename);
+    await indexDocument(
+      documentId,
+      buffer,
+      mimeType,
+      filename,
+      organizationId,
+      documentType,
+      programArea
+    );
   } catch (error) {
     console.error("Document processing error:", error);
-    await prisma.document.update({
-      where: { id: documentId },
-      data: {
-        status: "FAILED",
-        errorMessage: error instanceof Error ? error.message : "Processing failed",
-      },
-    });
+    // Error is already handled in indexDocument
   }
 }
 
@@ -101,9 +116,21 @@ export async function GET() {
     const documents = await prisma.document.findMany({
       where: { organizationId },
       orderBy: { createdAt: "desc" },
+      include: {
+        _count: {
+          select: { chunks: true },
+        },
+      },
     });
 
-    return NextResponse.json(documents);
+    // Add chunk count to response
+    const docsWithStats = documents.map((doc) => ({
+      ...doc,
+      chunkCount: doc._count.chunks,
+      _count: undefined,
+    }));
+
+    return NextResponse.json(docsWithStats);
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
