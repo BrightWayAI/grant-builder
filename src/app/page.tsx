@@ -2,9 +2,7 @@
 
 import { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/primitives/button";
-import { Card, CardContent } from "@/components/primitives/card";
 import { Badge } from "@/components/primitives/badge";
 import { 
   FileText, 
@@ -17,7 +15,6 @@ import {
   Shield,
   ChevronDown,
   Search,
-  FileCheck,
   PenTool,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -211,60 +208,331 @@ function ScreenshotMockup({
   );
 }
 
-// Feature showcase with screenshot
-function FeatureShowcase({
-  badge,
-  title,
-  description,
-  features,
-  screenshot,
-  reversed = false,
-}: {
-  badge: string;
-  title: string;
-  description: string;
-  features: string[];
-  screenshot: ReactNode;
-  reversed?: boolean;
-}) {
-  return (
-    <div className={cn(
-      "grid lg:grid-cols-2 gap-12 lg:gap-20 items-center",
-      reversed && "lg:grid-flow-dense"
-    )}>
-      <FadeInOnScroll 
-        direction={reversed ? "right" : "left"}
-        className={reversed ? "lg:col-start-2" : ""}
-      >
-        <Badge variant="outline" className="mb-4">{badge}</Badge>
-        <h3 className="text-3xl md:text-4xl font-display font-bold mb-4">
-          {title}
-        </h3>
-        <p className="text-lg text-text-secondary mb-6">
-          {description}
-        </p>
-        <ul className="space-y-3">
-          {features.map((feature, index) => (
-            <li key={index} className="flex items-start gap-3">
-              <div className="p-1 bg-brand-light rounded-full mt-0.5">
-                <Check className="h-4 w-4 text-brand" />
+// Sticky scroll features section
+function StickyFeatures() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  
+  const features = [
+    {
+      badge: "Knowledge Base",
+      title: "Your organization's brain, always ready",
+      description: "Upload past proposals, annual reports, impact data, and organizational documents. Our AI learns your voice and pulls the most relevant information when writing.",
+      bullets: [
+        "Smart document categorization",
+        "Automatic text extraction from PDF, DOCX, TXT",
+        "Semantic search finds the right context",
+        "Your data stays private, never used for training",
+      ],
+      screenshot: (
+        <div className="bg-surface p-6 min-h-[400px]">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-semibold">Knowledge Base</h3>
+            <Badge>24 documents</Badge>
+          </div>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            {[
+              { name: "Past Proposals", count: 8, icon: FileText, color: "text-brand" },
+              { name: "Organization Info", count: 6, icon: Brain, color: "text-purple-500" },
+              { name: "Impact Reports", count: 5, icon: Search, color: "text-green-500" },
+              { name: "Financial Docs", count: 5, icon: Shield, color: "text-orange-500" },
+            ].map((cat, i) => (
+              <div key={i} className="p-4 bg-surface-secondary rounded-lg">
+                <cat.icon className={cn("h-6 w-6 mb-2", cat.color)} />
+                <p className="font-medium text-sm">{cat.name}</p>
+                <p className="text-xs text-text-tertiary">{cat.count} documents</p>
               </div>
-              <span className="text-text-secondary">{feature}</span>
-            </li>
-          ))}
-        </ul>
-      </FadeInOnScroll>
+            ))}
+          </div>
+          <div className="p-3 bg-brand-light rounded-lg border-2 border-dashed border-brand flex items-center justify-center gap-2">
+            <Upload className="h-5 w-5 text-brand" />
+            <span className="text-sm text-brand font-medium">Drop files to upload</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      badge: "Grant Discovery",
+      title: "Find grants that match your mission",
+      description: "Search 900+ federal grants from Grants.gov. Our matching algorithm scores each opportunity based on your organization's profile, program areas, and funding needs.",
+      bullets: [
+        "Real-time Grants.gov integration",
+        "Smart matching based on your org profile",
+        "Filter by program area and eligibility",
+        "Save grants to your watchlist",
+      ],
+      screenshot: (
+        <div className="bg-surface p-6 min-h-[400px]">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex-1 bg-surface-secondary rounded-lg px-4 py-2 flex items-center gap-2">
+              <Search className="h-4 w-4 text-text-tertiary" />
+              <span className="text-sm text-text-tertiary">Search grants...</span>
+            </div>
+            <Button size="sm">Search</Button>
+          </div>
+          <div className="space-y-3">
+            {[
+              { name: "NEA Arts Education Partnership", agency: "NEA", match: 94, amount: "$50K-$150K" },
+              { name: "Community Development Block Grant", agency: "HUD", match: 89, amount: "$100K-$500K" },
+              { name: "Environmental Justice Collaborative", agency: "EPA", match: 85, amount: "$75K-$200K" },
+            ].map((grant, i) => (
+              <div key={i} className="p-4 bg-surface-secondary rounded-lg flex items-center gap-4">
+                <div className="h-12 w-12 bg-brand-light rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-lg font-bold text-brand">{grant.match}%</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{grant.name}</p>
+                  <p className="text-xs text-text-tertiary">{grant.agency} · {grant.amount}</p>
+                </div>
+                <Button size="sm" variant="outline">View</Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      ),
+    },
+    {
+      badge: "Smart RFP Parser",
+      title: "Upload any RFP, we handle the rest",
+      description: "Drop in a grant announcement, RFP, or NOFO. Our AI extracts all requirements, deadlines, sections, and word limits automatically.",
+      bullets: [
+        "Supports PDF, DOCX, and text formats",
+        "Extracts deadlines, amounts, eligibility",
+        "Identifies all narrative sections",
+        "Detects word and character limits",
+      ],
+      screenshot: (
+        <div className="bg-surface p-6 min-h-[400px]">
+          <div className="flex items-center gap-3 mb-4">
+            <FileText className="h-6 w-6 text-brand" />
+            <div>
+              <p className="font-medium">NEA-Arts-Grant-2025.pdf</p>
+              <p className="text-xs text-status-success">Parsed successfully</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="p-3 bg-surface-secondary rounded-lg">
+              <p className="text-xs text-text-tertiary">Deadline</p>
+              <p className="font-medium text-sm">Mar 15, 2025</p>
+            </div>
+            <div className="p-3 bg-surface-secondary rounded-lg">
+              <p className="text-xs text-text-tertiary">Award Range</p>
+              <p className="font-medium text-sm">$10K-$100K</p>
+            </div>
+            <div className="p-3 bg-surface-secondary rounded-lg">
+              <p className="text-xs text-text-tertiary">Sections</p>
+              <p className="font-medium text-sm">8 identified</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-sm font-medium mb-2">Sections Detected:</p>
+            {["Executive Summary (500 words)", "Statement of Need (1000 words)", "Project Description (2000 words)", "Evaluation Plan (750 words)"].map((section, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm">
+                <Check className="h-4 w-4 text-status-success" />
+                <span>{section}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ),
+    },
+    {
+      badge: "AI Generation",
+      title: "First drafts in minutes, not days",
+      description: "Generate complete proposal sections using your knowledge base. Each draft is grounded in your real data, written in your voice.",
+      bullets: [
+        "Section-by-section generation",
+        "Pulls context from your knowledge base",
+        "Respects word and character limits",
+        "Flags missing info with placeholders",
+      ],
+      screenshot: (
+        <div className="bg-surface p-6 min-h-[400px]">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="font-medium">Statement of Need</p>
+              <p className="text-xs text-text-tertiary">487 / 1000 words</p>
+            </div>
+            <Badge variant="outline" className="gap-1">
+              <Sparkles className="h-3 w-3" /> Generating...
+            </Badge>
+          </div>
+          <div className="bg-surface-secondary rounded-lg p-4 text-sm leading-relaxed">
+            <p>
+              The Springfield Arts Council has served our community for over 25 years, 
+              reaching 15,000 residents annually through free public programs. Despite 
+              this reach, significant gaps remain in arts access for underserved 
+              populations.
+            </p>
+            <p className="mt-3">
+              Our recent community needs assessment revealed that 67% of low-income 
+              families have never attended a professional arts performance, citing cost 
+              and transportation as primary barriers. This represents over 3,200 families 
+              in our service area who lack meaningful connection to cultural resources...
+            </p>
+            <span className="inline-block mt-2 animate-pulse text-brand">▊</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      badge: "Inline Copilot",
+      title: "Refine with AI assistance",
+      description: "Select any text and use the copilot to expand, condense, strengthen, or adjust tone. Get suggestions grounded in your knowledge base.",
+      bullets: [
+        "Expand sections with more detail",
+        "Condense to meet word limits",
+        "Strengthen arguments with data",
+        "Adjust tone for different funders",
+      ],
+      screenshot: (
+        <div className="bg-surface p-6 min-h-[400px]">
+          <div className="flex items-center justify-between mb-4">
+            <p className="font-medium">Project Description</p>
+            <p className="text-xs text-text-tertiary">1,847 / 2,000 words</p>
+          </div>
+          <div className="bg-surface-secondary rounded-lg p-4 text-sm leading-relaxed">
+            <p>
+              Our summer youth program will expand to serve 200 additional participants 
+              through partnerships with three new community centers. 
+              <span className="bg-brand/20 text-brand px-1 rounded mx-1">
+                The program includes weekly workshops, mentorship sessions, and a 
+                culminating showcase event.
+              </span>
+            </p>
+            <div className="mt-4 p-3 bg-white rounded-lg border shadow-lg">
+              <p className="text-xs font-medium mb-2">AI Copilot</p>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="cursor-pointer hover:bg-brand-light text-xs">
+                  <Sparkles className="h-3 w-3 mr-1" /> Expand with details
+                </Badge>
+                <Badge variant="outline" className="cursor-pointer hover:bg-brand-light text-xs">
+                  Add impact data
+                </Badge>
+                <Badge variant="outline" className="cursor-pointer hover:bg-brand-light text-xs">
+                  Strengthen
+                </Badge>
+                <Badge variant="outline" className="cursor-pointer hover:bg-brand-light text-xs">
+                  Make concise
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+  ];
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!containerRef.current) return;
       
-      <FadeInOnScroll 
-        direction={reversed ? "left" : "right"} 
-        delay={200}
-        className={reversed ? "lg:col-start-1 lg:row-start-1" : ""}
-      >
-        <ScreenshotMockup>
-          {screenshot}
-        </ScreenshotMockup>
-      </FadeInOnScroll>
-    </div>
+      const container = containerRef.current;
+      const rect = container.getBoundingClientRect();
+      const containerTop = rect.top;
+      const containerHeight = rect.height;
+      const windowHeight = window.innerHeight;
+      
+      // Calculate scroll progress through the container
+      const scrollProgress = Math.max(0, Math.min(1, 
+        (-containerTop) / (containerHeight - windowHeight)
+      ));
+      
+      // Determine which feature should be active
+      const newIndex = Math.min(
+        features.length - 1,
+        Math.floor(scrollProgress * features.length)
+      );
+      
+      setActiveIndex(newIndex);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); // Initial call
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [features.length]);
+
+  const activeFeature = features[activeIndex];
+
+  return (
+    <section 
+      ref={containerRef}
+      className="relative"
+      style={{ height: `${features.length * 100}vh` }}
+    >
+      <div className="sticky top-0 h-screen flex items-center">
+        <div className="max-w-7xl mx-auto px-6 w-full">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            {/* Left side - Text content */}
+            <div className="relative">
+              {features.map((feature, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    "transition-all duration-500 ease-out",
+                    index === activeIndex 
+                      ? "opacity-100 translate-y-0" 
+                      : "opacity-0 translate-y-8 absolute inset-0 pointer-events-none"
+                  )}
+                >
+                  <Badge variant="outline" className="mb-4">{feature.badge}</Badge>
+                  <h3 className="text-3xl md:text-4xl font-display font-bold mb-4">
+                    {feature.title}
+                  </h3>
+                  <p className="text-lg text-text-secondary mb-6">
+                    {feature.description}
+                  </p>
+                  <ul className="space-y-3">
+                    {feature.bullets.map((bullet, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <div className="p-1 bg-brand-light rounded-full mt-0.5">
+                          <Check className="h-4 w-4 text-brand" />
+                        </div>
+                        <span className="text-text-secondary">{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+              
+              {/* Progress indicators */}
+              <div className="flex gap-2 mt-8">
+                {features.map((_, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "h-1.5 rounded-full transition-all duration-300",
+                      index === activeIndex 
+                        ? "w-8 bg-brand" 
+                        : "w-1.5 bg-border"
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            {/* Right side - Screenshot */}
+            <div className="relative">
+              <ScreenshotMockup>
+                {features.map((feature, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "transition-all duration-500 ease-out",
+                      index === activeIndex 
+                        ? "opacity-100 translate-y-0" 
+                        : "opacity-0 translate-y-12 absolute inset-0 pointer-events-none"
+                    )}
+                  >
+                    {feature.screenshot}
+                  </div>
+                ))}
+              </ScreenshotMockup>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -376,65 +644,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Hero Screenshot */}
-      <section className="px-6 pb-20">
-        <FadeInOnScroll delay={400}>
-          <div className="max-w-5xl mx-auto">
-            <ScreenshotMockup>
-              <div className="bg-surface p-6 min-h-[400px]">
-                {/* Dashboard mockup */}
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="bg-brand-light rounded-lg p-4">
-                    <p className="text-sm text-text-secondary">Active Proposals</p>
-                    <p className="text-3xl font-bold text-brand">3</p>
-                  </div>
-                  <div className="bg-surface-secondary rounded-lg p-4">
-                    <p className="text-sm text-text-secondary">Documents</p>
-                    <p className="text-3xl font-bold">24</p>
-                  </div>
-                  <div className="bg-surface-secondary rounded-lg p-4">
-                    <p className="text-sm text-text-secondary">Matching Grants</p>
-                    <p className="text-3xl font-bold">12</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <h3 className="font-semibold">Recent Proposals</h3>
-                    {["NEA Arts Education Grant", "Ford Foundation Climate", "Robert Wood Johnson Health"].map((name, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 bg-surface-secondary rounded-lg">
-                        <FileText className="h-5 w-5 text-brand" />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{name}</p>
-                          <p className="text-xs text-text-tertiary">Draft · Updated 2h ago</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="space-y-3">
-                    <h3 className="font-semibold">Recommended Grants</h3>
-                    {[
-                      { name: "Community Arts Grant", match: 92 },
-                      { name: "Youth Development Fund", match: 87 },
-                      { name: "Environmental Justice", match: 84 },
-                    ].map((grant, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 bg-surface-secondary rounded-lg">
-                        <div className="h-10 w-10 bg-brand-light rounded-full flex items-center justify-center">
-                          <span className="text-sm font-bold text-brand">{grant.match}%</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{grant.name}</p>
-                          <p className="text-xs text-text-tertiary">Deadline: Mar 15</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </ScreenshotMockup>
-          </div>
-        </FadeInOnScroll>
-      </section>
-
       {/* Social Proof */}
       <section className="py-16 px-6 border-y border-border bg-surface-subtle">
         <div className="max-w-5xl mx-auto">
@@ -461,231 +670,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Feature Showcases */}
-      <section id="features" className="py-24 px-6">
-        <div className="max-w-6xl mx-auto space-y-32">
-          
-          {/* Feature 1: Knowledge Base */}
-          <FeatureShowcase
-            badge="Knowledge Base"
-            title="Your organization's brain, always ready"
-            description="Upload past proposals, annual reports, impact data, and organizational documents. Our AI learns your voice and pulls the most relevant information when writing."
-            features={[
-              "Smart document categorization (proposals, reports, financials)",
-              "Automatic text extraction from PDF, DOCX, and TXT",
-              "Semantic search finds the right context for each section",
-              "Your data stays private and is never used for training",
-            ]}
-            screenshot={
-              <div className="bg-surface p-6 min-h-[350px]">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-semibold">Knowledge Base</h3>
-                  <Badge>24 documents</Badge>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  {[
-                    { name: "Past Proposals", count: 8, icon: FileText, color: "text-brand" },
-                    { name: "Organization Info", count: 6, icon: Brain, color: "text-purple-500" },
-                    { name: "Impact Reports", count: 5, icon: Search, color: "text-green-500" },
-                    { name: "Financial Docs", count: 5, icon: Shield, color: "text-orange-500" },
-                  ].map((cat, i) => (
-                    <div key={i} className="p-4 bg-surface-secondary rounded-lg">
-                      <cat.icon className={cn("h-6 w-6 mb-2", cat.color)} />
-                      <p className="font-medium text-sm">{cat.name}</p>
-                      <p className="text-xs text-text-tertiary">{cat.count} documents</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="p-3 bg-brand-light rounded-lg border-2 border-dashed border-brand flex items-center justify-center gap-2">
-                  <Upload className="h-5 w-5 text-brand" />
-                  <span className="text-sm text-brand font-medium">Drop files to upload</span>
-                </div>
-              </div>
-            }
-          />
-
-          {/* Feature 2: Grant Discovery */}
-          <FeatureShowcase
-            badge="Grant Discovery"
-            title="Find grants that match your mission"
-            description="Search 900+ federal grants from Grants.gov. Our matching algorithm scores each opportunity based on your organization's profile, program areas, and funding needs."
-            features={[
-              "Real-time Grants.gov integration",
-              "Smart matching based on your org profile",
-              "Filter by program area, eligibility, and amount",
-              "Save grants to your watchlist for tracking",
-            ]}
-            reversed
-            screenshot={
-              <div className="bg-surface p-6 min-h-[350px]">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="flex-1 bg-surface-secondary rounded-lg px-4 py-2 flex items-center gap-2">
-                    <Search className="h-4 w-4 text-text-tertiary" />
-                    <span className="text-sm text-text-tertiary">Search grants...</span>
-                  </div>
-                  <Button size="sm">Search</Button>
-                </div>
-                <div className="space-y-3">
-                  {[
-                    { name: "NEA Arts Education Partnership", agency: "NEA", match: 94, amount: "$50K-$150K" },
-                    { name: "Community Development Block Grant", agency: "HUD", match: 89, amount: "$100K-$500K" },
-                    { name: "Environmental Justice Collaborative", agency: "EPA", match: 85, amount: "$75K-$200K" },
-                  ].map((grant, i) => (
-                    <div key={i} className="p-4 bg-surface-secondary rounded-lg flex items-center gap-4">
-                      <div className="h-12 w-12 bg-brand-light rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-lg font-bold text-brand">{grant.match}%</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{grant.name}</p>
-                        <p className="text-xs text-text-tertiary">{grant.agency} · {grant.amount}</p>
-                      </div>
-                      <Button size="sm" variant="outline">View</Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            }
-          />
-
-          {/* Feature 3: RFP Parser */}
-          <FeatureShowcase
-            badge="Smart RFP Parser"
-            title="Upload any RFP, we handle the rest"
-            description="Drop in a grant announcement, RFP, or NOFO. Our AI extracts all requirements, deadlines, sections, and word limits automatically—no manual data entry."
-            features={[
-              "Supports PDF, DOCX, and text formats",
-              "Extracts deadlines, amounts, and eligibility",
-              "Identifies all narrative sections automatically",
-              "Detects word and character limits per section",
-            ]}
-            screenshot={
-              <div className="bg-surface p-6 min-h-[350px]">
-                <div className="flex items-center gap-3 mb-4">
-                  <FileText className="h-6 w-6 text-brand" />
-                  <div>
-                    <p className="font-medium">NEA-Arts-Grant-2025.pdf</p>
-                    <p className="text-xs text-status-success">Parsed successfully</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="p-3 bg-surface-secondary rounded-lg">
-                    <p className="text-xs text-text-tertiary">Deadline</p>
-                    <p className="font-medium text-sm">Mar 15, 2025</p>
-                  </div>
-                  <div className="p-3 bg-surface-secondary rounded-lg">
-                    <p className="text-xs text-text-tertiary">Award Range</p>
-                    <p className="font-medium text-sm">$10K-$100K</p>
-                  </div>
-                  <div className="p-3 bg-surface-secondary rounded-lg">
-                    <p className="text-xs text-text-tertiary">Sections</p>
-                    <p className="font-medium text-sm">8 identified</p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm font-medium mb-2">Sections Detected:</p>
-                  {["Executive Summary (500 words)", "Statement of Need (1000 words)", "Project Description (2000 words)", "Evaluation Plan (750 words)"].map((section, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-status-success" />
-                      <span>{section}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            }
-          />
-
-          {/* Feature 4: AI Generation */}
-          <FeatureShowcase
-            badge="AI Generation"
-            title="First drafts in minutes, not days"
-            description="Generate complete proposal sections using your knowledge base. Each draft is grounded in your real data, written in your voice, and respects word limits."
-            features={[
-              "Section-by-section generation with streaming",
-              "Pulls relevant context from your knowledge base",
-              "Respects word and character limits",
-              "Flags missing information with placeholders",
-            ]}
-            reversed
-            screenshot={
-              <div className="bg-surface p-6 min-h-[350px]">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="font-medium">Statement of Need</p>
-                    <p className="text-xs text-text-tertiary">487 / 1000 words</p>
-                  </div>
-                  <Badge variant="outline" className="gap-1">
-                    <Sparkles className="h-3 w-3" /> Generating...
-                  </Badge>
-                </div>
-                <div className="bg-surface-secondary rounded-lg p-4 text-sm leading-relaxed">
-                  <p>
-                    The Springfield Arts Council has served our community for over 25 years, 
-                    reaching 15,000 residents annually through free public programs. Despite 
-                    this reach, significant gaps remain in arts access for underserved 
-                    populations.
-                  </p>
-                  <p className="mt-3">
-                    Our recent community needs assessment revealed that 67% of low-income 
-                    families have never attended a professional arts performance, citing cost 
-                    and transportation as primary barriers. This represents over 3,200 families 
-                    in our service area who lack meaningful connection to cultural resources...
-                  </p>
-                  <span className="inline-block mt-2 animate-pulse text-brand">▊</span>
-                </div>
-              </div>
-            }
-          />
-
-          {/* Feature 5: Inline Editor */}
-          <FeatureShowcase
-            badge="Inline Copilot"
-            title="Refine with AI assistance"
-            description="Select any text and use the copilot to expand, condense, strengthen, or adjust tone. Get suggestions grounded in your knowledge base data."
-            features={[
-              "Expand sections with more detail and examples",
-              "Condense to meet strict word limits",
-              "Strengthen arguments with supporting data",
-              "Adjust tone for different funders",
-            ]}
-            screenshot={
-              <div className="bg-surface p-6 min-h-[350px]">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="font-medium">Project Description</p>
-                  <p className="text-xs text-text-tertiary">1,847 / 2,000 words</p>
-                </div>
-                <div className="bg-surface-secondary rounded-lg p-4 text-sm leading-relaxed">
-                  <p>
-                    Our summer youth program will expand to serve 200 additional participants 
-                    through partnerships with three new community centers. 
-                    <span className="bg-brand/20 text-brand px-1 rounded mx-1">
-                      The program includes weekly workshops, mentorship sessions, and a 
-                      culminating showcase event.
-                    </span>
-                  </p>
-                  <div className="mt-4 p-3 bg-white rounded-lg border shadow-lg">
-                    <p className="text-xs font-medium mb-2">AI Copilot</p>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline" className="cursor-pointer hover:bg-brand-light text-xs">
-                        <Sparkles className="h-3 w-3 mr-1" /> Expand with details
-                      </Badge>
-                      <Badge variant="outline" className="cursor-pointer hover:bg-brand-light text-xs">
-                        Add impact data
-                      </Badge>
-                      <Badge variant="outline" className="cursor-pointer hover:bg-brand-light text-xs">
-                        Strengthen
-                      </Badge>
-                      <Badge variant="outline" className="cursor-pointer hover:bg-brand-light text-xs">
-                        Make concise
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
-          />
-
-        </div>
-      </section>
+      {/* Sticky Features Section */}
+      <div id="features">
+        <StickyFeatures />
+      </div>
 
       {/* Principles */}
       <section className="py-24 px-6 bg-surface-subtle">
