@@ -1,7 +1,8 @@
 // Grants.gov API integration
 // Using the public search and detail APIs
 
-const GRANTS_GOV_SEARCH_URL = "https://www.grants.gov/grantsws/rest/opportunities/search";
+// Note: The main grants.gov URL redirects, so we use the direct API endpoint
+const GRANTS_GOV_SEARCH_URL = "https://apply07.grants.gov/grantsws/rest/opportunities/search";
 const GRANTS_GOV_DETAIL_URL = "https://apply07.grants.gov/grantsws/rest/opportunity/details";
 
 export interface GrantsGovOpportunity {
@@ -73,10 +74,8 @@ export const CATEGORY_MAPPING: Record<string, string[]> = {
   "Senior Services": ["IS"],
 };
 
-// All available program areas for UI
 export const PROGRAM_AREAS = Object.keys(CATEGORY_MAPPING);
 
-// All available org types for UI
 export const ORG_TYPES = [
   { value: "501c3", label: "501(c)(3) Nonprofit" },
   { value: "nonprofit", label: "Other Nonprofit" },
@@ -104,27 +103,7 @@ const ELIGIBILITY_DESCRIPTIONS: Record<string, string> = {
 };
 
 /**
- * Quick search - returns basic info from search results only (fast)
- * Use this for initial display, then fetch details on demand
- */
-export async function searchGrantsQuick(params: GrantSearchParams = {}): Promise<GrantsGovOpportunity[]> {
-  const rows = params.rows || 25;
-  
-  let hits = await executeSearch(params, rows);
-  
-  // If no results with filters, try broader search
-  if (hits.length === 0 && (params.fundingCategories || params.eligibilities || params.keyword)) {
-    console.log("No results with filters, trying broader search...");
-    hits = await executeSearch({}, rows);
-  }
-  
-  // Convert hits to basic grant objects (no detail fetching)
-  return hits.map(hitToBasicGrant);
-}
-
-/**
- * Full search - fetches details for top results (slower but more info)
- * Fetches details in parallel batches for speed
+ * Full search - fetches details for top results
  */
 export async function searchGrants(params: GrantSearchParams = {}): Promise<GrantsGovOpportunity[]> {
   const rows = params.rows || 25;
@@ -159,7 +138,6 @@ export async function searchGrants(params: GrantSearchParams = {}): Promise<Gran
     );
     grants.push(...batchResults);
     
-    // Small delay between batches
     if (i + batchSize < detailLimit) {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
@@ -188,47 +166,47 @@ function hitToBasicGrant(hit: GrantsGovHit): GrantsGovOpportunity {
 
 async function executeSearch(params: GrantSearchParams, rows: number): Promise<GrantsGovHit[]> {
   try {
-    const searchBody: Record<string, unknown> = {
-      oppStatuses: "posted",
-      sortBy: "openDate|desc",
-      rows,
-    };
+    // Build form-encoded body (Grants.gov API prefers this format)
+    const formParams = new URLSearchParams();
+    formParams.append("oppStatuses", "posted");
+    formParams.append("sortBy", "openDate|desc");
+    formParams.append("rows", String(rows));
 
     if (params.keyword) {
-      searchBody.keyword = params.keyword;
+      formParams.append("keyword", params.keyword);
     }
 
     if (params.fundingCategories && params.fundingCategories.length > 0) {
-      searchBody.fundingCategories = params.fundingCategories.join("|");
+      formParams.append("fundingCategories", params.fundingCategories.join("|"));
     }
 
     if (params.eligibilities && params.eligibilities.length > 0) {
-      searchBody.eligibilities = params.eligibilities.join("|");
+      formParams.append("eligibilities", params.eligibilities.join("|"));
     }
 
     if (params.agencies && params.agencies.length > 0) {
-      searchBody.agencies = params.agencies.join("|");
+      formParams.append("agencies", params.agencies.join("|"));
     }
 
-    console.log("Searching Grants.gov:", JSON.stringify(searchBody));
+    console.log("Searching Grants.gov:", formParams.toString());
 
     const response = await fetch(GRANTS_GOV_SEARCH_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
         "Accept": "application/json",
       },
-      body: JSON.stringify(searchBody),
+      body: formParams.toString(),
       cache: "no-store",
     });
 
     if (!response.ok) {
-      console.error(`Grants.gov API error: ${response.status}`);
+      console.error(`Grants.gov API error: ${response.status} ${response.statusText}`);
       return [];
     }
 
     const data: GrantsGovSearchResponse = await response.json();
-    console.log(`Found ${data.hitCount || 0} grants`);
+    console.log(`Found ${data.hitCount || 0} grants, returned ${data.oppHits?.length || 0}`);
     
     return data.oppHits || [];
   } catch (error) {
@@ -243,7 +221,7 @@ async function executeSearch(params: GrantSearchParams, rows: number): Promise<G
 export async function getGrantDetail(opportunityId: string): Promise<GrantsGovOpportunity | null> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout per request
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
     
     const response = await fetch(GRANTS_GOV_DETAIL_URL, {
       method: "POST",
@@ -325,7 +303,6 @@ export function calculateMatchScore(
 ): number {
   let score = 50;
 
-  // Program area matching (+20)
   if (orgProfile.programAreas.length > 0) {
     const orgCategories = orgProfile.programAreas.flatMap(
       (area) => CATEGORY_MAPPING[area] || []
@@ -346,7 +323,6 @@ export function calculateMatchScore(
     else if (hasKeywordMatch) score += 15;
   }
 
-  // Org type / eligibility (+15)
   if (orgProfile.orgType) {
     const eligCodes = ELIGIBILITY_MAPPING[orgProfile.orgType] || ELIGIBILITY_MAPPING["501c3"];
     const eligDescriptions = eligCodes.map((code) => ELIGIBILITY_DESCRIPTIONS[code] || "").filter(Boolean);
@@ -364,7 +340,6 @@ export function calculateMatchScore(
     score += 10;
   }
 
-  // Funding amount (+15)
   if (grant.awardCeiling > 0) {
     const budgetMax = getBudgetMax(orgProfile.budgetRange);
     const fundingMin = orgProfile.fundingMin || 0;
