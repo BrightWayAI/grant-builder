@@ -4,8 +4,9 @@ import prisma from "@/lib/db";
 import {
   searchGrants,
   calculateMatchScore,
-  getSearchParamsForOrg,
   GrantsGovOpportunity,
+  ELIGIBILITY_MAPPING,
+  CATEGORY_MAPPING,
 } from "@/lib/grants-gov";
 
 export interface GrantWithScore extends GrantsGovOpportunity {
@@ -14,6 +15,7 @@ export interface GrantWithScore extends GrantsGovOpportunity {
 }
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30; // Allow up to 30s for Grants.gov API
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,9 +26,10 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const keyword = searchParams.get("keyword") || undefined;
-    const category = searchParams.get("category") || undefined;
-    const featured = searchParams.get("featured") === "true";
+    const orgTypeParam = searchParams.get("orgType") || undefined;
+    const areasParam = searchParams.get("areas") || undefined;
 
+    // Get organization for scoring
     const organization = await prisma.organization.findUnique({
       where: { id: user.organizationId },
       select: {
@@ -50,31 +53,48 @@ export async function GET(request: NextRequest) {
     });
     const savedGrantIds = new Set(savedGrants.map((sg) => sg.grantId));
 
-    // Build search params
-    let grants: GrantsGovOpportunity[];
-    
-    if (featured || (!keyword && organization.programAreas.length === 0)) {
-      // Get general grants for nonprofits if no specific criteria
-      grants = await searchGrants({
-        eligibilities: organization.orgType ? undefined : ["25"], // 501c3 if no type specified
-        rows: 50,
-      });
-    } else {
-      // Build search params based on org profile
-      const baseParams = getSearchParamsForOrg(organization);
-      
-      if (keyword) {
-        baseParams.keyword = keyword;
-      }
-      
-      if (category) {
-        baseParams.fundingCategories = [category];
-      }
+    // Build search params from UI filters
+    const searchGrantParams: {
+      keyword?: string;
+      eligibilities?: string[];
+      fundingCategories?: string[];
+      rows?: number;
+    } = {
+      rows: 25,
+    };
 
-      grants = await searchGrants(baseParams);
+    if (keyword) {
+      searchGrantParams.keyword = keyword;
     }
 
-    // Calculate match scores and sort
+    // Use UI filter org type, or fall back to profile
+    const effectiveOrgType = orgTypeParam || organization.orgType;
+    if (effectiveOrgType && ELIGIBILITY_MAPPING[effectiveOrgType]) {
+      searchGrantParams.eligibilities = ELIGIBILITY_MAPPING[effectiveOrgType];
+    }
+
+    // Use UI filter areas, or fall back to profile
+    const effectiveAreas = areasParam 
+      ? areasParam.split(",").filter(Boolean)
+      : organization.programAreas;
+    
+    if (effectiveAreas.length > 0) {
+      const categories = new Set<string>();
+      effectiveAreas.forEach((area) => {
+        const cats = CATEGORY_MAPPING[area];
+        if (cats) cats.forEach((c) => categories.add(c));
+      });
+      if (categories.size > 0) {
+        searchGrantParams.fundingCategories = Array.from(categories);
+      }
+    }
+
+    console.log("Search params:", JSON.stringify(searchGrantParams));
+
+    // Search grants
+    const grants = await searchGrants(searchGrantParams);
+
+    // Calculate match scores using profile (not UI filters)
     const grantsWithScores: GrantWithScore[] = grants
       .map((grant) => ({
         ...grant,
@@ -93,11 +113,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       grants: grantsWithScores,
       total: grantsWithScores.length,
-      profile: {
-        hasPrograms: organization.programAreas.length > 0,
-        hasOrgType: !!organization.orgType,
-        hasBudget: !!organization.budgetRange,
-      },
     });
   } catch (error) {
     console.error("Error searching grants:", error);
