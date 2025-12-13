@@ -102,6 +102,8 @@ export function KnowledgeBaseManager({
   });
 
   const selectCategory = (category: DocumentCategory) => {
+    // Clear files when switching categories
+    setFiles([]);
     setSelectedCategory(category.id);
     setSelectedType(category.types[0].type);
     setTimeout(() => {
@@ -198,18 +200,23 @@ export function KnowledgeBaseManager({
 
     setIsUploading(false);
     
-    const successCount = files.filter((f) => f.status === "success").length;
+    // Count successes from current state
+    const currentFiles = files;
+    const successCount = currentFiles.filter((f) => f.status !== "pending" && f.status !== "uploading").length;
+    
     if (successCount > 0) {
       toast({
         title: "Upload complete",
         description: `${successCount} file(s) uploaded and queued for indexing`,
       });
-      setTimeout(() => {
-        setFiles((prev) => prev.filter((f) => f.status !== "success"));
-        setSelectedCategory(null);
-        setSelectedType(null);
-        router.refresh();
-      }, 2000);
+      
+      // Clear successful files, reset state, and refresh page
+      setFiles((prev) => prev.filter((f) => f.status === "error"));
+      setSelectedCategory(null);
+      setSelectedType(null);
+      
+      // Force refresh the page data
+      router.refresh();
     }
   };
 
