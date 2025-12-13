@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/primitives/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { PageContainer } from "@/components/layouts/page-container";
+import { Check } from "lucide-react";
 
 const BUDGET_RANGES = [
   { value: "under_500k", label: "Under $500,000" },
@@ -19,6 +20,15 @@ const BUDGET_RANGES = [
   { value: "1m_2m", label: "$1 million - $2 million" },
   { value: "2m_5m", label: "$2 million - $5 million" },
   { value: "over_5m", label: "Over $5 million" },
+];
+
+const ORG_TYPES = [
+  { value: "501c3", label: "501(c)(3) Nonprofit" },
+  { value: "nonprofit", label: "Other Nonprofit" },
+  { value: "government", label: "Government Agency" },
+  { value: "tribal", label: "Tribal Organization" },
+  { value: "education", label: "Educational Institution" },
+  { value: "small_business", label: "Small Business" },
 ];
 
 const PROGRAM_AREAS = [
@@ -34,7 +44,17 @@ const PROGRAM_AREAS = [
   "Mental Health",
   "Disability Services",
   "Senior Services",
-  "Other",
+];
+
+const FUNDING_RANGES = [
+  { value: "10000", label: "$10,000" },
+  { value: "25000", label: "$25,000" },
+  { value: "50000", label: "$50,000" },
+  { value: "100000", label: "$100,000" },
+  { value: "250000", label: "$250,000" },
+  { value: "500000", label: "$500,000" },
+  { value: "1000000", label: "$1 million" },
+  { value: "5000000", label: "$5 million+" },
 ];
 
 export default function OnboardingPage() {
@@ -43,17 +63,20 @@ export default function OnboardingPage() {
     name: "",
     ein: "",
     mission: "",
+    orgType: "",
     geography: "",
     budgetRange: "",
     populationsServed: "",
     programAreas: [] as string[],
+    fundingMin: "",
+    fundingMax: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { update } = useSession();
   const { toast } = useToast();
 
-  const totalSteps = 3;
+  const totalSteps = 4;
   const progress = (step / totalSteps) * 100;
 
   const handleNext = () => {
@@ -61,6 +84,14 @@ export default function OnboardingPage() {
       toast({
         title: "Required field",
         description: "Please enter your organization name",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (step === 2 && !formData.orgType) {
+      toast({
+        title: "Required field",
+        description: "Please select your organization type",
         variant: "destructive",
       });
       return;
@@ -73,12 +104,25 @@ export default function OnboardingPage() {
   };
 
   const handleSubmit = async () => {
+    if (formData.programAreas.length === 0) {
+      toast({
+        title: "Required field",
+        description: "Please select at least one program area",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response = await fetch("/api/organizations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          fundingMin: formData.fundingMin ? parseInt(formData.fundingMin) : null,
+          fundingMax: formData.fundingMax ? parseInt(formData.fundingMax) : null,
+        }),
       });
 
       const data = await response.json();
@@ -91,10 +135,10 @@ export default function OnboardingPage() {
 
       toast({
         title: "Organization created",
-        description: "Let's set up your knowledge base!",
+        description: "Welcome to Brightway! Let's find you some grants.",
       });
 
-      router.push("/knowledge-base");
+      router.push("/dashboard");
     } catch (error) {
       toast({
         title: "Error",
@@ -121,7 +165,7 @@ export default function OnboardingPage() {
         <div className="text-center mb-8">
           <h1 className="text-title">Set up your organization</h1>
           <p className="text-text-secondary mt-2">
-            Tell us about your nonprofit so we can personalize your experience
+            Tell us about your nonprofit so we can match you with relevant grants
           </p>
         </div>
 
@@ -131,13 +175,15 @@ export default function OnboardingPage() {
           <CardHeader>
             <CardTitle>
               {step === 1 && "Basic Information"}
-              {step === 2 && "Organization Details"}
+              {step === 2 && "Organization Type"}
               {step === 3 && "Programs & Focus Areas"}
+              {step === 4 && "Funding Preferences"}
             </CardTitle>
             <CardDescription>
               {step === 1 && "Let's start with the essentials"}
-              {step === 2 && "Help us understand your organization better"}
+              {step === 2 && "Help us understand your eligibility"}
               {step === 3 && "What areas does your organization focus on?"}
+              {step === 4 && "What kind of grants are you looking for?"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -161,7 +207,7 @@ export default function OnboardingPage() {
                     placeholder="XX-XXXXXXX"
                   />
                   <p className="text-xs text-text-tertiary">
-                    Your Employer Identification Number helps us verify nonprofit status
+                    Your Employer Identification Number helps verify nonprofit status
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -179,6 +225,31 @@ export default function OnboardingPage() {
 
             {step === 2 && (
               <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="orgType">Organization Type *</Label>
+                  <p className="text-sm text-text-secondary mb-2">
+                    This determines which grants you&apos;re eligible for
+                  </p>
+                  <div className="grid gap-2">
+                    {ORG_TYPES.map((type) => (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, orgType: type.value })}
+                        className={`flex items-center justify-between p-3 rounded-lg border text-left transition-colors ${
+                          formData.orgType === type.value
+                            ? "border-brand bg-brand-light"
+                            : "border-border hover:border-text-tertiary"
+                        }`}
+                      >
+                        <span className="font-medium">{type.label}</span>
+                        {formData.orgType === type.value && (
+                          <Check className="h-4 w-4 text-brand" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="geography">Geographic Focus</Label>
                   <Input
@@ -206,7 +277,34 @@ export default function OnboardingPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-4">
+                <p className="text-sm text-text-secondary">
+                  Select all that apply. This helps us match you with relevant grants. *
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {PROGRAM_AREAS.map((area) => (
+                    <button
+                      key={area}
+                      type="button"
+                      onClick={() => toggleProgramArea(area)}
+                      className={`flex items-center justify-between p-3 rounded-lg border text-left text-sm transition-colors ${
+                        formData.programAreas.includes(area)
+                          ? "border-brand bg-brand-light"
+                          : "border-border hover:border-text-tertiary"
+                      }`}
+                    >
+                      <span>{area}</span>
+                      {formData.programAreas.includes(area) && (
+                        <Check className="h-4 w-4 text-brand flex-shrink-0" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <div className="space-y-2 pt-4">
                   <Label htmlFor="populations">Populations Served</Label>
                   <Textarea
                     id="populations"
@@ -214,30 +312,63 @@ export default function OnboardingPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, populationsServed: e.target.value })
                     }
-                    placeholder="e.g., Low-income families, youth ages 14-24, seniors"
+                    placeholder="e.g., Low-income families, youth ages 14-24, seniors, immigrants"
                     rows={3}
                   />
                 </div>
               </div>
             )}
 
-            {step === 3 && (
+            {step === 4 && (
               <div className="space-y-4">
                 <p className="text-sm text-text-secondary">
-                  Select all that apply. This helps us match you with relevant grants.
+                  Help us find grants that match your capacity and goals.
                 </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {PROGRAM_AREAS.map((area) => (
-                    <Button
-                      key={area}
-                      type="button"
-                      variant={formData.programAreas.includes(area) ? "primary" : "secondary"}
-                      className="justify-start h-auto py-2 px-3"
-                      onClick={() => toggleProgramArea(area)}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fundingMin">Minimum Grant Size</Label>
+                    <Select
+                      value={formData.fundingMin}
+                      onValueChange={(value) => setFormData({ ...formData, fundingMin: value })}
                     >
-                      {area}
-                    </Button>
-                  ))}
+                      <SelectTrigger>
+                        <SelectValue placeholder="No minimum" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FUNDING_RANGES.slice(0, -1).map((range) => (
+                          <SelectItem key={range.value} value={range.value}>
+                            {range.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="fundingMax">Maximum Grant Size</Label>
+                    <Select
+                      value={formData.fundingMax}
+                      onValueChange={(value) => setFormData({ ...formData, fundingMax: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="No maximum" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FUNDING_RANGES.map((range) => (
+                          <SelectItem key={range.value} value={range.value}>
+                            {range.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="bg-surface-subtle rounded-lg p-4 mt-4">
+                  <h4 className="font-medium text-sm mb-2">What happens next?</h4>
+                  <ul className="text-sm text-text-secondary space-y-1">
+                    <li>• We&apos;ll search for grants matching your profile</li>
+                    <li>• New opportunities will appear on your dashboard</li>
+                    <li>• You can enable weekly email digests in settings</li>
+                  </ul>
                 </div>
               </div>
             )}

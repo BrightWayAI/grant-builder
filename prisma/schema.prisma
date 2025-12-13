@@ -16,7 +16,10 @@ model Organization {
   budgetRange     String?
   populationsServed String?
   programAreas    String[]
-  orgType         String?    // e.g., "501c3", "government", "tribal"
+  orgType         String?    // e.g., "501c3", "government", "tribal", "education"
+  fundingMin      Int?       // Minimum grant amount interested in
+  fundingMax      Int?       // Maximum grant amount interested in
+  grantTypes      String[]   // e.g., ["federal", "state", "foundation", "corporate"]
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   

@@ -4,14 +4,15 @@ import prisma from "@/lib/db";
 import { Button } from "@/components/primitives/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/primitives/card";
 import { Badge } from "@/components/primitives/badge";
-import { FileText, FolderOpen, Plus, ArrowRight } from "lucide-react";
+import { FileText, FolderOpen, Plus, ArrowRight, Compass, Sparkles } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { MatchingGrantsSection } from "@/components/dashboard/matching-grants";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user?.organizationId) return null;
 
-  const [documents, proposals, organization] = await Promise.all([
+  const [documents, proposals, organization, savedGrantsCount] = await Promise.all([
     prisma.document.findMany({
       where: { organizationId: user.organizationId },
       orderBy: { createdAt: "desc" },
@@ -25,6 +26,9 @@ export default async function DashboardPage() {
     prisma.organization.findUnique({
       where: { id: user.organizationId },
     }),
+    prisma.savedGrant.count({
+      where: { organizationId: user.organizationId },
+    }),
   ]);
 
   const documentCount = await prisma.document.count({
@@ -34,6 +38,10 @@ export default async function DashboardPage() {
   const indexedCount = await prisma.document.count({
     where: { organizationId: user.organizationId, status: "INDEXED" },
   });
+
+  const hasGrantCriteria = organization && (
+    organization.programAreas.length > 0 || organization.orgType
+  );
 
   return (
     <div className="space-y-8">
@@ -50,19 +58,18 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* Stats Cards */}
+      <div className="grid md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-medium">Knowledge Base</CardTitle>
-            <FolderOpen className="h-5 w-5 text-text-tertiary" />
+            <CardTitle className="text-lg font-medium">Grant Opportunities</CardTitle>
+            <Compass className="h-5 w-5 text-text-tertiary" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-display">{documentCount}</div>
-            <p className="text-sm text-text-secondary">
-              {indexedCount} indexed, {documentCount - indexedCount} processing
-            </p>
-            <Link href="/knowledge-base" className="text-brand text-sm hover:underline mt-2 inline-flex items-center">
-              Manage documents <ArrowRight className="h-3 w-3 ml-1" />
+            <div className="text-3xl font-bold font-display">{savedGrantsCount}</div>
+            <p className="text-sm text-text-secondary">saved to watchlist</p>
+            <Link href="/discover" className="text-brand text-sm hover:underline mt-2 inline-flex items-center">
+              Discover grants <ArrowRight className="h-3 w-3 ml-1" />
             </Link>
           </CardContent>
         </Card>
@@ -83,8 +90,63 @@ export default async function DashboardPage() {
             </Link>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg font-medium">Knowledge Base</CardTitle>
+            <FolderOpen className="h-5 w-5 text-text-tertiary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold font-display">{documentCount}</div>
+            <p className="text-sm text-text-secondary">
+              {indexedCount} indexed, {documentCount - indexedCount} processing
+            </p>
+            <Link href="/knowledge-base" className="text-brand text-sm hover:underline mt-2 inline-flex items-center">
+              Manage documents <ArrowRight className="h-3 w-3 ml-1" />
+            </Link>
+          </CardContent>
+        </Card>
       </div>
 
+      {/* Matching Grants Section */}
+      {hasGrantCriteria ? (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-brand" />
+                Recommended Grants
+              </CardTitle>
+              <CardDescription>
+                Opportunities matching your organization&apos;s profile
+              </CardDescription>
+            </div>
+            <Link href="/discover">
+              <Button variant="secondary" size="sm">
+                View All
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <MatchingGrantsSection />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-dashed">
+          <CardContent className="py-8 text-center">
+            <Compass className="h-12 w-12 text-text-disabled mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">Complete your profile to see matching grants</h3>
+            <p className="text-text-secondary mb-4 max-w-md mx-auto">
+              Add your program areas and organization type in settings to get personalized grant recommendations.
+            </p>
+            <Link href="/settings">
+              <Button variant="secondary">Update Profile</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Setup Knowledge Base CTA */}
       {documentCount === 0 && (
         <Card className="border-dashed">
           <CardContent className="py-8 text-center">
@@ -100,6 +162,7 @@ export default async function DashboardPage() {
         </Card>
       )}
 
+      {/* Recent Proposals */}
       {proposals.length > 0 && (
         <Card>
           <CardHeader>
@@ -131,6 +194,7 @@ export default async function DashboardPage() {
         </Card>
       )}
 
+      {/* Recent Documents */}
       {documents.length > 0 && (
         <Card>
           <CardHeader>

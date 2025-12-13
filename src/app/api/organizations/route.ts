@@ -10,7 +10,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, ein, mission, geography, budgetRange, populationsServed, programAreas } = body;
+    const {
+      name,
+      ein,
+      mission,
+      geography,
+      budgetRange,
+      populationsServed,
+      programAreas,
+      orgType,
+      fundingMin,
+      fundingMax,
+    } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -28,9 +39,20 @@ export async function POST(request: NextRequest) {
         budgetRange: budgetRange || null,
         populationsServed: populationsServed || null,
         programAreas: programAreas || [],
+        orgType: orgType || null,
+        fundingMin: fundingMin || null,
+        fundingMax: fundingMax || null,
         users: {
           connect: { id: session.user.id },
         },
+      },
+    });
+
+    // Enable grant digest by default for new organizations
+    await prisma.grantDigestPreference.create({
+      data: {
+        organizationId: organization.id,
+        enabled: true,
       },
     });
 
