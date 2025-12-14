@@ -24,75 +24,27 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Scroll-triggered animation wrapper
-function ScrollReveal({ 
-  children, 
-  className,
-  delay = 0,
-}: { 
-  children: ReactNode; 
-  className?: string;
-  delay?: number;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [hasMounted, setHasMounted] = useState(false);
-
-  // Track mount state
+// Hook to set up global scroll observer
+function useScrollAnimations() {
   useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hasMounted) return;
-    
-    const currentRef = ref.current;
-    if (!currentRef) return;
-
-    // Check if already in view on mount
-    const rect = currentRef.getBoundingClientRect();
-    const isInView = rect.top < window.innerHeight && rect.bottom > 0;
-    
-    if (isInView) {
-      setTimeout(() => setIsVisible(true), delay);
-      return;
-    }
-
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => setIsVisible(true), delay);
-          observer.disconnect();
-        }
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+          }
+        });
       },
-      { threshold: 0.1, rootMargin: "50px 0px 0px 0px" }
+      { threshold: 0.15, rootMargin: "0px 0px -50px 0px" }
     );
 
-    observer.observe(currentRef);
+    // Observe all elements with scroll-animate class
+    document.querySelectorAll(".scroll-animate").forEach((el) => {
+      observer.observe(el);
+    });
+
     return () => observer.disconnect();
-  }, [delay, hasMounted]);
-
-  // Before hydration, render visible to avoid flash
-  if (!hasMounted) {
-    return (
-      <div className={className}>
-        {children}
-      </div>
-    );
-  }
-
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "transition-all duration-700 ease-out",
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12",
-        className
-      )}
-    >
-      {children}
-    </div>
-  );
+  }, []);
 }
 
 // Typewriter effect for hero
@@ -258,40 +210,44 @@ function HowItWorks() {
   return (
     <section className="py-20 px-6 bg-surface-subtle">
       <div className="max-w-5xl mx-auto">
-        <ScrollReveal>
-          <div className="text-center mb-12">
-            <Badge variant="outline" className="mb-4">How It Works</Badge>
-            <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">
-              From RFP to draft in four steps
-            </h2>
-            <p className="text-text-secondary text-lg">
-              No prompt engineering. No copy-pasting. Just upload and generate.
-            </p>
-          </div>
-        </ScrollReveal>
+        <div className="text-center mb-12 scroll-animate float-up">
+          <Badge variant="outline" className="mb-4">How It Works</Badge>
+          <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">
+            From RFP to draft in four steps
+          </h2>
+          <p className="text-text-secondary text-lg">
+            No prompt engineering. No copy-pasting. Just upload and generate.
+          </p>
+        </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {steps.map((step, index) => {
             const Icon = step.icon;
             return (
-              <ScrollReveal key={index} delay={index * 100}>
-                <div className="relative p-6 rounded-xl bg-surface border border-border hover:border-brand/30 hover:shadow-lg transition-all group">
-                  {/* Step number */}
-                  <div className="absolute -top-3 -left-3 h-8 w-8 rounded-full bg-brand text-white flex items-center justify-center text-sm font-bold shadow-lg">
-                    {step.step}
-                  </div>
-                  
-                  {/* Icon */}
-                  <div className="h-12 w-12 rounded-xl bg-brand-light flex items-center justify-center mb-4 group-hover:bg-brand transition-colors">
-                    <Icon className="h-6 w-6 text-brand group-hover:text-white transition-colors" />
-                  </div>
-                  
-                  <h3 className="font-semibold text-lg mb-2">{step.title}</h3>
-                  <p className="text-text-secondary text-sm leading-relaxed">
-                    {step.description}
-                  </p>
+              <div 
+                key={index} 
+                className={cn(
+                  "relative p-6 rounded-xl bg-surface border border-border hover:border-brand/30 hover:shadow-lg transition-all group scroll-animate float-up",
+                  index === 1 && "delay-100",
+                  index === 2 && "delay-200",
+                  index === 3 && "delay-300"
+                )}
+              >
+                {/* Step number */}
+                <div className="absolute -top-3 -left-3 h-8 w-8 rounded-full bg-brand text-white flex items-center justify-center text-sm font-bold shadow-lg">
+                  {step.step}
                 </div>
-              </ScrollReveal>
+                
+                {/* Icon */}
+                <div className="h-12 w-12 rounded-xl bg-brand-light flex items-center justify-center mb-4 group-hover:bg-brand transition-colors">
+                  <Icon className="h-6 w-6 text-brand group-hover:text-white transition-colors" />
+                </div>
+                
+                <h3 className="font-semibold text-lg mb-2">{step.title}</h3>
+                <p className="text-text-secondary text-sm leading-relaxed">
+                  {step.description}
+                </p>
+              </div>
             );
           })}
         </div>
@@ -324,40 +280,42 @@ function FeatureSection({
           reverse ? "lg:flex-row-reverse" : "lg:flex-row"
         )}>
           {/* Text content */}
-          <div className="w-full lg:w-1/2">
-            <ScrollReveal>
-              {badge && (
-                <Badge variant="outline" className="mb-4">{badge}</Badge>
-              )}
-              <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
-                {title}
-              </h2>
-              <p className="text-text-secondary text-lg mb-6">
-                {description}
-              </p>
-              <ul className="space-y-3">
-                {bullets.map((bullet, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <div className="h-6 w-6 rounded-full bg-brand/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="h-4 w-4 text-brand" />
-                    </div>
-                    <span className="text-text-primary">{bullet}</span>
-                  </li>
-                ))}
-              </ul>
-            </ScrollReveal>
+          <div className={cn(
+            "w-full lg:w-1/2 scroll-animate",
+            reverse ? "float-right" : "float-left"
+          )}>
+            {badge && (
+              <Badge variant="outline" className="mb-4">{badge}</Badge>
+            )}
+            <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
+              {title}
+            </h2>
+            <p className="text-text-secondary text-lg mb-6">
+              {description}
+            </p>
+            <ul className="space-y-3">
+              {bullets.map((bullet, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <div className="h-6 w-6 rounded-full bg-brand/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="h-4 w-4 text-brand" />
+                  </div>
+                  <span className="text-text-primary">{bullet}</span>
+                </li>
+              ))}
+            </ul>
           </div>
           
           {/* Mockup */}
-          <div className="w-full lg:w-1/2">
-            <ScrollReveal delay={200}>
-              <div className="relative">
-                <BrowserMockup>
-                  {mockup}
-                </BrowserMockup>
-                <div className="absolute -z-10 inset-0 -m-4 bg-gradient-to-r from-brand/20 to-purple-500/20 rounded-2xl blur-2xl opacity-40" />
-              </div>
-            </ScrollReveal>
+          <div className={cn(
+            "w-full lg:w-1/2 scroll-animate delay-200",
+            reverse ? "float-left" : "float-right"
+          )}>
+            <div className="relative">
+              <BrowserMockup>
+                {mockup}
+              </BrowserMockup>
+              <div className="absolute -z-10 inset-0 -m-4 bg-gradient-to-r from-brand/20 to-purple-500/20 rounded-2xl blur-2xl opacity-40" />
+            </div>
           </div>
         </div>
       </div>
@@ -590,27 +548,32 @@ function WhyBrightway() {
   return (
     <section className="py-24 px-6 bg-brand text-white">
       <div className="max-w-5xl mx-auto text-center">
-        <ScrollReveal>
+        <div className="scroll-animate float-up">
           <Badge variant="outline" className="mb-4 border-white/30 text-white">Why Brightway</Badge>
           <h2 className="text-4xl md:text-5xl font-display font-bold mb-16">
             Stop starting from scratch
           </h2>
-        </ScrollReveal>
+        </div>
         
         <div className="grid md:grid-cols-3 gap-8">
           {benefits.map((benefit, index) => {
             const Icon = benefit.icon;
             return (
-              <ScrollReveal key={index} delay={index * 100}>
-                <div className="text-center">
-                  <div className="h-16 w-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-4">
-                    <Icon className="h-8 w-8" />
-                  </div>
-                  <div className="text-5xl font-bold font-display mb-2">{benefit.stat}</div>
-                  <div className="text-lg font-medium mb-2">{benefit.label}</div>
-                  <p className="text-white/70">{benefit.description}</p>
+              <div 
+                key={index} 
+                className={cn(
+                  "text-center scroll-animate float-up",
+                  index === 1 && "delay-100",
+                  index === 2 && "delay-200"
+                )}
+              >
+                <div className="h-16 w-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-4">
+                  <Icon className="h-8 w-8" />
                 </div>
-              </ScrollReveal>
+                <div className="text-5xl font-bold font-display mb-2">{benefit.stat}</div>
+                <div className="text-lg font-medium mb-2">{benefit.label}</div>
+                <p className="text-white/70">{benefit.description}</p>
+              </div>
             );
           })}
         </div>
@@ -621,6 +584,9 @@ function WhyBrightway() {
 
 export default function Home() {
   const [scrollY, setScrollY] = useState(0);
+
+  // Set up scroll animations
+  useScrollAnimations();
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -832,42 +798,41 @@ export default function Home() {
       {/* Principles */}
       <section className="py-24 px-6 bg-surface">
         <div className="max-w-4xl mx-auto">
-          <ScrollReveal>
-            <div className="text-center mb-16">
-              <Badge variant="outline" className="mb-4">Our Principles</Badge>
-              <h2 className="text-4xl font-display font-bold mb-4">
-                AI that writes with integrity
-              </h2>
-              <p className="text-text-secondary text-lg">
-                Every proposal Brightway generates follows these rules
-              </p>
-            </div>
-          </ScrollReveal>
+          <div className="text-center mb-16 scroll-animate float-up">
+            <Badge variant="outline" className="mb-4">Our Principles</Badge>
+            <h2 className="text-4xl font-display font-bold mb-4">
+              AI that writes with integrity
+            </h2>
+            <p className="text-text-secondary text-lg">
+              Every proposal Brightway generates follows these rules
+            </p>
+          </div>
           
           <div className="grid sm:grid-cols-2 gap-4">
             {principles.map((principle, index) => (
-              <ScrollReveal key={index} delay={index * 50}>
-                <div 
-                  className={cn(
-                    "flex items-center gap-3 p-4 rounded-lg",
-                    principle.negative 
-                      ? "bg-red-50 text-red-900" 
-                      : "bg-green-50 text-green-900"
+              <div 
+                key={index}
+                className={cn(
+                  "flex items-center gap-3 p-4 rounded-lg scroll-animate float-up",
+                  principle.negative 
+                    ? "bg-red-50 text-red-900" 
+                    : "bg-green-50 text-green-900",
+                  index >= 2 && "delay-100",
+                  index >= 4 && "delay-200"
+                )}
+              >
+                <div className={cn(
+                  "p-1 rounded-full flex-shrink-0",
+                  principle.negative ? "bg-red-200" : "bg-green-200"
+                )}>
+                  {principle.negative ? (
+                    <span className="block h-4 w-4 text-center leading-4 text-red-600 font-bold">×</span>
+                  ) : (
+                    <Check className="h-4 w-4 text-green-600" />
                   )}
-                >
-                  <div className={cn(
-                    "p-1 rounded-full flex-shrink-0",
-                    principle.negative ? "bg-red-200" : "bg-green-200"
-                  )}>
-                    {principle.negative ? (
-                      <span className="block h-4 w-4 text-center leading-4 text-red-600 font-bold">×</span>
-                    ) : (
-                      <Check className="h-4 w-4 text-green-600" />
-                    )}
-                  </div>
-                  <span className="font-medium">{principle.text}</span>
                 </div>
-              </ScrollReveal>
+                <span className="font-medium">{principle.text}</span>
+              </div>
             ))}
           </div>
         </div>
@@ -876,44 +841,38 @@ export default function Home() {
       {/* FAQ */}
       <section className="py-24 px-6 bg-surface-subtle">
         <div className="max-w-3xl mx-auto">
-          <ScrollReveal>
-            <div className="text-center mb-16">
-              <Badge variant="outline" className="mb-4">FAQ</Badge>
-              <h2 className="text-4xl font-display font-bold">
-                Questions & Answers
-              </h2>
-            </div>
-          </ScrollReveal>
+          <div className="text-center mb-16 scroll-animate float-up">
+            <Badge variant="outline" className="mb-4">FAQ</Badge>
+            <h2 className="text-4xl font-display font-bold">
+              Questions & Answers
+            </h2>
+          </div>
           
-          <ScrollReveal delay={100}>
-            <div>
-              {faqs.map((faq, index) => (
-                <FAQItem key={index} question={faq.question} answer={faq.answer} />
-              ))}
-            </div>
-          </ScrollReveal>
+          <div className="scroll-animate float-up delay-100">
+            {faqs.map((faq, index) => (
+              <FAQItem key={index} question={faq.question} answer={faq.answer} />
+            ))}
+          </div>
         </div>
       </section>
 
       {/* CTA */}
       <section className="py-24 px-6 bg-surface">
-        <ScrollReveal>
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
-              Stop spending weeks on proposals
-            </h2>
-            <p className="text-xl text-text-secondary mb-10 max-w-2xl mx-auto">
-              Join nonprofit teams who are writing better grants in less time. 
-              Start free, no credit card required.
-            </p>
-            <Link href="/signup">
-              <Button size="lg" className="text-lg px-10 h-14">
-                Start Writing Free
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-            </Link>
-          </div>
-        </ScrollReveal>
+        <div className="max-w-4xl mx-auto text-center scroll-animate float-up">
+          <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
+            Stop spending weeks on proposals
+          </h2>
+          <p className="text-xl text-text-secondary mb-10 max-w-2xl mx-auto">
+            Join nonprofit teams who are writing better grants in less time. 
+            Start free, no credit card required.
+          </p>
+          <Link href="/signup">
+            <Button size="lg" className="text-lg px-10 h-14">
+              Start Writing Free
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+          </Link>
+        </div>
       </section>
 
       {/* Footer */}

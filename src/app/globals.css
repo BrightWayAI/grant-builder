@@ -215,6 +215,91 @@
   }
 }
 
+/* Scroll-triggered float-in animations */
+@keyframes float-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes float-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-float-in-up {
+  animation: float-in-up 0.8s ease-out forwards;
+}
+
+.animate-float-in-left {
+  animation: float-in-left 0.8s ease-out forwards;
+}
+
+.animate-float-in-right {
+  animation: float-in-right 0.8s ease-out forwards;
+}
+
+/* Initial hidden state for scroll animations */
+.scroll-animate {
+  opacity: 0;
+}
+
+.scroll-animate.is-visible {
+  opacity: 1;
+}
+
+.scroll-animate.float-up {
+  transform: translateY(40px);
+}
+
+.scroll-animate.float-up.is-visible {
+  animation: float-in-up 0.8s ease-out forwards;
+}
+
+.scroll-animate.float-left {
+  transform: translateX(40px);
+}
+
+.scroll-animate.float-left.is-visible {
+  animation: float-in-left 0.8s ease-out forwards;
+}
+
+.scroll-animate.float-right {
+  transform: translateX(-40px);
+}
+
+.scroll-animate.float-right.is-visible {
+  animation: float-in-right 0.8s ease-out forwards;
+}
+
+/* Staggered delays */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
