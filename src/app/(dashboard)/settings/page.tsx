@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { OrganizationSettings } from "@/components/settings/organization-settings";
 import { GrantDigestSettings } from "@/components/settings/grant-digest-settings";
 import { TeamSettings } from "@/components/settings/team-settings";
+import { GeographicFocus } from "@/lib/geography";
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
@@ -14,6 +15,12 @@ export default async function SettingsPage() {
   });
 
   if (!organization) return null;
+
+  // Cast geographicFocus from Prisma's JsonValue to our typed interface
+  const orgWithTypedGeo = {
+    ...organization,
+    geographicFocus: organization.geographicFocus as GeographicFocus | null,
+  };
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -30,7 +37,7 @@ export default async function SettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <OrganizationSettings organization={organization} />
+          <OrganizationSettings organization={orgWithTypedGeo} />
         </CardContent>
       </Card>
 

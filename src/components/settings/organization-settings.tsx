@@ -8,6 +8,8 @@ import { Label } from "@/components/primitives/label";
 import { Textarea } from "@/components/primitives/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/primitives/select";
 import { useToast } from "@/components/ui/use-toast";
+import { GeographicFocusSelector } from "./geographic-focus-selector";
+import { GeographicFocus } from "@/lib/geography";
 
 const BUDGET_RANGES = [
   { value: "under_500k", label: "Under $500,000" },
@@ -23,6 +25,7 @@ interface Organization {
   ein: string | null;
   mission: string | null;
   geography: string | null;
+  geographicFocus: GeographicFocus | null;
   budgetRange: string | null;
   populationsServed: string | null;
 }
@@ -32,7 +35,7 @@ export function OrganizationSettings({ organization }: { organization: Organizat
     name: organization.name,
     ein: organization.ein || "",
     mission: organization.mission || "",
-    geography: organization.geography || "",
+    geographicFocus: organization.geographicFocus || { countries: [], states: [], regions: [] },
     budgetRange: organization.budgetRange || "",
     populationsServed: organization.populationsServed || "",
   });
@@ -105,12 +108,10 @@ export function OrganizationSettings({ organization }: { organization: Organizat
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="geography">Geographic Focus</Label>
-        <Input
-          id="geography"
-          value={formData.geography}
-          onChange={(e) => setFormData({ ...formData, geography: e.target.value })}
-          placeholder="e.g., San Francisco Bay Area, National"
+        <Label>Geographic Focus</Label>
+        <GeographicFocusSelector
+          value={formData.geographicFocus}
+          onChange={(value) => setFormData({ ...formData, geographicFocus: value })}
         />
       </div>
 

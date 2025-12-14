@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireOrganization } from "@/lib/auth";
 import prisma from "@/lib/db";
+import { getSubscriptionInfo, incrementProposalCount } from "@/lib/subscription";
 
 export async function POST(request: NextRequest) {
   try {
     const { organizationId } = await requireOrganization();
+
+    // Check subscription limits
+    const subscription = await getSubscriptionInfo(organizationId);
+    if (!subscription.canCreateProposal) {
+      return NextResponse.json(
+        { 
+          error: "Proposal limit reached",
+          code: subscription.isTrialUsed ? "TRIAL_ENDED" : "LIMIT_REACHED",
+          needsPayment: subscription.needsPayment,
+        }, 
+        { status: 403 }
+      );
+    }
 
     const body = await request.json();
     const {
@@ -61,6 +75,9 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Increment proposal count for subscription tracking
+    await incrementProposalCount(organizationId);
 
     return NextResponse.json(proposal);
   } catch (error) {

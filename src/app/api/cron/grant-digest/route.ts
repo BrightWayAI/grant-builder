@@ -82,15 +82,10 @@ export async function POST(request: NextRequest) {
         // Format for email
         const emailGrants = scoredGrants.map((grant) => ({
           title: grant.title,
-          funder: grant.agency,
-          deadline: grant.closeDate
-            ? new Date(grant.closeDate).toLocaleDateString()
-            : null,
-          amount: grant.awardCeiling
-            ? `Up to $${grant.awardCeiling.toLocaleString()}`
-            : "TBD",
+          funderName: grant.agency,
+          deadline: grant.closeDate ? new Date(grant.closeDate) : null,
+          awardCeiling: grant.awardCeiling || null,
           matchScore: grant.matchScore,
-          url: `https://www.grants.gov/search-results-detail/${grant.id}`,
         }));
 
         await sendGrantDigest({

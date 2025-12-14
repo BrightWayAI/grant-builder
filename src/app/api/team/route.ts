@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/db";
+import { sendTeamInviteEmail } from "@/lib/email";
 import { z } from "zod";
 
 // GET - List team members
@@ -103,6 +104,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ member: updatedUser, invited: false });
     }
 
+    // Get organization name for the email
+    const organization = await prisma.organization.findUnique({
+      where: { id: user.organizationId },
+      select: { name: true },
+    });
+
     // Create new user with pending invite (they'll set password on first login)
     const newUser = await prisma.user.create({
       data: {
@@ -119,7 +126,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // TODO: Send invitation email
+    // Send invitation email
+    try {
+      await sendTeamInviteEmail({
+        to: email,
+        inviterName: user.name || user.email,
+        organizationName: organization?.name || "your organization",
+        role,
+      });
+    } catch (emailError) {
+      console.error("Failed to send invite email:", emailError);
+      // Don't fail the request if email fails
+    }
 
     return NextResponse.json({ member: newUser, invited: true }, { status: 201 });
   } catch (error) {

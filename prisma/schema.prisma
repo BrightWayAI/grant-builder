@@ -12,7 +12,8 @@ model Organization {
   name            String
   ein             String?
   mission         String?    @db.Text
-  geography       String?
+  geography       String?    // Deprecated - use geographicFocus
+  geographicFocus Json?      // Structured: { countries: string[], states: string[], regions: string[] }
   budgetRange     String?
   populationsServed String?
   programAreas    String[]
@@ -20,6 +21,16 @@ model Organization {
   fundingMin      Int?       // Minimum grant amount interested in
   fundingMax      Int?       // Maximum grant amount interested in
   grantTypes      String[]   // e.g., ["federal", "state", "foundation", "corporate"]
+  
+  // Stripe subscription fields
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  stripePriceId        String?
+  stripeCurrentPeriodEnd DateTime?
+  subscriptionStatus   SubscriptionStatus @default(TRIAL)
+  proposalsUsedThisMonth Int     @default(0)
+  proposalResetDate    DateTime?
+  
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   
@@ -28,6 +39,14 @@ model Organization {
   proposals       Proposal[]
   savedGrants     SavedGrant[]
   digestPreference GrantDigestPreference?
+}
+
+enum SubscriptionStatus {
+  TRIAL           // Free trial (1 proposal)
+  ACTIVE          // Paid subscription active
+  PAST_DUE        // Payment failed, grace period
+  CANCELED        // Subscription canceled
+  UNPAID          // Multiple payment failures
 }
 
 model User {
