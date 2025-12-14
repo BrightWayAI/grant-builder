@@ -80,11 +80,22 @@ export default function BillingPage() {
         body: JSON.stringify({ plan, seats: plan === "teams" ? 3 : 1 }),
       });
       const data = await res.json();
+      
+      if (!res.ok) {
+        console.error("Checkout error:", data.error);
+        alert(data.error || "Failed to start checkout. Please try again.");
+        return;
+      }
+      
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        console.error("No checkout URL returned:", data);
+        alert("Failed to create checkout session. Please try again.");
       }
     } catch (error) {
       console.error("Failed to start checkout:", error);
+      alert("An error occurred. Please try again.");
     } finally {
       setUpgradeLoading(false);
     }

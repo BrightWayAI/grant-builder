@@ -24,26 +24,37 @@ export const stripe = {
   get webhooks() { return getStripe().webhooks; },
 };
 
+// Lazy-loaded to ensure env vars are available at runtime
+export function getPlanConfig(plan: "individual" | "teams" | "enterprise") {
+  const configs = {
+    individual: {
+      name: "Individual",
+      priceId: process.env.STRIPE_PRICE_INDIVIDUAL || process.env.STRIPE_PRICE_PERSONAL,
+      proposalsPerMonth: 5,
+      seats: 1,
+    },
+    teams: {
+      name: "Teams",
+      priceId: process.env.STRIPE_PRICE_TEAMS,
+      proposalsPerMonth: 15,
+      seats: null,
+    },
+    enterprise: {
+      name: "Enterprise",
+      priceId: process.env.STRIPE_PRICE_ENTERPRISE,
+      proposalsPerMonth: 50,
+      seats: null,
+    },
+  };
+  return configs[plan];
+}
+
+// Keep PLANS for backward compatibility but make it a getter
 export const PLANS = {
-  individual: {
-    name: "Individual",
-    priceId: process.env.STRIPE_PRICE_INDIVIDUAL || process.env.STRIPE_PRICE_PERSONAL!,
-    proposalsPerMonth: 5,
-    seats: 1,
-  },
-  teams: {
-    name: "Teams",
-    priceId: process.env.STRIPE_PRICE_TEAMS!,
-    proposalsPerMonth: 15, // per seat
-    seats: null, // unlimited
-  },
-  enterprise: {
-    name: "Enterprise",
-    priceId: process.env.STRIPE_PRICE_ENTERPRISE!,
-    proposalsPerMonth: 50,
-    seats: null, // unlimited
-  },
-} as const;
+  get individual() { return getPlanConfig("individual"); },
+  get teams() { return getPlanConfig("teams"); },
+  get enterprise() { return getPlanConfig("enterprise"); },
+};
 
 export type PlanType = keyof typeof PLANS;
 

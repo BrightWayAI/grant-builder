@@ -53,6 +53,17 @@ export async function POST(req: NextRequest) {
     const selectedPlan = PLANS[plan as PlanType];
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
+    // Validate price ID exists
+    if (!selectedPlan.priceId) {
+      console.error(`Missing price ID for plan: ${plan}`);
+      return NextResponse.json(
+        { error: `Price not configured for ${plan} plan` },
+        { status: 500 }
+      );
+    }
+
+    console.log(`Creating checkout for plan: ${plan}, priceId: ${selectedPlan.priceId}`);
+
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
