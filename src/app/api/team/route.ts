@@ -21,7 +21,6 @@ export async function GET() {
       select: {
         stripePriceId: true,
         subscriptionStatus: true,
-        subscriptionStatus: true,
         seatsPurchased: true,
         _count: { select: { users: true } },
       },
