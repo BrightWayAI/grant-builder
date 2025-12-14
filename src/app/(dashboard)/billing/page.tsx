@@ -42,7 +42,6 @@ export default function BillingPage() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [teamSeats, setTeamSeats] = useState(3);
-  const [lockIn, setLockIn] = useState(false);
 
   useEffect(() => {
     fetchSubscription();
@@ -87,7 +86,7 @@ export default function BillingPage() {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, seats, lockInDiscount: lockIn || subscription?.isBeta }),
+        body: JSON.stringify({ plan, seats, lockInDiscount: subscription?.isBeta }),
       });
       const data = await res.json();
       
@@ -167,50 +166,14 @@ export default function BillingPage() {
                   You have full access to all features during our beta period. Usage is free.
                 </p>
                 <ul className="text-sm text-purple-700 space-y-1">
-                  <li>• {subscription?.proposalLimit || 15} proposals per month</li>
-                  <li>• 1 GB knowledge base storage</li>
-                  <li>• 100 documents</li>
+                  <li>• {subscription?.proposalLimit || 5} proposals per month</li>
+                  <li>• 500 MB knowledge base storage</li>
+                  <li>• 50 documents</li>
                   <li>• Unlimited team members</li>
                 </ul>
               </div>
-              <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between gap-3">
-                <div className="text-sm text-blue-900">
-                  Lock in discounted pricing now (20% off first year). You won&apos;t be charged until checkout completes.
-                </div>
-                <div className="flex items-center gap-2 text-sm text-text-secondary">
-                  <span className="font-medium">Teams seats</span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setTeamSeats(Math.max(3, teamSeats - 1))}
-                      disabled={teamSeats <= 3}
-                    >
-                      -
-                    </Button>
-                    <span className="w-10 text-center font-medium">{teamSeats}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setTeamSeats(teamSeats + 1)}
-                    >
-                      +
-                    </Button>
-                    <span className="text-xs text-text-tertiary">Min 3 seats</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <Button onClick={() => handleUpgrade("individual")} disabled={upgradeLoading}>
-                  {upgradeLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  Lock in Individual - $49 → $39.20/mo (year 1)
-                </Button>
-                <Button variant="outline" onClick={() => handleUpgrade("teams")} disabled={upgradeLoading}>
-                  Lock in Teams - ${Math.max(3, teamSeats) * 29 * 0.8}/mo ({Math.max(3, teamSeats)} seats, year 1)
-                </Button>
-              </div>
-              <p className="text-xs text-text-tertiary">
-                Discounts applied via coupon HSdmrDjW (20% off first year). Seats not enforced during beta; enforcement begins on paid activation.
+              <p className="text-sm text-text-secondary">
+                You can purchase a plan anytime during beta and lock in 20% off your first year. Seats are not enforced while in beta.
               </p>
             </div>
           ) : status === "trial" ? (
@@ -386,12 +349,14 @@ export default function BillingPage() {
       <Card>
         <CardHeader>
           <CardTitle>Plan Comparison</CardTitle>
+          <CardDescription>Lock in 20% off your first year (applied at checkout)</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-4">
             <div className={`p-4 rounded-lg border ${subscription?.plan === "individual" ? "border-brand bg-brand/5" : "border-border"}`}>
               <h3 className="font-semibold mb-1">Individual</h3>
-              <p className="text-2xl font-bold mb-3">$49<span className="text-sm font-normal text-text-secondary">/mo</span></p>
+              <p className="text-2xl font-bold mb-1">$49<span className="text-sm font-normal text-text-secondary">/mo</span></p>
+              <p className="text-xs text-green-700 mb-3">$39.20/mo first year (20% off)</p>
               <ul className="space-y-2 text-sm text-text-secondary">
                 <li>2 proposals per month</li>
                 <li>250 MB knowledge base</li>
@@ -399,20 +364,20 @@ export default function BillingPage() {
                 <li>1 team member</li>
                 <li>Grant discovery</li>
               </ul>
-              {subscription?.status === "trial" && (
-                <Button 
-                  className="w-full mt-4" 
-                  size="sm"
-                  onClick={() => handleUpgrade("individual")}
-                  disabled={upgradeLoading}
-                >
-                  Upgrade
-                </Button>
-              )}
+              <Button 
+                className="w-full mt-4" 
+                size="sm"
+                onClick={() => handleUpgrade("individual")}
+                disabled={upgradeLoading}
+              >
+                Lock in 20% off
+              </Button>
             </div>
+
             <div className={`p-4 rounded-lg border ${subscription?.plan === "teams" ? "border-brand bg-brand/5" : "border-border"}`}>
               <h3 className="font-semibold mb-1">Teams</h3>
-              <p className="text-2xl font-bold mb-3">$29<span className="text-sm font-normal text-text-secondary">/seat/mo</span></p>
+              <p className="text-2xl font-bold mb-1">$29<span className="text-sm font-normal text-text-secondary">/seat/mo</span></p>
+              <p className="text-xs text-green-700 mb-3">20% off first year</p>
               <ul className="space-y-2 text-sm text-text-secondary">
                 <li>5 proposals per seat</li>
                 <li>1 GB shared knowledge base</li>
@@ -420,20 +385,40 @@ export default function BillingPage() {
                 <li>Unlimited team members</li>
                 <li>Priority support</li>
               </ul>
-              {(subscription?.status === "trial" || subscription?.plan === "individual") && (
-                <Button 
-                  className="w-full mt-4" 
-                  size="sm"
-                  onClick={() => handleUpgrade("teams")}
+              <div className="flex items-center gap-2 mt-3">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setTeamSeats(Math.max(3, teamSeats - 1))}
+                  disabled={teamSeats <= 3 || upgradeLoading}
+                >
+                  -
+                </Button>
+                <span className="w-12 text-center font-medium">{teamSeats}</span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setTeamSeats(teamSeats + 1)}
                   disabled={upgradeLoading}
                 >
-                  Upgrade
+                  +
                 </Button>
-              )}
+                <span className="text-xs text-text-tertiary">Min 3 seats</span>
+              </div>
+              <Button 
+                className="w-full mt-3" 
+                size="sm"
+                onClick={() => handleUpgrade("teams")}
+                disabled={upgradeLoading}
+              >
+                Lock in {Math.max(3, teamSeats)} seats at ${Math.max(3, teamSeats) * 29 * 0.8}/mo (year 1)
+              </Button>
             </div>
+
             <div className={`p-4 rounded-lg border ${subscription?.plan === "enterprise" ? "border-brand bg-brand/5" : "border-border"}`}>
               <h3 className="font-semibold mb-1">Enterprise</h3>
-              <p className="text-2xl font-bold mb-3">$199<span className="text-sm font-normal text-text-secondary">/mo</span></p>
+              <p className="text-2xl font-bold mb-1">$199<span className="text-sm font-normal text-text-secondary">/mo</span></p>
+              <p className="text-xs text-green-700 mb-3">$159.20/mo first year (20% off)</p>
               <ul className="space-y-2 text-sm text-text-secondary">
                 <li>50 proposals per month</li>
                 <li>5 GB knowledge base</li>
@@ -441,16 +426,14 @@ export default function BillingPage() {
                 <li>Unlimited team members</li>
                 <li>Dedicated support</li>
               </ul>
-              {subscription?.plan !== "enterprise" && (
-                <Button 
-                  className="w-full mt-4" 
-                  size="sm"
-                  onClick={() => handleUpgrade("enterprise")}
-                  disabled={upgradeLoading}
-                >
-                  Upgrade
-                </Button>
-              )}
+              <Button 
+                className="w-full mt-4" 
+                size="sm"
+                onClick={() => handleUpgrade("enterprise")}
+                disabled={upgradeLoading}
+              >
+                Lock in 20% off
+              </Button>
             </div>
           </div>
         </CardContent>

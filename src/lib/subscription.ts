@@ -3,9 +3,9 @@ import { getPlanByPriceId, getProposalLimit } from "@/lib/stripe";
 
 export const PLAN_LIMITS = {
   beta: {
-    proposalsPerMonth: 15,  // Same as teams
-    maxStorageMB: 1024,     // 1 GB
-    maxDocuments: 100,
+    proposalsPerMonth: 5,
+    maxStorageMB: 500,
+    maxDocuments: 50,
     maxTeamMembers: 999,    // unlimited
   },
   trial: {
