@@ -1,6 +1,29 @@
 import prisma from "@/lib/db";
 import { getPlanByPriceId, getProposalLimit } from "@/lib/stripe";
 
+export const PLAN_LIMITS = {
+  trial: {
+    proposalsPerMonth: 1,
+    maxStorageMB: 100,      // 100 MB
+    maxDocuments: 10,
+    maxTeamMembers: 1,
+  },
+  personal: {
+    proposalsPerMonth: 10,
+    maxStorageMB: 500,      // 500 MB
+    maxDocuments: 50,
+    maxTeamMembers: 1,
+  },
+  teams: {
+    proposalsPerMonth: 25,  // per seat
+    maxStorageMB: 2048,     // 2 GB shared
+    maxDocuments: 200,
+    maxTeamMembers: 999,    // unlimited
+  },
+} as const;
+
+export type PlanType = keyof typeof PLAN_LIMITS;
+
 export interface SubscriptionInfo {
   status: "trial" | "active" | "past_due" | "canceled" | "unpaid";
   canCreateProposal: boolean;

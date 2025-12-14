@@ -875,11 +875,11 @@ export default function Home() {
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Unlimited revisions per proposal</span>
+                  <span>500 MB knowledge base</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Knowledge base & document storage</span>
+                  <span>50 documents</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
@@ -913,15 +913,15 @@ export default function Home() {
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Shared knowledge base</span>
+                  <span>2 GB shared knowledge base</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Team collaboration</span>
+                  <span>200 documents</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Everything in Personal, plus</span>
+                  <span>Unlimited team members</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/primitives/button";
 import { cn } from "@/lib/utils";
-import { FileText, FolderOpen, Home, Settings, LogOut, Plus, ChevronLeft, Menu, Compass } from "lucide-react";
+import { FileText, FolderOpen, Home, Settings, LogOut, Plus, ChevronLeft, Menu, Compass, CreditCard } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
@@ -13,6 +13,7 @@ const navItems = [
   { href: "/discover", label: "Discover Grants", icon: Compass },
   { href: "/proposals", label: "Proposals", icon: FileText },
   { href: "/knowledge-base", label: "Knowledge Base", icon: FolderOpen },
+  { href: "/billing", label: "Billing", icon: CreditCard },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
