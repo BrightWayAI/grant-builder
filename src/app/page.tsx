@@ -637,11 +637,11 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <nav className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Image src="/beacon-logo.png" alt="Beacon" width={32} height={32} />
+              <Image src="/beacon-logo.png" alt="Beacon" width={40} height={40} />
               <div className="flex flex-col">
-                <span className="text-xl font-display font-bold leading-tight">Beacon</span>
-                <span className="text-[10px] text-text-tertiary leading-tight flex items-center gap-1">
-                  by <Image src="/brightway-logo.png" alt="BrightWay" width={12} height={12} className="inline" /> BrightWay
+                <span className="text-2xl font-display font-bold leading-tight">Beacon</span>
+                <span className="text-xs text-text-tertiary leading-tight flex items-center gap-1">
+                  by <Image src="/brightway-logo.png" alt="BrightWay" width={14} height={14} className="inline" /> BrightWay
                 </span>
               </div>
             </div>
@@ -1012,11 +1012,11 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
-              <Image src="/beacon-logo.png" alt="Beacon" width={32} height={32} />
+              <Image src="/beacon-logo.png" alt="Beacon" width={36} height={36} />
               <div className="flex flex-col">
-                <span className="font-display font-bold leading-tight">Beacon</span>
-                <span className="text-[10px] text-text-tertiary leading-tight flex items-center gap-1">
-                  by <Image src="/brightway-logo.png" alt="BrightWay" width={12} height={12} className="inline" /> BrightWay
+                <span className="text-lg font-display font-bold leading-tight">Beacon</span>
+                <span className="text-xs text-text-tertiary leading-tight flex items-center gap-1">
+                  by <Image src="/brightway-logo.png" alt="BrightWay" width={14} height={14} className="inline" /> BrightWay
                 </span>
               </div>
             </div>
