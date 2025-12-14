@@ -90,7 +90,7 @@ export function UpgradeModal({ open, onOpenChange, trigger }: UpgradeModalProps)
   const getMessage = () => {
     switch (trigger) {
       case "trial_ended":
-        return "You've used your free proposal. Upgrade to keep writing winning grants.";
+        return "You've used your 3 free proposals. Upgrade to keep writing winning grants.";
       case "limit_reached":
         return "You've reached your monthly proposal limit. Upgrade for more proposals.";
       default:

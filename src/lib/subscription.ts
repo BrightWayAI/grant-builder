@@ -3,7 +3,7 @@ import { getPlanByPriceId, getProposalLimit } from "@/lib/stripe";
 
 export const PLAN_LIMITS = {
   trial: {
-    proposalsPerMonth: 1,
+    proposalsPerMonth: 3,   // 3 free proposals
     maxStorageMB: 50,       // 50 MB
     maxDocuments: 5,
     maxTeamMembers: 1,

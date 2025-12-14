@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/primitive
 import { useToast } from "@/components/ui/use-toast";
 import { RFPUpload } from "@/components/proposals/rfp-upload";
 import { RFPRequirements } from "@/components/proposals/rfp-requirements";
+import { UpgradeModal } from "@/components/subscription/upgrade-modal";
 import { Loader2 } from "lucide-react";
 import { ParsedRFP, RFPSection, getDefaultSections } from "@/lib/ai/rfp-parser";
 
@@ -21,6 +22,8 @@ export default function NewProposalPage() {
   const [parsedRFP, setParsedRFP] = useState<ParsedRFP | null>(null);
   const [sections, setSections] = useState<RFPSection[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeTrigger, setUpgradeTrigger] = useState<"trial_ended" | "limit_reached">("limit_reached");
   const router = useRouter();
   const { toast } = useToast();
 
@@ -69,6 +72,16 @@ export default function NewProposalPage() {
 
       if (!response.ok) {
         const error = await response.json();
+        
+        // Handle subscription limit errors
+        if (response.status === 403 && (error.code === "TRIAL_ENDED" || error.code === "LIMIT_REACHED")) {
+          setUpgradeTrigger(error.code === "TRIAL_ENDED" ? "trial_ended" : "limit_reached");
+          setShowUpgradeModal(true);
+          setStep("requirements");
+          setIsGenerating(false);
+          return;
+        }
+        
         throw new Error(error.error || "Failed to create proposal");
       }
 
@@ -244,6 +257,12 @@ export default function NewProposalPage() {
           </CardContent>
         </Card>
       )}
+
+      <UpgradeModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        trigger={upgradeTrigger}
+      />
     </div>
   );
 }
