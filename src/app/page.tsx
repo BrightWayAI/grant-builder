@@ -854,15 +854,15 @@ export default function Home() {
           </div>
           
           <div className="grid md:grid-cols-3 gap-6 scroll-animate float-up delay-100">
-            {/* Personal Plan */}
+            {/* Individual Plan */}
             <div className="rounded-2xl border border-border bg-surface p-6">
               <div className="mb-5">
                 <div className="flex items-baseline gap-1 mb-1">
                   <span className="text-3xl font-bold">$49</span>
                   <span className="text-text-secondary text-sm">/mo</span>
                 </div>
-                <h3 className="text-lg font-semibold">Personal</h3>
-                <p className="text-sm text-text-tertiary mt-1">For individual grant writers</p>
+                <h3 className="text-lg font-semibold">Individual</h3>
+                <p className="text-sm text-text-tertiary mt-1">For solo grant writers</p>
               </div>
               
               <Link href="/signup">

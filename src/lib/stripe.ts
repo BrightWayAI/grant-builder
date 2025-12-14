@@ -25,9 +25,9 @@ export const stripe = {
 };
 
 export const PLANS = {
-  personal: {
-    name: "Personal",
-    priceId: process.env.STRIPE_PRICE_PERSONAL!,
+  individual: {
+    name: "Individual",
+    priceId: process.env.STRIPE_PRICE_INDIVIDUAL || process.env.STRIPE_PRICE_PERSONAL!,
     proposalsPerMonth: 5,
     seats: 1,
   },
@@ -48,14 +48,14 @@ export const PLANS = {
 export type PlanType = keyof typeof PLANS;
 
 export function getPlanByPriceId(priceId: string): PlanType | null {
-  if (priceId === PLANS.personal.priceId) return "personal";
+  if (priceId === PLANS.individual.priceId) return "individual";
   if (priceId === PLANS.teams.priceId) return "teams";
   if (priceId === PLANS.enterprise.priceId) return "enterprise";
   return null;
 }
 
 export function getProposalLimit(plan: PlanType, seatCount: number = 1): number {
-  if (plan === "personal") return PLANS.personal.proposalsPerMonth;
+  if (plan === "individual") return PLANS.individual.proposalsPerMonth;
   if (plan === "enterprise") return PLANS.enterprise.proposalsPerMonth;
   return PLANS.teams.proposalsPerMonth * seatCount;
 }

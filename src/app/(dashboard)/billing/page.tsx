@@ -71,7 +71,7 @@ export default function BillingPage() {
     }
   };
 
-  const handleUpgrade = async (plan: "personal" | "teams" | "enterprise") => {
+  const handleUpgrade = async (plan: "individual" | "teams" | "enterprise") => {
     setUpgradeLoading(true);
     try {
       const res = await fetch("/api/stripe/checkout", {
@@ -141,9 +141,9 @@ export default function BillingPage() {
                 You're on the free trial. Create your first proposal free, then upgrade to continue.
               </p>
               <div className="flex gap-3">
-                <Button onClick={() => handleUpgrade("personal")} disabled={upgradeLoading}>
+                <Button onClick={() => handleUpgrade("individual")} disabled={upgradeLoading}>
                   {upgradeLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  Upgrade to Personal - $49/mo
+                  Upgrade to Individual - $49/mo
                 </Button>
                 <Button variant="outline" onClick={() => handleUpgrade("teams")} disabled={upgradeLoading}>
                   Upgrade to Teams - $29/seat/mo
@@ -155,7 +155,7 @@ export default function BillingPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">
-                    {subscription?.plan === "personal" ? "$49" : "$29/seat"}/month
+                    {subscription?.plan === "individual" ? "$49" : "$29/seat"}/month
                   </p>
                   {subscription?.currentPeriodEnd && (
                     <p className="text-sm text-text-secondary">
@@ -269,8 +269,8 @@ export default function BillingPage() {
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-4">
-            <div className={`p-4 rounded-lg border ${subscription?.plan === "personal" ? "border-brand bg-brand/5" : "border-border"}`}>
-              <h3 className="font-semibold mb-1">Personal</h3>
+            <div className={`p-4 rounded-lg border ${subscription?.plan === "individual" ? "border-brand bg-brand/5" : "border-border"}`}>
+              <h3 className="font-semibold mb-1">Individual</h3>
               <p className="text-2xl font-bold mb-3">$49<span className="text-sm font-normal text-text-secondary">/mo</span></p>
               <ul className="space-y-2 text-sm text-text-secondary">
                 <li>5 proposals per month</li>
@@ -283,7 +283,7 @@ export default function BillingPage() {
                 <Button 
                   className="w-full mt-4" 
                   size="sm"
-                  onClick={() => handleUpgrade("personal")}
+                  onClick={() => handleUpgrade("individual")}
                   disabled={upgradeLoading}
                 >
                   Upgrade
@@ -300,7 +300,7 @@ export default function BillingPage() {
                 <li>Unlimited team members</li>
                 <li>Priority support</li>
               </ul>
-              {(subscription?.status === "trial" || subscription?.plan === "personal") && (
+              {(subscription?.status === "trial" || subscription?.plan === "individual") && (
                 <Button 
                   className="w-full mt-4" 
                   size="sm"

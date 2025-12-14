@@ -8,7 +8,7 @@ export const PLAN_LIMITS = {
     maxDocuments: 5,
     maxTeamMembers: 1,
   },
-  personal: {
+  individual: {
     proposalsPerMonth: 5,
     maxStorageMB: 250,      // 250 MB
     maxDocuments: 25,

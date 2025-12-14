@@ -20,8 +20,8 @@ interface UpgradeModalProps {
 
 const plans = [
   {
-    id: "personal",
-    name: "Personal",
+    id: "individual",
+    name: "Individual",
     price: 49,
     features: [
       "5 proposals per month",
@@ -57,7 +57,7 @@ const plans = [
 ];
 
 export function UpgradeModal({ open, onOpenChange, trigger }: UpgradeModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState<"personal" | "teams" | "enterprise">("personal");
+  const [selectedPlan, setSelectedPlan] = useState<"individual" | "teams" | "enterprise">("individual");
   const [seats, setSeats] = useState(3);
   const [loading, setLoading] = useState(false);
 
@@ -113,7 +113,7 @@ export function UpgradeModal({ open, onOpenChange, trigger }: UpgradeModalProps)
           {plans.map((plan) => (
             <button
               key={plan.id}
-              onClick={() => setSelectedPlan(plan.id as "personal" | "teams" | "enterprise")}
+              onClick={() => setSelectedPlan(plan.id as "individual" | "teams" | "enterprise")}
               className={cn(
                 "relative text-left p-5 rounded-xl border-2 transition-all",
                 selectedPlan === plan.id
