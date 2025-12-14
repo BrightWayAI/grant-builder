@@ -7,6 +7,7 @@ import { Badge } from "@/components/primitives/badge";
 import { FileText, FolderOpen, Plus, ArrowRight, Compass, Sparkles } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { MatchingGrantsSection } from "@/components/dashboard/matching-grants";
+import { KnowledgeScoreCard } from "@/components/dashboard/knowledge-score-card";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -59,7 +60,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg font-medium">Grant Opportunities</CardTitle>
@@ -91,21 +92,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-medium">Knowledge Base</CardTitle>
-            <FolderOpen className="h-5 w-5 text-text-tertiary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold font-display">{documentCount}</div>
-            <p className="text-sm text-text-secondary">
-              {indexedCount} indexed, {documentCount - indexedCount} processing
-            </p>
-            <Link href="/knowledge-base" className="text-brand text-sm hover:underline mt-2 inline-flex items-center">
-              Manage documents <ArrowRight className="h-3 w-3 ml-1" />
-            </Link>
-          </CardContent>
-        </Card>
+        <KnowledgeScoreCard />
       </div>
 
       {/* Matching Grants Section */}

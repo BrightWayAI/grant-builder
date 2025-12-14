@@ -9,6 +9,7 @@ import { formatFileSize } from "@/lib/utils";
 import { DOCUMENT_CATEGORIES } from "@/lib/document-categories";
 import { BookOpen } from "lucide-react";
 import { DocumentType } from "@prisma/client";
+import { getKnowledgeScore } from "@/lib/knowledge-score";
 
 const MAX_STORAGE_BYTES = 500 * 1024 * 1024; // 500MB
 
@@ -53,8 +54,7 @@ export default async function KnowledgeBasePage() {
     ).length;
   });
 
-  // Calculate knowledge base health score
-  const healthScore = calculateHealthScore(existingTypes, stats.indexed);
+  const kbScore = await getKnowledgeScore(user.organizationId);
 
   return (
     <div className="space-y-6">
@@ -70,32 +70,33 @@ export default async function KnowledgeBasePage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${getHealthColor(healthScore)}`}>
+              <div className={`p-2 rounded-full ${getHealthColor(kbScore.score)}`}>
                 <BookOpen className="h-5 w-5" />
               </div>
               <div>
-                <div className="text-2xl font-bold font-display">{healthScore}%</div>
+                <div className="text-2xl font-bold font-display">{kbScore.score}%</div>
                 <p className="text-sm text-text-secondary">Knowledge Score</p>
               </div>
             </div>
+            <div className="mt-3 text-xs text-text-secondary space-y-1">
+              <div>Coverage: {kbScore.coverage}%</div>
+              <div>Freshness: {kbScore.freshness}%</div>
+              <div>Doc quality: {kbScore.docStrength}%</div>
+            </div>
+            {kbScore.recommendations.length > 0 && (
+              <ul className="mt-3 text-xs text-text-secondary list-disc list-inside space-y-1">
+                {kbScore.recommendations.map((rec, i) => (
+                  <li key={i}>{rec}</li>
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
         
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold font-display">{stats.total}</div>
-            <p className="text-sm text-text-secondary">Total Documents</p>
-            <div className="flex gap-2 mt-2 flex-wrap">
-              {stats.indexed > 0 && (
-                <Badge variant="success" className="text-xs">{stats.indexed} ready</Badge>
-              )}
-              {stats.processing > 0 && (
-                <Badge variant="default" className="text-xs">{stats.processing} processing</Badge>
-              )}
-              {stats.failed > 0 && (
-                <Badge variant="error" className="text-xs">{stats.failed} failed</Badge>
-              )}
-            </div>
+            <div className="text-2xl font-bold font-display">{stats.indexed}</div>
+            <p className="text-sm text-text-secondary">Docs ready for drafting</p>
           </CardContent>
         </Card>
 
@@ -109,12 +110,8 @@ export default async function KnowledgeBasePage() {
 
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold font-display">
-              {formatFileSize(totalSize)}
-            </div>
-            <p className="text-sm text-text-secondary">
-              of {formatFileSize(MAX_STORAGE_BYTES)} used
-            </p>
+            <div className="text-2xl font-bold font-display">{formatFileSize(totalSize)}</div>
+            <p className="text-sm text-text-secondary">of {formatFileSize(MAX_STORAGE_BYTES)} used</p>
             <Progress value={usagePercent} className="h-1 mt-3" />
           </CardContent>
         </Card>
