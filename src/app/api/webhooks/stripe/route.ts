@@ -113,6 +113,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       proposalsUsedThisMonth: 0,
       proposalResetDate: periodEnd,
       seatsPurchased: plan === "teams" ? seats : 1,
+      // If they lock in during beta, we still move them to ACTIVE immediately; adjust here if you prefer delayed activation
     },
   });
 

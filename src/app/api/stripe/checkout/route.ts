@@ -7,6 +7,7 @@ import { z } from "zod";
 const checkoutSchema = z.object({
   plan: z.enum(["individual", "teams", "enterprise"]),
   seats: z.number().int().min(1).optional().default(1),
+  lockInDiscount: z.boolean().optional().default(false),
 });
 
 export async function POST(req: NextRequest) {
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { plan, seats } = checkoutSchema.parse(body);
+    const { plan, seats, lockInDiscount } = checkoutSchema.parse(body);
 
     if (plan === "teams" && seats < 3) {
       return NextResponse.json(
@@ -31,6 +32,13 @@ export async function POST(req: NextRequest) {
 
     const organization = await prisma.organization.findUnique({
       where: { id: user.organizationId },
+      select: {
+        id: true,
+        name: true,
+        stripeCustomerId: true,
+        subscriptionStatus: true,
+        seatsPurchased: true,
+      },
     });
 
     if (!organization) {
@@ -88,14 +96,23 @@ export async function POST(req: NextRequest) {
         organizationId: organization.id,
         plan,
         seats: (plan === "teams" ? seats : 1).toString(),
+        lockInDiscount: lockInDiscount ? "true" : "false",
       },
       subscription_data: {
         metadata: {
           organizationId: organization.id,
           plan,
           seats: (plan === "teams" ? seats : 1).toString(),
+          lockInDiscount: lockInDiscount ? "true" : "false",
         },
       },
+      discounts: lockInDiscount
+        ? [
+            {
+              coupon: process.env.STRIPE_BETA_COUPON_ID || "HSdmrDjW",
+            },
+          ]
+        : undefined,
       allow_promotion_codes: true,
     });
 

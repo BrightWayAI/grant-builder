@@ -70,6 +70,7 @@ export function UpgradeModal({ open, onOpenChange, trigger }: UpgradeModalProps)
         body: JSON.stringify({
           plan: selectedPlan,
           seats: selectedPlan === "teams" ? seats : 1,
+          lockInDiscount: true,
         }),
       });
 
@@ -94,7 +95,7 @@ export function UpgradeModal({ open, onOpenChange, trigger }: UpgradeModalProps)
       case "limit_reached":
         return "You've reached your monthly proposal limit. Upgrade for more proposals.";
       default:
-        return "Upgrade your plan to unlock more proposals and features.";
+        return "Lock in discounted pricing during beta (20% off first year).";
     }
   };
 
@@ -171,7 +172,7 @@ export function UpgradeModal({ open, onOpenChange, trigger }: UpgradeModalProps)
               </Button>
             </div>
             <span className="text-sm text-text-secondary ml-auto">
-              ${seats * 29}/mo total
+              ${seats * 29 * 0.8}/mo (20% off, year 1)
             </span>
           </div>
         )}
@@ -188,7 +189,7 @@ export function UpgradeModal({ open, onOpenChange, trigger }: UpgradeModalProps)
               </>
             ) : (
               <>
-                Continue to Checkout
+                Lock in {selectedPlan === "teams" ? `${seats} seats` : selectedPlan} at 20% off
               </>
             )}
           </Button>

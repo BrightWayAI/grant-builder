@@ -42,6 +42,7 @@ export default function BillingPage() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [teamSeats, setTeamSeats] = useState(3);
+  const [lockIn, setLockIn] = useState(false);
 
   useEffect(() => {
     fetchSubscription();
@@ -86,7 +87,7 @@ export default function BillingPage() {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, seats }),
+        body: JSON.stringify({ plan, seats, lockInDiscount: lockIn || subscription?.isBeta }),
       });
       const data = await res.json();
       
@@ -140,22 +141,22 @@ export default function BillingPage() {
       {/* Current Plan */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Current Plan</CardTitle>
-              <CardDescription>
-                {subscription?.isBeta 
-                  ? "Full access during beta period"
-                  : subscription?.plan 
-                  ? `${subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)} Plan`
-                  : "Free Trial"}
-              </CardDescription>
-            </div>
-            <Badge className={statusConfig[status].color}>
-              <StatusIcon className="h-3 w-3 mr-1" />
-              {statusConfig[status].label}
-            </Badge>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Current Plan</CardTitle>
+            <CardDescription>
+              {subscription?.isBeta 
+                ? "Beta access — usage is free during beta"
+                : subscription?.plan 
+                ? `${subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)} Plan`
+                : "Free Trial"}
+            </CardDescription>
           </div>
+          <Badge className={statusConfig[status].color}>
+            <StatusIcon className="h-3 w-3 mr-1" />
+            {statusConfig[status].label}
+          </Badge>
+        </div>
         </CardHeader>
         <CardContent>
           {status === "beta" ? (
@@ -163,7 +164,7 @@ export default function BillingPage() {
               <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
                 <h3 className="font-medium text-purple-900 mb-2">Welcome to the Beacon Beta!</h3>
                 <p className="text-sm text-purple-800 mb-3">
-                  You have full access to all features during our beta period. No payment required.
+                  You have full access to all features during our beta period. Usage is free.
                 </p>
                 <ul className="text-sm text-purple-700 space-y-1">
                   <li>• {subscription?.proposalLimit || 15} proposals per month</li>
@@ -172,8 +173,44 @@ export default function BillingPage() {
                   <li>• Unlimited team members</li>
                 </ul>
               </div>
-              <p className="text-sm text-text-tertiary">
-                We&apos;ll notify you before the beta ends. Beta testers will receive special pricing.
+              <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between gap-3">
+                <div className="text-sm text-blue-900">
+                  Lock in discounted pricing now (20% off first year). You won&apos;t be charged until checkout completes.
+                </div>
+                <div className="flex items-center gap-2 text-sm text-text-secondary">
+                  <span className="font-medium">Teams seats</span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setTeamSeats(Math.max(3, teamSeats - 1))}
+                      disabled={teamSeats <= 3}
+                    >
+                      -
+                    </Button>
+                    <span className="w-10 text-center font-medium">{teamSeats}</span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setTeamSeats(teamSeats + 1)}
+                    >
+                      +
+                    </Button>
+                    <span className="text-xs text-text-tertiary">Min 3 seats</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button onClick={() => handleUpgrade("individual")} disabled={upgradeLoading}>
+                  {upgradeLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Lock in Individual - $49 → $39.20/mo (year 1)
+                </Button>
+                <Button variant="outline" onClick={() => handleUpgrade("teams")} disabled={upgradeLoading}>
+                  Lock in Teams - ${Math.max(3, teamSeats) * 29 * 0.8}/mo ({Math.max(3, teamSeats)} seats, year 1)
+                </Button>
+              </div>
+              <p className="text-xs text-text-tertiary">
+                Discounts applied via coupon HSdmrDjW (20% off first year). Seats not enforced during beta; enforcement begins on paid activation.
               </p>
             </div>
           ) : status === "trial" ? (

@@ -21,6 +21,7 @@ export async function GET() {
       select: {
         stripePriceId: true,
         subscriptionStatus: true,
+        subscriptionStatus: true,
         seatsPurchased: true,
         _count: { select: { users: true } },
       },
@@ -30,10 +31,11 @@ export async function GET() {
       return NextResponse.json({ error: "Organization not found" }, { status: 404 });
     }
 
+    const isBeta = organization.subscriptionStatus === "BETA";
     const plan = organization.stripePriceId
       ? getPlanByPriceId(organization.stripePriceId)
       : null;
-    const seatsPurchased = plan === "teams" ? (organization.seatsPurchased || 3) : null;
+    const seatsPurchased = !isBeta && plan === "teams" ? (organization.seatsPurchased || 3) : null;
     const seatsUsed = organization._count.users;
     const seatsRemaining = seatsPurchased !== null ? Math.max(0, seatsPurchased - seatsUsed) : null;
 
@@ -55,12 +57,12 @@ export async function GET() {
 
     return NextResponse.json({
       members,
-      seats: {
+      seats: seatsPurchased !== null ? {
         plan,
         purchased: seatsPurchased,
         used: seatsUsed,
         remaining: seatsRemaining,
-      },
+      } : undefined,
     });
   } catch (error) {
     console.error("Error fetching team members:", error);
@@ -108,13 +110,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Organization not found" }, { status: 404 });
     }
 
+    const isBeta = organization.subscriptionStatus === "BETA";
     const plan = organization.stripePriceId
       ? getPlanByPriceId(organization.stripePriceId)
       : null;
-    const seatsPurchased = plan === "teams" ? (organization.seatsPurchased || 3) : null;
+    const seatsPurchased = !isBeta && plan === "teams" ? (organization.seatsPurchased || 3) : null;
     const seatsUsed = organization._count.users;
 
-    if (plan === "teams" && seatsPurchased !== null && seatsUsed >= seatsPurchased) {
+    if (!isBeta && plan === "teams" && seatsPurchased !== null && seatsUsed >= seatsPurchased) {
       return NextResponse.json(
         { error: `No available licenses. You have ${seatsUsed}/${seatsPurchased} seats assigned.` },
         { status: 400 }
