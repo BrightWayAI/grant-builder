@@ -28,13 +28,19 @@ export const PLANS = {
   personal: {
     name: "Personal",
     priceId: process.env.STRIPE_PRICE_PERSONAL!,
-    proposalsPerMonth: 10,
+    proposalsPerMonth: 5,
     seats: 1,
   },
   teams: {
     name: "Teams",
     priceId: process.env.STRIPE_PRICE_TEAMS!,
-    proposalsPerMonth: 25, // per seat
+    proposalsPerMonth: 15, // per seat
+    seats: null, // unlimited
+  },
+  enterprise: {
+    name: "Enterprise",
+    priceId: process.env.STRIPE_PRICE_ENTERPRISE!,
+    proposalsPerMonth: 50,
     seats: null, // unlimited
   },
 } as const;
@@ -44,10 +50,12 @@ export type PlanType = keyof typeof PLANS;
 export function getPlanByPriceId(priceId: string): PlanType | null {
   if (priceId === PLANS.personal.priceId) return "personal";
   if (priceId === PLANS.teams.priceId) return "teams";
+  if (priceId === PLANS.enterprise.priceId) return "enterprise";
   return null;
 }
 
 export function getProposalLimit(plan: PlanType, seatCount: number = 1): number {
   if (plan === "personal") return PLANS.personal.proposalsPerMonth;
+  if (plan === "enterprise") return PLANS.enterprise.proposalsPerMonth;
   return PLANS.teams.proposalsPerMonth * seatCount;
 }

@@ -5,7 +5,7 @@ import { stripe, PLANS, PlanType } from "@/lib/stripe";
 import { z } from "zod";
 
 const checkoutSchema = z.object({
-  plan: z.enum(["personal", "teams"]),
+  plan: z.enum(["personal", "teams", "enterprise"]),
   seats: z.number().min(1).optional().default(1),
 });
 

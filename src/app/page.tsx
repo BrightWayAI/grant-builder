@@ -843,7 +843,7 @@ export default function Home() {
 
       {/* Pricing */}
       <section id="pricing" className="py-24 px-6 bg-surface-subtle">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16 scroll-animate float-up">
             <h2 className="text-4xl font-display font-bold mb-4">
               Simple pricing
@@ -853,79 +853,113 @@ export default function Home() {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 gap-8 scroll-animate float-up delay-100">
+          <div className="grid md:grid-cols-3 gap-6 scroll-animate float-up delay-100">
             {/* Personal Plan */}
-            <div className="rounded-2xl border border-border bg-surface p-8">
-              <div className="mb-6">
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-4xl font-bold">$49</span>
-                  <span className="text-text-secondary">/mo</span>
+            <div className="rounded-2xl border border-border bg-surface p-6">
+              <div className="mb-5">
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-3xl font-bold">$49</span>
+                  <span className="text-text-secondary text-sm">/mo</span>
                 </div>
-                <h3 className="text-xl font-semibold">Personal</h3>
+                <h3 className="text-lg font-semibold">Personal</h3>
+                <p className="text-sm text-text-tertiary mt-1">For individual grant writers</p>
               </div>
               
               <Link href="/signup">
-                <Button className="w-full mb-6">Try Brightway Free</Button>
+                <Button className="w-full mb-5" variant="outline">Start Free</Button>
               </Link>
               
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center gap-3">
+              <ul className="space-y-2.5 text-sm">
+                <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>10 proposals per month</span>
+                  <span>5 proposals per month</span>
                 </li>
-                <li className="flex items-center gap-3">
+                <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>500 MB knowledge base</span>
+                  <span>250 MB knowledge base</span>
                 </li>
-                <li className="flex items-center gap-3">
+                <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>50 documents</span>
+                  <span>25 documents</span>
                 </li>
-                <li className="flex items-center gap-3">
+                <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
                   <span>Grant discovery</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>DOCX export</span>
                 </li>
               </ul>
             </div>
             
             {/* Teams Plan */}
-            <div className="rounded-2xl border-2 border-brand bg-brand/5 p-8">
-              <div className="mb-6">
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-4xl font-bold">$29</span>
-                  <span className="text-text-secondary">/mo per seat</span>
+            <div className="rounded-2xl border-2 border-brand bg-brand/5 p-6 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="bg-brand text-white text-xs font-medium px-3 py-1 rounded-full">
+                  Most Popular
+                </span>
+              </div>
+              <div className="mb-5">
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-3xl font-bold">$29</span>
+                  <span className="text-text-secondary text-sm">/seat/mo</span>
                 </div>
-                <h3 className="text-xl font-semibold">Teams</h3>
+                <h3 className="text-lg font-semibold">Teams</h3>
+                <p className="text-sm text-text-tertiary mt-1">For growing organizations</p>
               </div>
               
               <Link href="/signup">
-                <Button className="w-full mb-6">Try Brightway Free</Button>
+                <Button className="w-full mb-5">Start Free</Button>
               </Link>
               
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center gap-3">
+              <ul className="space-y-2.5 text-sm">
+                <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>25 proposals per seat per month</span>
+                  <span>15 proposals per seat</span>
                 </li>
-                <li className="flex items-center gap-3">
+                <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>2 GB shared knowledge base</span>
+                  <span>1 GB shared storage</span>
                 </li>
-                <li className="flex items-center gap-3">
+                <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>200 documents</span>
+                  <span>100 documents</span>
                 </li>
-                <li className="flex items-center gap-3">
+                <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
                   <span>Unlimited team members</span>
                 </li>
-                <li className="flex items-center gap-3">
+              </ul>
+            </div>
+            
+            {/* Enterprise Plan */}
+            <div className="rounded-2xl border border-border bg-surface p-6">
+              <div className="mb-5">
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-3xl font-bold">$199</span>
+                  <span className="text-text-secondary text-sm">/mo</span>
+                </div>
+                <h3 className="text-lg font-semibold">Enterprise</h3>
+                <p className="text-sm text-text-tertiary mt-1">For high-volume programs</p>
+              </div>
+              
+              <Link href="/signup">
+                <Button className="w-full mb-5" variant="outline">Start Free</Button>
+              </Link>
+              
+              <ul className="space-y-2.5 text-sm">
+                <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Priority support</span>
+                  <span>50 proposals per month</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>5 GB knowledge base</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>500 documents</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Dedicated support</span>
                 </li>
               </ul>
             </div>

@@ -24,11 +24,10 @@ const plans = [
     name: "Personal",
     price: 49,
     features: [
-      "10 proposals per month",
-      "Unlimited revisions",
-      "Knowledge base",
+      "5 proposals per month",
+      "250 MB knowledge base",
+      "25 documents",
       "Grant discovery",
-      "DOCX export",
     ],
   },
   {
@@ -37,18 +36,28 @@ const plans = [
     price: 29,
     priceLabel: "per seat",
     features: [
-      "25 proposals per seat",
-      "Shared knowledge base",
-      "Team collaboration",
-      "Everything in Personal",
-      "Priority support",
+      "15 proposals per seat",
+      "1 GB shared storage",
+      "100 documents",
+      "Unlimited members",
     ],
     popular: true,
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    price: 199,
+    features: [
+      "50 proposals per month",
+      "5 GB knowledge base",
+      "500 documents",
+      "Dedicated support",
+    ],
   },
 ];
 
 export function UpgradeModal({ open, onOpenChange, trigger }: UpgradeModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState<"personal" | "teams">("personal");
+  const [selectedPlan, setSelectedPlan] = useState<"personal" | "teams" | "enterprise">("personal");
   const [seats, setSeats] = useState(3);
   const [loading, setLoading] = useState(false);
 
@@ -100,11 +109,11 @@ export function UpgradeModal({ open, onOpenChange, trigger }: UpgradeModalProps)
           <DialogDescription>{getMessage()}</DialogDescription>
         </DialogHeader>
 
-        <div className="grid md:grid-cols-2 gap-4 mt-4">
+        <div className="grid md:grid-cols-3 gap-4 mt-4">
           {plans.map((plan) => (
             <button
               key={plan.id}
-              onClick={() => setSelectedPlan(plan.id as "personal" | "teams")}
+              onClick={() => setSelectedPlan(plan.id as "personal" | "teams" | "enterprise")}
               className={cn(
                 "relative text-left p-5 rounded-xl border-2 transition-all",
                 selectedPlan === plan.id

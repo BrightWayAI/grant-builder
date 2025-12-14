@@ -71,7 +71,7 @@ export default function BillingPage() {
     }
   };
 
-  const handleUpgrade = async (plan: "personal" | "teams") => {
+  const handleUpgrade = async (plan: "personal" | "teams" | "enterprise") => {
     setUpgradeLoading(true);
     try {
       const res = await fetch("/api/stripe/checkout", {
@@ -246,7 +246,7 @@ export default function BillingPage() {
           </div>
 
           {/* Team Members */}
-          {subscription?.plan === "teams" && (
+          {(subscription?.plan === "teams" || subscription?.plan === "enterprise") && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
@@ -254,12 +254,9 @@ export default function BillingPage() {
                   <span>Team Members</span>
                 </div>
                 <span className="text-text-secondary">
-                  {subscription?.teamSize || 1} / {subscription?.teamLimit || 3}
+                  {subscription?.teamSize || 1} members
                 </span>
               </div>
-              <Progress 
-                value={((subscription?.teamSize || 1) / (subscription?.teamLimit || 3)) * 100} 
-              />
             </div>
           )}
         </CardContent>
@@ -271,30 +268,69 @@ export default function BillingPage() {
           <CardTitle>Plan Comparison</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-4">
             <div className={`p-4 rounded-lg border ${subscription?.plan === "personal" ? "border-brand bg-brand/5" : "border-border"}`}>
               <h3 className="font-semibold mb-1">Personal</h3>
               <p className="text-2xl font-bold mb-3">$49<span className="text-sm font-normal text-text-secondary">/mo</span></p>
               <ul className="space-y-2 text-sm text-text-secondary">
-                <li>10 proposals per month</li>
-                <li>500 MB knowledge base</li>
-                <li>50 documents</li>
+                <li>5 proposals per month</li>
+                <li>250 MB knowledge base</li>
+                <li>25 documents</li>
                 <li>1 team member</li>
                 <li>Grant discovery</li>
-                <li>DOCX export</li>
               </ul>
+              {subscription?.status === "trial" && (
+                <Button 
+                  className="w-full mt-4" 
+                  size="sm"
+                  onClick={() => handleUpgrade("personal")}
+                  disabled={upgradeLoading}
+                >
+                  Upgrade
+                </Button>
+              )}
             </div>
             <div className={`p-4 rounded-lg border ${subscription?.plan === "teams" ? "border-brand bg-brand/5" : "border-border"}`}>
               <h3 className="font-semibold mb-1">Teams</h3>
               <p className="text-2xl font-bold mb-3">$29<span className="text-sm font-normal text-text-secondary">/seat/mo</span></p>
               <ul className="space-y-2 text-sm text-text-secondary">
-                <li>25 proposals per seat</li>
-                <li>2 GB shared knowledge base</li>
-                <li>200 documents</li>
+                <li>15 proposals per seat</li>
+                <li>1 GB shared knowledge base</li>
+                <li>100 documents</li>
                 <li>Unlimited team members</li>
-                <li>Everything in Personal</li>
                 <li>Priority support</li>
               </ul>
+              {(subscription?.status === "trial" || subscription?.plan === "personal") && (
+                <Button 
+                  className="w-full mt-4" 
+                  size="sm"
+                  onClick={() => handleUpgrade("teams")}
+                  disabled={upgradeLoading}
+                >
+                  Upgrade
+                </Button>
+              )}
+            </div>
+            <div className={`p-4 rounded-lg border ${subscription?.plan === "enterprise" ? "border-brand bg-brand/5" : "border-border"}`}>
+              <h3 className="font-semibold mb-1">Enterprise</h3>
+              <p className="text-2xl font-bold mb-3">$199<span className="text-sm font-normal text-text-secondary">/mo</span></p>
+              <ul className="space-y-2 text-sm text-text-secondary">
+                <li>50 proposals per month</li>
+                <li>5 GB knowledge base</li>
+                <li>500 documents</li>
+                <li>Unlimited team members</li>
+                <li>Dedicated support</li>
+              </ul>
+              {subscription?.plan !== "enterprise" && (
+                <Button 
+                  className="w-full mt-4" 
+                  size="sm"
+                  onClick={() => handleUpgrade("enterprise")}
+                  disabled={upgradeLoading}
+                >
+                  Upgrade
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>

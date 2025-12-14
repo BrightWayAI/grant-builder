@@ -4,20 +4,26 @@ import { getPlanByPriceId, getProposalLimit } from "@/lib/stripe";
 export const PLAN_LIMITS = {
   trial: {
     proposalsPerMonth: 1,
-    maxStorageMB: 100,      // 100 MB
-    maxDocuments: 10,
+    maxStorageMB: 50,       // 50 MB
+    maxDocuments: 5,
     maxTeamMembers: 1,
   },
   personal: {
-    proposalsPerMonth: 10,
-    maxStorageMB: 500,      // 500 MB
-    maxDocuments: 50,
+    proposalsPerMonth: 5,
+    maxStorageMB: 250,      // 250 MB
+    maxDocuments: 25,
     maxTeamMembers: 1,
   },
   teams: {
-    proposalsPerMonth: 25,  // per seat
-    maxStorageMB: 2048,     // 2 GB shared
-    maxDocuments: 200,
+    proposalsPerMonth: 15,  // per seat
+    maxStorageMB: 1024,     // 1 GB shared
+    maxDocuments: 100,
+    maxTeamMembers: 999,    // unlimited
+  },
+  enterprise: {
+    proposalsPerMonth: 50,
+    maxStorageMB: 5120,     // 5 GB
+    maxDocuments: 500,
     maxTeamMembers: 999,    // unlimited
   },
 } as const;
