@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/primitives/button";
@@ -40,8 +41,9 @@ export function Sidebar({ user }: SidebarProps) {
         >
           <Menu className="h-5 w-5 text-text-secondary" />
         </button>
-        <Link href="/dashboard" className="ml-3 text-lg font-display font-semibold text-brand">
-          Brightway
+        <Link href="/dashboard" className="ml-3 flex items-center gap-2">
+          <Image src="/beacon-logo.png" alt="Beacon" width={24} height={24} />
+          <span className="text-lg font-display font-semibold text-brand">Beacon</span>
         </Link>
         <div className="ml-auto">
           <Link href="/proposals/new">
@@ -71,8 +73,14 @@ export function Sidebar({ user }: SidebarProps) {
         {/* Logo */}
         <div className="h-14 flex items-center justify-between px-4 border-b border-border">
           {!collapsed && (
-            <Link href="/dashboard" className="text-lg font-display font-semibold text-brand">
-              Brightway
+            <Link href="/dashboard" className="flex items-center gap-2">
+              <Image src="/beacon-logo.png" alt="Beacon" width={24} height={24} />
+              <span className="text-lg font-display font-semibold text-brand">Beacon</span>
+            </Link>
+          )}
+          {collapsed && (
+            <Link href="/dashboard" className="mx-auto">
+              <Image src="/beacon-logo.png" alt="Beacon" width={24} height={24} />
             </Link>
           )}
           <button

@@ -32,8 +32,11 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Brightway Grants",
+  title: "Beacon by BrightWay",
   description: "AI-powered grant proposal generation for nonprofits",
+  icons: {
+    icon: "/beacon-logo.png",
+  },
 };
 
 export default function RootLayout({

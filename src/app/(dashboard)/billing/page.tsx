@@ -186,7 +186,7 @@ export default function BillingPage() {
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-sm text-yellow-800">
                   {status === "past_due" 
-                    ? "Your payment failed. Please update your payment method to continue using Brightway."
+                    ? "Your payment failed. Please update your payment method to continue using Beacon."
                     : status === "canceled"
                     ? "Your subscription has been canceled. Upgrade to regain access."
                     : "Your account has unpaid invoices. Please update your payment method."}

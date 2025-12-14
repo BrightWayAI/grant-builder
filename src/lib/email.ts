@@ -12,7 +12,7 @@ function getResend(): Resend {
   return resendInstance;
 }
 
-const FROM_EMAIL = process.env.EMAIL_FROM || "Brightway Grants <noreply@brightwayai.com>";
+const FROM_EMAIL = process.env.EMAIL_FROM || "Beacon by BrightWay <noreply@brightwayai.com>";
 
 interface SendEmailOptions {
   to: string;
@@ -73,11 +73,11 @@ export async function sendTeamInviteEmail({
       </div>
       
       <p style="margin-bottom: 16px;">
-        <strong>${inviterName}</strong> has invited you to join <strong>${organizationName}</strong> on Brightway Grants as a <strong>${role}</strong>.
+        <strong>${inviterName}</strong> has invited you to join <strong>${organizationName}</strong> on Beacon as a <strong>${role}</strong>.
       </p>
       
       <p style="margin-bottom: 24px;">
-        Brightway Grants is an AI-powered grant writing platform that helps nonprofits write better proposals in less time.
+        Beacon is an AI-powered grant writing platform that helps nonprofits write better proposals in less time.
       </p>
       
       <div style="text-align: center; margin: 32px 0;">
@@ -93,7 +93,7 @@ export async function sendTeamInviteEmail({
       <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;">
       
       <p style="color: #999; font-size: 12px; text-align: center;">
-        Brightway Grants • AI-Powered Grant Writing
+        Beacon by BrightWay • AI-Powered Grant Writing
       </p>
     </body>
     </html>
@@ -102,7 +102,7 @@ export async function sendTeamInviteEmail({
   const text = `
 You're invited to join ${organizationName}
 
-${inviterName} has invited you to join ${organizationName} on Brightway Grants as a ${role}.
+${inviterName} has invited you to join ${organizationName} on Beacon as a ${role}.
 
 Accept your invitation: ${signupUrl}
 
@@ -111,7 +111,7 @@ If you didn't expect this invitation, you can safely ignore this email.
 
   return sendEmail({
     to,
-    subject: `You're invited to join ${organizationName} on Brightway Grants`,
+    subject: `You're invited to join ${organizationName} on Beacon`,
     html,
     text,
   });
@@ -140,11 +140,11 @@ export async function sendPaymentFailedEmail({
       </div>
       
       <p style="margin-bottom: 16px;">
-        We were unable to process your payment for <strong>${organizationName}</strong>'s Brightway Grants subscription.
+        We were unable to process your payment for <strong>${organizationName}</strong>'s Beacon subscription.
       </p>
       
       <p style="margin-bottom: 24px;">
-        Please update your payment method to continue using Brightway Grants without interruption.
+        Please update your payment method to continue using Beacon without interruption.
       </p>
       
       <div style="text-align: center; margin: 32px 0;">
@@ -156,7 +156,7 @@ export async function sendPaymentFailedEmail({
       <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;">
       
       <p style="color: #999; font-size: 12px; text-align: center;">
-        Brightway Grants • AI-Powered Grant Writing
+        Beacon by BrightWay • AI-Powered Grant Writing
       </p>
     </body>
     </html>
@@ -190,7 +190,7 @@ export async function sendWelcomeEmail({
         <div style="display: inline-block; background: #2563eb; padding: 12px; border-radius: 12px;">
           <span style="color: white; font-size: 24px;">✨</span>
         </div>
-        <h1 style="margin: 16px 0 8px; font-size: 24px;">Welcome to Brightway Grants!</h1>
+        <h1 style="margin: 16px 0 8px; font-size: 24px;">Welcome to Beacon!</h1>
       </div>
       
       <p style="margin-bottom: 16px;">
@@ -224,7 +224,7 @@ export async function sendWelcomeEmail({
       <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;">
       
       <p style="color: #999; font-size: 12px; text-align: center;">
-        Brightway Grants • AI-Powered Grant Writing
+        Beacon by BrightWay • AI-Powered Grant Writing
       </p>
     </body>
     </html>
@@ -232,7 +232,7 @@ export async function sendWelcomeEmail({
 
   return sendEmail({
     to,
-    subject: "Welcome to Brightway Grants!",
+    subject: "Welcome to Beacon!",
     html,
   });
 }

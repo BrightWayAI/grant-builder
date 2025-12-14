@@ -61,7 +61,7 @@ function LoginForm() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="font-display text-2xl">Welcome back</CardTitle>
-          <CardDescription>Sign in to your Brightway Grants account</CardDescription>
+          <CardDescription>Sign in to your Beacon account</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

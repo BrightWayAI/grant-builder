@@ -135,7 +135,7 @@ export default function OnboardingPage() {
 
       toast({
         title: "Organization created",
-        description: "Welcome to Brightway! Let's find you some grants.",
+        description: "Welcome to Beacon! Let's find you some grants.",
       });
 
       router.push("/dashboard");

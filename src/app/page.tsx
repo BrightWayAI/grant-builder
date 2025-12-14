@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/primitives/button";
 import { Badge } from "@/components/primitives/badge";
 import { 
@@ -522,8 +523,8 @@ function ExportMockup() {
   );
 }
 
-// Why Brightway section
-function WhyBrightway() {
+// Why Beacon section
+function WhyBeacon() {
   const benefits = [
     {
       icon: Clock,
@@ -549,7 +550,7 @@ function WhyBrightway() {
     <section className="py-24 px-6 bg-brand text-white">
       <div className="max-w-5xl mx-auto text-center">
         <div className="scroll-animate float-up">
-          <Badge variant="outline" className="mb-4 border-white/30 text-white">Why Brightway</Badge>
+          <Badge variant="outline" className="mb-4 border-white/30 text-white">Why Beacon</Badge>
           <h2 className="text-4xl md:text-5xl font-display font-bold mb-16">
             Stop starting from scratch
           </h2>
@@ -597,7 +598,7 @@ export default function Home() {
   const faqs = [
     {
       question: "How is this different from ChatGPT?",
-      answer: "ChatGPT is a general-purpose tool that requires extensive prompting to get good results. Brightway Grants is purpose-built for grant writing. It understands RFP structures, knows what funders look for, and uses YOUR organization's data to write in YOUR voice. No prompt engineering required—just upload and generate.",
+      answer: "ChatGPT is a general-purpose tool that requires extensive prompting to get good results. Beacon is purpose-built for grant writing. It understands RFP structures, knows what funders look for, and uses YOUR organization's data to write in YOUR voice. No prompt engineering required—just upload and generate.",
     },
     {
       question: "How does the knowledge base work?",
@@ -605,7 +606,7 @@ export default function Home() {
     },
     {
       question: "What types of grants does this work for?",
-      answer: "Brightway works with federal grants (via Grants.gov integration), foundation grants, corporate giving, and state/local government funding. The RFP parser handles various formats including NOFOs, LOIs, and full applications. If it has sections to write, Brightway can help.",
+      answer: "Beacon works with federal grants (via Grants.gov integration), foundation grants, corporate giving, and state/local government funding. The RFP parser handles various formats including NOFOs, LOIs, and full applications. If it has sections to write, Beacon can help.",
     },
     {
       question: "Can I edit the generated content?",
@@ -635,11 +636,14 @@ export default function Home() {
       )}>
         <div className="max-w-7xl mx-auto px-6 py-4">
           <nav className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-brand rounded-lg flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-white" />
+            <div className="flex items-center gap-3">
+              <Image src="/beacon-logo.png" alt="Beacon" width={32} height={32} />
+              <div className="flex flex-col">
+                <span className="text-xl font-display font-bold leading-tight">Beacon</span>
+                <span className="text-[10px] text-text-tertiary leading-tight flex items-center gap-1">
+                  by <Image src="/brightway-logo.png" alt="BrightWay" width={12} height={12} className="inline" /> BrightWay
+                </span>
               </div>
-              <span className="text-xl font-display font-bold">Brightway</span>
             </div>
             <div className="flex items-center gap-4">
               <a href="#pricing" className="text-sm text-text-secondary hover:text-text-primary transition-colors">
@@ -735,7 +739,7 @@ export default function Home() {
         <FeatureSection
           badge="Knowledge Base"
           title="Your documents, your voice"
-          description="Upload past proposals, annual reports, and impact data. Brightway learns your organization's unique voice and pulls relevant information when writing."
+          description="Upload past proposals, annual reports, and impact data. Beacon learns your organization's unique voice and pulls relevant information when writing."
           bullets={[
             "Index PDFs, Word docs, and spreadsheets",
             "AI learns your writing style and terminology",
@@ -795,8 +799,8 @@ export default function Home() {
         />
       </div>
 
-      {/* Why Brightway */}
-      <WhyBrightway />
+      {/* Why Beacon */}
+      <WhyBeacon />
 
       {/* Principles */}
       <section className="py-24 px-6 bg-surface">
@@ -807,7 +811,7 @@ export default function Home() {
               AI that writes with integrity
             </h2>
             <p className="text-text-secondary text-lg">
-              Every proposal Brightway generates follows these rules
+              Every proposal Beacon generates follows these rules
             </p>
           </div>
           
@@ -992,7 +996,7 @@ export default function Home() {
             Write your first proposal free
           </h2>
           <p className="text-xl text-text-secondary mb-10 max-w-2xl mx-auto">
-            See how Brightway works with your real RFP. No credit card required.
+            See how Beacon works with your real RFP. No credit card required.
           </p>
           <Link href="/signup">
             <Button size="lg" className="text-lg px-10 h-14">
@@ -1007,11 +1011,14 @@ export default function Home() {
       <footer className="py-12 px-6 border-t border-border">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-brand rounded-lg flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-white" />
+            <div className="flex items-center gap-3">
+              <Image src="/beacon-logo.png" alt="Beacon" width={32} height={32} />
+              <div className="flex flex-col">
+                <span className="font-display font-bold leading-tight">Beacon</span>
+                <span className="text-[10px] text-text-tertiary leading-tight flex items-center gap-1">
+                  by <Image src="/brightway-logo.png" alt="BrightWay" width={12} height={12} className="inline" /> BrightWay
+                </span>
               </div>
-              <span className="font-display font-bold">Brightway Grants</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-text-secondary">
               <Link href="/login" className="hover:text-text-primary transition-colors">
