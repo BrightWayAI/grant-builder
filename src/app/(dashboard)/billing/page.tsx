@@ -42,6 +42,7 @@ export default function BillingPage() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [teamSeats, setTeamSeats] = useState(3);
+  const [showSeatModal, setShowSeatModal] = useState(false);
 
   useEffect(() => {
     fetchSubscription();
@@ -79,10 +80,13 @@ export default function BillingPage() {
     }
   };
 
-  const handleUpgrade = async (plan: "individual" | "teams" | "enterprise") => {
+  const handleUpgrade = async (
+    plan: "individual" | "teams" | "enterprise",
+    seatOverride?: number
+  ) => {
     setUpgradeLoading(true);
     try {
-      const seats = plan === "teams" ? Math.max(3, teamSeats) : 1;
+      const seats = plan === "teams" ? Math.max(3, seatOverride ?? teamSeats) : 1;
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -355,8 +359,8 @@ export default function BillingPage() {
           <div className="grid md:grid-cols-3 gap-4">
             <div className={`p-4 rounded-lg border ${subscription?.plan === "individual" ? "border-brand bg-brand/5" : "border-border"}`}>
               <h3 className="font-semibold mb-1">Individual</h3>
-              <p className="text-2xl font-bold mb-1">$49<span className="text-sm font-normal text-text-secondary">/mo</span></p>
-              <p className="text-xs text-green-700 mb-3">$39.20/mo first year (20% off)</p>
+              <div className="text-sm text-text-secondary mb-1 line-through">$49/mo</div>
+              <p className="text-2xl font-bold mb-3">$39<span className="text-sm font-normal text-text-secondary">/mo first year</span></p>
               <ul className="space-y-2 text-sm text-text-secondary">
                 <li>2 proposals per month</li>
                 <li>250 MB knowledge base</li>
@@ -370,14 +374,14 @@ export default function BillingPage() {
                 onClick={() => handleUpgrade("individual")}
                 disabled={upgradeLoading}
               >
-                Lock in 20% off
+                Select Plan
               </Button>
             </div>
 
             <div className={`p-4 rounded-lg border ${subscription?.plan === "teams" ? "border-brand bg-brand/5" : "border-border"}`}>
               <h3 className="font-semibold mb-1">Teams</h3>
-              <p className="text-2xl font-bold mb-1">$29<span className="text-sm font-normal text-text-secondary">/seat/mo</span></p>
-              <p className="text-xs text-green-700 mb-3">20% off first year</p>
+              <div className="text-sm text-text-secondary mb-1 line-through">$29/seat/mo</div>
+              <p className="text-2xl font-bold mb-3">$23<span className="text-sm font-normal text-text-secondary">/seat/mo first year</span></p>
               <ul className="space-y-2 text-sm text-text-secondary">
                 <li>5 proposals per seat</li>
                 <li>1 GB shared knowledge base</li>
@@ -385,40 +389,20 @@ export default function BillingPage() {
                 <li>Unlimited team members</li>
                 <li>Priority support</li>
               </ul>
-              <div className="flex items-center gap-2 mt-3">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setTeamSeats(Math.max(3, teamSeats - 1))}
-                  disabled={teamSeats <= 3 || upgradeLoading}
-                >
-                  -
-                </Button>
-                <span className="w-12 text-center font-medium">{teamSeats}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setTeamSeats(teamSeats + 1)}
-                  disabled={upgradeLoading}
-                >
-                  +
-                </Button>
-                <span className="text-xs text-text-tertiary">Min 3 seats</span>
-              </div>
               <Button 
                 className="w-full mt-3" 
                 size="sm"
-                onClick={() => handleUpgrade("teams")}
+                onClick={() => setShowSeatModal(true)}
                 disabled={upgradeLoading}
               >
-                Lock in {Math.max(3, teamSeats)} seats at ${Math.max(3, teamSeats) * 29 * 0.8}/mo (year 1)
+                Select Plan
               </Button>
             </div>
 
             <div className={`p-4 rounded-lg border ${subscription?.plan === "enterprise" ? "border-brand bg-brand/5" : "border-border"}`}>
               <h3 className="font-semibold mb-1">Enterprise</h3>
-              <p className="text-2xl font-bold mb-1">$199<span className="text-sm font-normal text-text-secondary">/mo</span></p>
-              <p className="text-xs text-green-700 mb-3">$159.20/mo first year (20% off)</p>
+              <div className="text-sm text-text-secondary mb-1 line-through">$199/mo</div>
+              <p className="text-2xl font-bold mb-3">$159<span className="text-sm font-normal text-text-secondary">/mo first year</span></p>
               <ul className="space-y-2 text-sm text-text-secondary">
                 <li>50 proposals per month</li>
                 <li>5 GB knowledge base</li>
@@ -432,12 +416,55 @@ export default function BillingPage() {
                 onClick={() => handleUpgrade("enterprise")}
                 disabled={upgradeLoading}
               >
-                Lock in 20% off
+                Select Plan
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {showSeatModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-2">Choose seats</h3>
+            <p className="text-sm text-text-secondary mb-4">Teams requires at least 3 seats. 20% off first year will be applied.</p>
+            <div className="flex items-center gap-3 mb-4">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setTeamSeats(Math.max(3, teamSeats - 1))}
+                disabled={teamSeats <= 3 || upgradeLoading}
+              >
+                -
+              </Button>
+              <span className="w-12 text-center font-medium">{teamSeats}</span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setTeamSeats(teamSeats + 1)}
+                disabled={upgradeLoading}
+              >
+                +
+              </Button>
+              <span className="text-xs text-text-tertiary">Min 3</span>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowSeatModal(false)} disabled={upgradeLoading}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowSeatModal(false);
+                  handleUpgrade("teams", teamSeats);
+                }}
+                disabled={upgradeLoading}
+              >
+                Continue - ${Math.max(3, teamSeats) * 23}/mo first year
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
