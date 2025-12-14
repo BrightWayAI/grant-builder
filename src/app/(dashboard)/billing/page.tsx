@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 interface SubscriptionData {
-  status: "trial" | "active" | "past_due" | "canceled" | "unpaid";
+  status: "beta" | "trial" | "active" | "past_due" | "canceled" | "unpaid";
   plan: string | null;
   proposalsUsed: number;
   proposalLimit: number;
@@ -30,6 +30,7 @@ interface SubscriptionData {
   teamLimit: number;
   currentPeriodEnd: string | null;
   canCreateProposal: boolean;
+  isBeta: boolean;
 }
 
 export default function BillingPage() {
@@ -110,6 +111,7 @@ export default function BillingPage() {
   }
 
   const statusConfig = {
+    beta: { label: "Beta Access", color: "bg-purple-100 text-purple-800", icon: CheckCircle },
     trial: { label: "Free Trial", color: "bg-blue-100 text-blue-800", icon: Clock },
     active: { label: "Active", color: "bg-green-100 text-green-800", icon: CheckCircle },
     past_due: { label: "Past Due", color: "bg-yellow-100 text-yellow-800", icon: AlertCircle },
@@ -117,7 +119,7 @@ export default function BillingPage() {
     unpaid: { label: "Unpaid", color: "bg-red-100 text-red-800", icon: AlertCircle },
   };
 
-  const status = subscription?.status || "trial";
+  const status = subscription?.status || "beta";
   const StatusIcon = statusConfig[status].icon;
 
   return (
@@ -134,7 +136,9 @@ export default function BillingPage() {
             <div>
               <CardTitle>Current Plan</CardTitle>
               <CardDescription>
-                {subscription?.plan 
+                {subscription?.isBeta 
+                  ? "Full access during beta period"
+                  : subscription?.plan 
                   ? `${subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)} Plan`
                   : "Free Trial"}
               </CardDescription>
@@ -146,10 +150,28 @@ export default function BillingPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {status === "trial" ? (
+          {status === "beta" ? (
+            <div className="space-y-4">
+              <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <h3 className="font-medium text-purple-900 mb-2">Welcome to the Beacon Beta!</h3>
+                <p className="text-sm text-purple-800 mb-3">
+                  You have full access to all features during our beta period. No payment required.
+                </p>
+                <ul className="text-sm text-purple-700 space-y-1">
+                  <li>• {subscription?.proposalLimit || 15} proposals per month</li>
+                  <li>• 1 GB knowledge base storage</li>
+                  <li>• 100 documents</li>
+                  <li>• Unlimited team members</li>
+                </ul>
+              </div>
+              <p className="text-sm text-text-tertiary">
+                We&apos;ll notify you before the beta ends. Beta testers will receive special pricing.
+              </p>
+            </div>
+          ) : status === "trial" ? (
             <div className="space-y-4">
               <p className="text-sm text-text-secondary">
-                You're on the free trial. Create your first proposal free, then upgrade to continue.
+                You&apos;re on the free trial. Create your first 3 proposals free, then upgrade to continue.
               </p>
               <div className="flex gap-3">
                 <Button onClick={() => handleUpgrade("individual")} disabled={upgradeLoading}>

@@ -629,9 +629,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-surface">
+      {/* Beta Banner */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-purple-600 text-white text-center py-2 text-sm">
+        <span className="font-medium">🚀 Now in Beta</span> — Try Beacon free while we&apos;re in early access
+      </div>
+      
       {/* Header */}
       <header className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+        "fixed top-10 left-0 right-0 z-50 transition-all duration-300",
         scrollY > 50 ? "bg-surface/95 backdrop-blur-sm border-b border-border" : "bg-transparent"
       )}>
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -653,7 +658,7 @@ export default function Home() {
                 <Button variant="ghost">Log In</Button>
               </Link>
               <Link href="/signup">
-                <Button>Get Started <ArrowRight className="h-4 w-4 ml-1" /></Button>
+                <Button>Join the Beta <ArrowRight className="h-4 w-4 ml-1" /></Button>
               </Link>
             </div>
           </nav>
@@ -661,7 +666,7 @@ export default function Home() {
       </header>
 
       {/* Hero */}
-      <section className="pt-28 pb-16 px-6">
+      <section className="pt-36 pb-16 px-6">
         <div className="max-w-5xl mx-auto text-center">
           <Badge variant="outline" className="mb-6 px-4 py-1.5">
             <Sparkles className="h-3 w-3 mr-2" />
@@ -849,11 +854,14 @@ export default function Home() {
       <section id="pricing" className="py-24 px-6 bg-surface-subtle">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16 scroll-animate float-up">
+            <Badge className="mb-4 bg-purple-100 text-purple-800 border-purple-200">
+              Free during beta
+            </Badge>
             <h2 className="text-4xl font-display font-bold mb-4">
               Simple pricing
             </h2>
             <p className="text-xl text-text-secondary">
-              Try your first proposal free. No credit card required.
+              Full access free during beta. These will be our prices at launch.
             </p>
           </div>
           
@@ -870,13 +878,13 @@ export default function Home() {
               </div>
               
               <Link href="/signup">
-                <Button className="w-full mb-5" variant="outline">Start Free</Button>
+                <Button className="w-full mb-5" variant="outline">Try Free in Beta</Button>
               </Link>
               
               <ul className="space-y-2.5 text-sm">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>5 proposals per month</span>
+                  <span>2 proposals per month</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
@@ -910,13 +918,13 @@ export default function Home() {
               </div>
               
               <Link href="/signup">
-                <Button className="w-full mb-5">Start Free</Button>
+                <Button className="w-full mb-5">Try Free in Beta</Button>
               </Link>
               
               <ul className="space-y-2.5 text-sm">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>15 proposals per seat</span>
+                  <span>5 proposals per seat</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
@@ -945,7 +953,7 @@ export default function Home() {
               </div>
               
               <Link href="/signup">
-                <Button className="w-full mb-5" variant="outline">Start Free</Button>
+                <Button className="w-full mb-5" variant="outline">Try Free in Beta</Button>
               </Link>
               
               <ul className="space-y-2.5 text-sm">
@@ -992,15 +1000,18 @@ export default function Home() {
       {/* CTA */}
       <section className="py-24 px-6 bg-surface-subtle">
         <div className="max-w-4xl mx-auto text-center scroll-animate float-up">
+          <Badge className="mb-4 bg-purple-100 text-purple-800 border-purple-200">
+            Limited beta spots available
+          </Badge>
           <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
-            Write your first proposal free
+            Join the beta today
           </h2>
           <p className="text-xl text-text-secondary mb-10 max-w-2xl mx-auto">
-            See how Beacon works with your real RFP. No credit card required.
+            Get full access to Beacon free while we&apos;re in beta. No credit card required.
           </p>
           <Link href="/signup">
             <Button size="lg" className="text-lg px-10 h-14">
-              Start Writing Free
+              Join the Beta
               <ArrowRight className="h-5 w-5 ml-2" />
             </Button>
           </Link>

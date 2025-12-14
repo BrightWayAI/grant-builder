@@ -30,13 +30,13 @@ export function getPlanConfig(plan: "individual" | "teams" | "enterprise") {
     individual: {
       name: "Individual",
       priceId: process.env.STRIPE_PRICE_INDIVIDUAL || process.env.STRIPE_PRICE_PERSONAL,
-      proposalsPerMonth: 5,
+      proposalsPerMonth: 2,   // 2 per month
       seats: 1,
     },
     teams: {
       name: "Teams",
       priceId: process.env.STRIPE_PRICE_TEAMS,
-      proposalsPerMonth: 15,
+      proposalsPerMonth: 5,   // 5 per seat per month
       seats: null,
     },
     enterprise: {

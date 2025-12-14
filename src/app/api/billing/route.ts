@@ -37,13 +37,15 @@ export async function GET() {
     }
 
     const status = organization.subscriptionStatus.toLowerCase() as 
-      "trial" | "active" | "past_due" | "canceled" | "unpaid";
+      "beta" | "trial" | "active" | "past_due" | "canceled" | "unpaid";
+    
+    const isBeta = status === "beta";
     
     const plan = organization.stripePriceId 
       ? getPlanByPriceId(organization.stripePriceId) 
       : null;
 
-    const limits = plan ? PLAN_LIMITS[plan] : PLAN_LIMITS.trial;
+    const limits = isBeta ? PLAN_LIMITS.beta : (plan ? PLAN_LIMITS[plan] : PLAN_LIMITS.trial);
     const teamSize = organization.users.length;
 
     // Calculate storage used (in MB)
@@ -74,6 +76,7 @@ export async function GET() {
       teamLimit: limits.maxTeamMembers,
       currentPeriodEnd: organization.stripeCurrentPeriodEnd?.toISOString() || null,
       canCreateProposal: organization.proposalsUsedThisMonth < proposalLimit,
+      isBeta,
     });
   } catch (error) {
     console.error("Billing info error:", error);

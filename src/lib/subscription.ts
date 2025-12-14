@@ -2,6 +2,12 @@ import prisma from "@/lib/db";
 import { getPlanByPriceId, getProposalLimit } from "@/lib/stripe";
 
 export const PLAN_LIMITS = {
+  beta: {
+    proposalsPerMonth: 15,  // Same as teams
+    maxStorageMB: 1024,     // 1 GB
+    maxDocuments: 100,
+    maxTeamMembers: 999,    // unlimited
+  },
   trial: {
     proposalsPerMonth: 3,   // 3 free proposals
     maxStorageMB: 50,       // 50 MB
@@ -9,13 +15,13 @@ export const PLAN_LIMITS = {
     maxTeamMembers: 1,
   },
   individual: {
-    proposalsPerMonth: 5,
+    proposalsPerMonth: 2,   // 2 per month
     maxStorageMB: 250,      // 250 MB
     maxDocuments: 25,
     maxTeamMembers: 1,
   },
   teams: {
-    proposalsPerMonth: 15,  // per seat
+    proposalsPerMonth: 5,   // 5 per seat per month
     maxStorageMB: 1024,     // 1 GB shared
     maxDocuments: 100,
     maxTeamMembers: 999,    // unlimited
@@ -31,13 +37,14 @@ export const PLAN_LIMITS = {
 export type PlanType = keyof typeof PLAN_LIMITS;
 
 export interface SubscriptionInfo {
-  status: "trial" | "active" | "past_due" | "canceled" | "unpaid";
+  status: "beta" | "trial" | "active" | "past_due" | "canceled" | "unpaid";
   canCreateProposal: boolean;
   proposalsUsed: number;
   proposalLimit: number;
   isTrialUsed: boolean;
   needsPayment: boolean;
   plan: string | null;
+  isBeta: boolean;
 }
 
 export async function getSubscriptionInfo(organizationId: string): Promise<SubscriptionInfo> {
@@ -56,13 +63,14 @@ export async function getSubscriptionInfo(organizationId: string): Promise<Subsc
 
   if (!organization) {
     return {
-      status: "trial",
+      status: "beta",
       canCreateProposal: false,
       proposalsUsed: 0,
-      proposalLimit: 1,
+      proposalLimit: PLAN_LIMITS.beta.proposalsPerMonth,
       isTrialUsed: false,
       needsPayment: false,
       plan: null,
+      isBeta: true,
     };
   }
 
@@ -70,17 +78,34 @@ export async function getSubscriptionInfo(organizationId: string): Promise<Subsc
   const totalProposals = organization._count.proposals;
   const proposalsUsed = organization.proposalsUsedThisMonth;
   
-  // Trial users get 1 free proposal
+  // Beta users get full access
+  if (status === "beta") {
+    const limit = PLAN_LIMITS.beta.proposalsPerMonth;
+    return {
+      status,
+      canCreateProposal: proposalsUsed < limit,
+      proposalsUsed,
+      proposalLimit: limit,
+      isTrialUsed: false,
+      needsPayment: false,
+      plan: null,
+      isBeta: true,
+    };
+  }
+  
+  // Trial users get 3 free proposals
   if (status === "trial") {
-    const isTrialUsed = totalProposals >= 1;
+    const limit = PLAN_LIMITS.trial.proposalsPerMonth;
+    const isTrialUsed = totalProposals >= limit;
     return {
       status,
       canCreateProposal: !isTrialUsed,
       proposalsUsed: totalProposals,
-      proposalLimit: 1,
+      proposalLimit: limit,
       isTrialUsed,
       needsPayment: isTrialUsed,
       plan: null,
+      isBeta: false,
     };
   }
 
@@ -97,6 +122,7 @@ export async function getSubscriptionInfo(organizationId: string): Promise<Subsc
       isTrialUsed: true,
       needsPayment: false,
       plan,
+      isBeta: false,
     };
   }
 
@@ -110,6 +136,7 @@ export async function getSubscriptionInfo(organizationId: string): Promise<Subsc
       isTrialUsed: true,
       needsPayment: true,
       plan: organization.stripePriceId ? getPlanByPriceId(organization.stripePriceId) : null,
+      isBeta: false,
     };
   }
 
@@ -122,6 +149,7 @@ export async function getSubscriptionInfo(organizationId: string): Promise<Subsc
     isTrialUsed: true,
     needsPayment: true,
     plan: null,
+    isBeta: false,
   };
 }
 

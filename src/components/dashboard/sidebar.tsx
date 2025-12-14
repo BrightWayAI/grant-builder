@@ -24,9 +24,10 @@ interface SidebarProps {
     email: string;
     organization?: { name: string } | null;
   };
+  isBeta?: boolean;
 }
 
-export function Sidebar({ user }: SidebarProps) {
+export function Sidebar({ user, isBeta = false }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -44,6 +45,11 @@ export function Sidebar({ user }: SidebarProps) {
         <Link href="/dashboard" className="ml-3 flex items-center gap-2">
           <Image src="/beacon-logo.png" alt="Beacon" width={24} height={24} />
           <span className="text-lg font-display font-semibold text-brand">Beacon</span>
+          {isBeta && (
+            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 text-purple-700 rounded">
+              Beta
+            </span>
+          )}
         </Link>
         <div className="ml-auto">
           <Link href="/proposals/new">
@@ -76,11 +82,19 @@ export function Sidebar({ user }: SidebarProps) {
             <Link href="/dashboard" className="flex items-center gap-2">
               <Image src="/beacon-logo.png" alt="Beacon" width={24} height={24} />
               <span className="text-lg font-display font-semibold text-brand">Beacon</span>
+              {isBeta && (
+                <span className="px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 text-purple-700 rounded">
+                  Beta
+                </span>
+              )}
             </Link>
           )}
           {collapsed && (
-            <Link href="/dashboard" className="mx-auto">
+            <Link href="/dashboard" className="mx-auto relative">
               <Image src="/beacon-logo.png" alt="Beacon" width={24} height={24} />
+              {isBeta && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full" />
+              )}
             </Link>
           )}
           <button

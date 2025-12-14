@@ -27,7 +27,7 @@ model Organization {
   stripeSubscriptionId String?   @unique
   stripePriceId        String?
   stripeCurrentPeriodEnd DateTime?
-  subscriptionStatus   SubscriptionStatus @default(TRIAL)
+  subscriptionStatus   SubscriptionStatus @default(BETA)
   proposalsUsedThisMonth Int     @default(0)
   proposalResetDate    DateTime?
   
@@ -42,7 +42,8 @@ model Organization {
 }
 
 enum SubscriptionStatus {
-  TRIAL           // Free trial (1 proposal)
+  BETA            // Beta access (full features, no payment)
+  TRIAL           // Free trial (3 proposals)
   ACTIVE          // Paid subscription active
   PAST_DUE        // Payment failed, grace period
   CANCELED        // Subscription canceled
