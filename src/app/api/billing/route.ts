@@ -16,7 +16,12 @@ export async function GET() {
 
     const organization = await prisma.organization.findUnique({
       where: { id: user.organizationId },
-      include: {
+      select: {
+        subscriptionStatus: true,
+        stripePriceId: true,
+        stripeCurrentPeriodEnd: true,
+        proposalsUsedThisMonth: true,
+        seatsPurchased: true,
         documents: {
           select: { fileSize: true },
         },
@@ -41,12 +46,14 @@ export async function GET() {
     
     const isBeta = status === "beta";
     
-    const plan = organization.stripePriceId 
+  const plan = organization.stripePriceId 
       ? getPlanByPriceId(organization.stripePriceId) 
       : null;
 
     const limits = isBeta ? PLAN_LIMITS.beta : (plan ? PLAN_LIMITS[plan] : PLAN_LIMITS.trial);
     const teamSize = organization.users.length;
+    const seatsPurchased = plan === "teams" ? (organization.seatsPurchased || 3) : null;
+    const seatsUsed = plan === "teams" ? teamSize : null;
 
     // Calculate storage used (in MB)
     const storageUsedBytes = organization.documents.reduce(
@@ -55,10 +62,9 @@ export async function GET() {
     );
     const storageUsedMB = storageUsedBytes / (1024 * 1024);
 
-    // For teams plan, limits scale with team size
-    const proposalLimit = plan === "teams" 
-      ? limits.proposalsPerMonth * teamSize 
-      : limits.proposalsPerMonth;
+    // For teams plan, limits scale with purchased seats (not headcount)
+    const seatMultiplier = plan === "teams" ? (seatsPurchased || 3) : 1;
+    const proposalLimit = limits.proposalsPerMonth * seatMultiplier;
     
     const documentsLimit = limits.maxDocuments;
     const storageLimitMB = limits.maxStorageMB;
@@ -73,7 +79,10 @@ export async function GET() {
       documentsCount: organization._count.documents,
       documentsLimit,
       teamSize,
-      teamLimit: limits.maxTeamMembers,
+      teamLimit: seatsPurchased ?? limits.maxTeamMembers,
+      seatsPurchased: seatsPurchased ?? null,
+      seatsUsed,
+      seatsRemaining: seatsPurchased !== null ? Math.max(0, seatsPurchased - (seatsUsed || 0)) : null,
       currentPeriodEnd: organization.stripeCurrentPeriodEnd?.toISOString() || null,
       canCreateProposal: organization.proposalsUsedThisMonth < proposalLimit,
       isBeta,

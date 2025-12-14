@@ -31,6 +31,9 @@ interface SubscriptionData {
   currentPeriodEnd: string | null;
   canCreateProposal: boolean;
   isBeta: boolean;
+  seatsPurchased?: number | null;
+  seatsUsed?: number | null;
+  seatsRemaining?: number | null;
 }
 
 export default function BillingPage() {
@@ -38,6 +41,7 @@ export default function BillingPage() {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [teamSeats, setTeamSeats] = useState(3);
 
   useEffect(() => {
     fetchSubscription();
@@ -49,6 +53,9 @@ export default function BillingPage() {
       if (res.ok) {
         const data = await res.json();
         setSubscription(data);
+        if (data.plan === "teams" && data.seatsPurchased) {
+          setTeamSeats(Math.max(3, data.seatsPurchased));
+        }
       }
     } catch (error) {
       console.error("Failed to fetch subscription:", error);
@@ -75,10 +82,11 @@ export default function BillingPage() {
   const handleUpgrade = async (plan: "individual" | "teams" | "enterprise") => {
     setUpgradeLoading(true);
     try {
+      const seats = plan === "teams" ? Math.max(3, teamSeats) : 1;
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, seats: plan === "teams" ? 3 : 1 }),
+        body: JSON.stringify({ plan, seats }),
       });
       const data = await res.json();
       
@@ -173,13 +181,35 @@ export default function BillingPage() {
               <p className="text-sm text-text-secondary">
                 You&apos;re on the free trial. Create your first 3 proposals free, then upgrade to continue.
               </p>
+              <div className="flex items-center gap-3 text-sm text-text-secondary">
+                <span className="font-medium">Teams seats</span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setTeamSeats(Math.max(3, teamSeats - 1))}
+                    disabled={teamSeats <= 3}
+                  >
+                    -
+                  </Button>
+                  <span className="w-10 text-center font-medium">{teamSeats}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setTeamSeats(teamSeats + 1)}
+                  >
+                    +
+                  </Button>
+                  <span className="text-xs text-text-tertiary">Min 3 seats</span>
+                </div>
+              </div>
               <div className="flex gap-3">
                 <Button onClick={() => handleUpgrade("individual")} disabled={upgradeLoading}>
                   {upgradeLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                   Upgrade to Individual - $49/mo
                 </Button>
                 <Button variant="outline" onClick={() => handleUpgrade("teams")} disabled={upgradeLoading}>
-                  Upgrade to Teams - $29/seat/mo
+                  Upgrade to Teams - ${teamSeats * 29}/mo ({teamSeats} seats)
                 </Button>
               </div>
             </div>
@@ -292,6 +322,26 @@ export default function BillingPage() {
               </div>
             </div>
           )}
+
+          {subscription?.plan === "teams" && subscription?.seatsPurchased ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-text-secondary" />
+                  <span>Licenses</span>
+                </div>
+                <span className="text-text-secondary">
+                  {subscription?.seatsUsed || 0} / {subscription?.seatsPurchased} seats used
+                </span>
+              </div>
+              <Progress 
+                value={((subscription?.seatsUsed || 0) / (subscription?.seatsPurchased || 1)) * 100} 
+              />
+              <p className="text-xs text-text-tertiary">
+                {Math.max(0, (subscription?.seatsRemaining || 0))} seats remaining.
+              </p>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -306,7 +356,7 @@ export default function BillingPage() {
               <h3 className="font-semibold mb-1">Individual</h3>
               <p className="text-2xl font-bold mb-3">$49<span className="text-sm font-normal text-text-secondary">/mo</span></p>
               <ul className="space-y-2 text-sm text-text-secondary">
-                <li>5 proposals per month</li>
+                <li>2 proposals per month</li>
                 <li>250 MB knowledge base</li>
                 <li>25 documents</li>
                 <li>1 team member</li>
@@ -327,7 +377,7 @@ export default function BillingPage() {
               <h3 className="font-semibold mb-1">Teams</h3>
               <p className="text-2xl font-bold mb-3">$29<span className="text-sm font-normal text-text-secondary">/seat/mo</span></p>
               <ul className="space-y-2 text-sm text-text-secondary">
-                <li>15 proposals per seat</li>
+                <li>5 proposals per seat</li>
                 <li>1 GB shared knowledge base</li>
                 <li>100 documents</li>
                 <li>Unlimited team members</li>

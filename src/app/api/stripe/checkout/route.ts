@@ -6,7 +6,7 @@ import { z } from "zod";
 
 const checkoutSchema = z.object({
   plan: z.enum(["individual", "teams", "enterprise"]),
-  seats: z.number().min(1).optional().default(1),
+  seats: z.number().int().min(1).optional().default(1),
 });
 
 export async function POST(req: NextRequest) {
@@ -21,6 +21,13 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { plan, seats } = checkoutSchema.parse(body);
+
+    if (plan === "teams" && seats < 3) {
+      return NextResponse.json(
+        { error: "Teams plan requires at least 3 seats." },
+        { status: 400 }
+      );
+    }
 
     const organization = await prisma.organization.findUnique({
       where: { id: user.organizationId },
@@ -80,13 +87,13 @@ export async function POST(req: NextRequest) {
       metadata: {
         organizationId: organization.id,
         plan,
-        seats: seats.toString(),
+        seats: (plan === "teams" ? seats : 1).toString(),
       },
       subscription_data: {
         metadata: {
           organizationId: organization.id,
           plan,
-          seats: seats.toString(),
+          seats: (plan === "teams" ? seats : 1).toString(),
         },
       },
       allow_promotion_codes: true,

@@ -28,6 +28,7 @@ model Organization {
   stripePriceId        String?
   stripeCurrentPeriodEnd DateTime?
   subscriptionStatus   SubscriptionStatus @default(BETA)
+  seatsPurchased       Int?
   proposalsUsedThisMonth Int     @default(0)
   proposalResetDate    DateTime?
   

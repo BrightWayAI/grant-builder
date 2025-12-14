@@ -55,6 +55,7 @@ export async function getSubscriptionInfo(organizationId: string): Promise<Subsc
       stripePriceId: true,
       proposalsUsedThisMonth: true,
       proposalResetDate: true,
+      seatsPurchased: true,
       _count: {
         select: { proposals: true },
       },
@@ -112,7 +113,8 @@ export async function getSubscriptionInfo(organizationId: string): Promise<Subsc
   // Active subscription
   if (status === "active" && organization.stripePriceId) {
     const plan = getPlanByPriceId(organization.stripePriceId);
-    const limit = plan ? getProposalLimit(plan) : 10;
+    const seats = organization.seatsPurchased || 1;
+    const limit = plan ? getProposalLimit(plan, seats) : 10;
     
     return {
       status,

@@ -24,7 +24,7 @@ const plans = [
     name: "Individual",
     price: 49,
     features: [
-      "5 proposals per month",
+      "2 proposals per month",
       "250 MB knowledge base",
       "25 documents",
       "Grant discovery",
@@ -36,7 +36,7 @@ const plans = [
     price: 29,
     priceLabel: "per seat",
     features: [
-      "15 proposals per seat",
+      "5 proposals per seat",
       "1 GB shared storage",
       "100 documents",
       "Unlimited members",

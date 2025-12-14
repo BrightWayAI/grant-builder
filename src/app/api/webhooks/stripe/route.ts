@@ -93,6 +93,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const subscription = subscriptionResponse as any;
   const priceId = subscription.items?.data?.[0]?.price?.id;
+  const seats = subscription.items?.data?.[0]?.quantity
+    ? Number(subscription.items.data[0].quantity) || 1
+    : subscription.metadata?.seats
+    ? Number(subscription.metadata.seats) || 1
+    : 1;
   const plan = getPlanByPriceId(priceId);
   const periodEnd = subscription.current_period_end 
     ? new Date(subscription.current_period_end * 1000) 
@@ -107,6 +112,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       subscriptionStatus: "ACTIVE",
       proposalsUsedThisMonth: 0,
       proposalResetDate: periodEnd,
+      seatsPurchased: plan === "teams" ? seats : 1,
     },
   });
 
@@ -136,6 +142,11 @@ async function updateOrganizationSubscription(
   subscription: any
 ) {
   const priceId = subscription.items?.data?.[0]?.price?.id;
+  const seats = subscription.items?.data?.[0]?.quantity
+    ? Number(subscription.items.data[0].quantity) || 1
+    : subscription.metadata?.seats
+    ? Number(subscription.metadata.seats) || 1
+    : 1;
   
   let status: "ACTIVE" | "PAST_DUE" | "CANCELED" | "UNPAID" | "TRIAL" = "ACTIVE";
   switch (subscription.status) {
@@ -167,6 +178,7 @@ async function updateOrganizationSubscription(
       stripePriceId: priceId,
       stripeCurrentPeriodEnd: periodEnd,
       subscriptionStatus: status,
+      seatsPurchased: getPlanByPriceId(priceId) === "teams" ? seats : 1,
     },
   });
 
@@ -185,6 +197,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
         subscriptionStatus: "CANCELED",
         stripeSubscriptionId: null,
         stripePriceId: null,
+        seatsPurchased: null,
       },
     });
     console.log(`Subscription canceled for org ${org.id}`);

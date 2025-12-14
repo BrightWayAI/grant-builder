@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { sendTeamInviteEmail } from "@/lib/email";
+import { getPlanByPriceId } from "@/lib/stripe";
 import { z } from "zod";
 
 // GET - List team members
@@ -14,6 +15,27 @@ export async function GET() {
     if (!user.organizationId) {
       return NextResponse.json({ error: "No organization" }, { status: 400 });
     }
+
+    const organization = await prisma.organization.findUnique({
+      where: { id: user.organizationId },
+      select: {
+        stripePriceId: true,
+        subscriptionStatus: true,
+        seatsPurchased: true,
+        _count: { select: { users: true } },
+      },
+    });
+
+    if (!organization) {
+      return NextResponse.json({ error: "Organization not found" }, { status: 404 });
+    }
+
+    const plan = organization.stripePriceId
+      ? getPlanByPriceId(organization.stripePriceId)
+      : null;
+    const seatsPurchased = plan === "teams" ? (organization.seatsPurchased || 3) : null;
+    const seatsUsed = organization._count.users;
+    const seatsRemaining = seatsPurchased !== null ? Math.max(0, seatsPurchased - seatsUsed) : null;
 
     const members = await prisma.user.findMany({
       where: { organizationId: user.organizationId },
@@ -31,7 +53,15 @@ export async function GET() {
       ],
     });
 
-    return NextResponse.json({ members });
+    return NextResponse.json({
+      members,
+      seats: {
+        plan,
+        purchased: seatsPurchased,
+        used: seatsUsed,
+        remaining: seatsRemaining,
+      },
+    });
   } catch (error) {
     console.error("Error fetching team members:", error);
     return NextResponse.json(
@@ -60,6 +90,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Only admins can invite team members" },
         { status: 403 }
+      );
+    }
+
+    const organization = await prisma.organization.findUnique({
+      where: { id: user.organizationId },
+      select: {
+        name: true,
+        stripePriceId: true,
+        subscriptionStatus: true,
+        seatsPurchased: true,
+        _count: { select: { users: true } },
+      },
+    });
+
+    if (!organization) {
+      return NextResponse.json({ error: "Organization not found" }, { status: 404 });
+    }
+
+    const plan = organization.stripePriceId
+      ? getPlanByPriceId(organization.stripePriceId)
+      : null;
+    const seatsPurchased = plan === "teams" ? (organization.seatsPurchased || 3) : null;
+    const seatsUsed = organization._count.users;
+
+    if (plan === "teams" && seatsPurchased !== null && seatsUsed >= seatsPurchased) {
+      return NextResponse.json(
+        { error: `No available licenses. You have ${seatsUsed}/${seatsPurchased} seats assigned.` },
+        { status: 400 }
       );
     }
 
@@ -101,14 +159,28 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      return NextResponse.json({ member: updatedUser, invited: false });
-    }
+      try {
+        await sendTeamInviteEmail({
+          to: email,
+          inviterName: user.name || user.email,
+          organizationName: organization.name || "your organization",
+          role,
+        });
+      } catch (emailError) {
+        console.error("Failed to send invite email to existing user:", emailError);
+      }
 
-    // Get organization name for the email
-    const organization = await prisma.organization.findUnique({
-      where: { id: user.organizationId },
-      select: { name: true },
-    });
+      const seatSummary = plan === "teams" && seatsPurchased !== null
+        ? {
+            plan,
+            purchased: seatsPurchased,
+            used: seatsUsed + 1,
+            remaining: Math.max(0, seatsPurchased - (seatsUsed + 1)),
+          }
+        : undefined;
+
+      return NextResponse.json({ member: updatedUser, invited: true, seats: seatSummary });
+    }
 
     // Create new user with pending invite (they'll set password on first login)
     const newUser = await prisma.user.create({
@@ -139,7 +211,16 @@ export async function POST(req: NextRequest) {
       // Don't fail the request if email fails
     }
 
-    return NextResponse.json({ member: newUser, invited: true }, { status: 201 });
+    const seatSummary = plan === "teams" && seatsPurchased !== null
+      ? {
+          plan,
+          purchased: seatsPurchased,
+          used: seatsUsed + 1,
+          remaining: Math.max(0, seatsPurchased - (seatsUsed + 1)),
+        }
+      : undefined;
+
+    return NextResponse.json({ member: newUser, invited: true, seats: seatSummary }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

@@ -33,6 +33,13 @@ interface TeamMember {
   createdAt: string;
 }
 
+interface SeatInfo {
+  plan?: string | null;
+  purchased?: number | null;
+  used?: number | null;
+  remaining?: number | null;
+}
+
 interface TeamSettingsProps {
   currentUserId: string;
   currentUserRole: string;
@@ -46,6 +53,7 @@ export function TeamSettings({ currentUserId, currentUserRole }: TeamSettingsPro
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [seats, setSeats] = useState<SeatInfo | null>(null);
 
   const isAdmin = currentUserRole === "admin";
 
@@ -59,6 +67,9 @@ export function TeamSettings({ currentUserId, currentUserRole }: TeamSettingsPro
       if (!res.ok) throw new Error("Failed to fetch team members");
       const data = await res.json();
       setMembers(data.members);
+      if (data.seats) {
+        setSeats(data.seats);
+      }
     } catch (err) {
       setError("Failed to load team members");
     } finally {
@@ -68,7 +79,8 @@ export function TeamSettings({ currentUserId, currentUserRole }: TeamSettingsPro
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail.trim()) return;
+    const emailToInvite = inviteEmail.trim();
+    if (!emailToInvite) return;
 
     setInviting(true);
     setError(null);
@@ -78,7 +90,7 @@ export function TeamSettings({ currentUserId, currentUserRole }: TeamSettingsPro
       const res = await fetch("/api/team", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
+        body: JSON.stringify({ email: emailToInvite, role: inviteRole }),
       });
 
       const data = await res.json();
@@ -88,12 +100,18 @@ export function TeamSettings({ currentUserId, currentUserRole }: TeamSettingsPro
       }
 
       setMembers([...members, data.member]);
-      setInviteEmail("");
+      if (data.seats) {
+        setSeats(data.seats);
+      } else if (seats && seats.purchased) {
+        const used = (seats.used || 0) + 1;
+        setSeats({ ...seats, used, remaining: Math.max(0, (seats.remaining || 0) - 1) });
+      }
       setSuccess(
         data.invited
-          ? `Invitation sent to ${inviteEmail}`
-          : `${inviteEmail} has been added to your team`
+          ? `Invitation sent to ${emailToInvite}`
+          : `${emailToInvite} has been added to your team`
       );
+      setInviteEmail("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to invite member");
     } finally {
@@ -135,6 +153,10 @@ export function TeamSettings({ currentUserId, currentUserRole }: TeamSettingsPro
 
       setMembers(members.filter((m) => m.id !== memberId));
       setSuccess("Team member removed");
+      if (seats?.plan === "teams" && seats.purchased) {
+        const used = Math.max(0, (seats.used || 0) - 1);
+        setSeats({ ...seats, used, remaining: Math.max(0, seats.purchased - used) });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to remove member");
     }
@@ -165,6 +187,19 @@ export function TeamSettings({ currentUserId, currentUserRole }: TeamSettingsPro
       {/* Invite Form - Admin only */}
       {isAdmin && (
         <form onSubmit={handleInvite} className="space-y-4">
+          {seats?.plan === "teams" ? (
+            <div className="p-3 bg-surface-subtle rounded-lg border border-border">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">Licenses</span>
+                <span className="text-text-secondary">
+                  {seats.used || 0} / {seats.purchased || 0} used
+                </span>
+              </div>
+              <p className="text-xs text-text-tertiary mt-1">
+                {Math.max(0, seats.remaining || 0)} seats remaining.
+              </p>
+            </div>
+          ) : null}
           <div className="flex gap-3">
             <div className="flex-1">
               <Input
@@ -187,7 +222,14 @@ export function TeamSettings({ currentUserId, currentUserRole }: TeamSettingsPro
                 <SelectItem value="admin">Admin</SelectItem>
               </SelectContent>
             </Select>
-            <Button type="submit" disabled={inviting || !inviteEmail.trim()}>
+            <Button
+              type="submit"
+              disabled={
+                inviting ||
+                !inviteEmail.trim() ||
+                (seats?.plan === "teams" && (seats.remaining ?? 1) <= 0)
+              }
+            >
               {inviting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
