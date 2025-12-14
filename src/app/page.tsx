@@ -642,9 +642,9 @@ export default function Home() {
               <span className="text-xl font-display font-bold">Brightway</span>
             </div>
             <div className="flex items-center gap-4">
-              <Link href="/pricing" className="text-sm text-text-secondary hover:text-text-primary transition-colors">
+              <a href="#pricing" className="text-sm text-text-secondary hover:text-text-primary transition-colors">
                 Pricing
-              </Link>
+              </a>
               <Link href="/login">
                 <Button variant="ghost">Log In</Button>
               </Link>
@@ -841,8 +841,100 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <section id="pricing" className="py-24 px-6 bg-surface-subtle">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16 scroll-animate float-up">
+            <h2 className="text-4xl font-display font-bold mb-4">
+              Simple pricing
+            </h2>
+            <p className="text-xl text-text-secondary">
+              Try your first proposal free. No credit card required.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-8 scroll-animate float-up delay-100">
+            {/* Personal Plan */}
+            <div className="rounded-2xl border border-border bg-surface p-8">
+              <div className="mb-6">
+                <div className="flex items-baseline gap-1 mb-2">
+                  <span className="text-4xl font-bold">$49</span>
+                  <span className="text-text-secondary">/mo</span>
+                </div>
+                <h3 className="text-xl font-semibold">Personal</h3>
+              </div>
+              
+              <Link href="/signup">
+                <Button className="w-full mb-6">Try Brightway Free</Button>
+              </Link>
+              
+              <ul className="space-y-3 text-sm">
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>10 proposals per month</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Unlimited revisions per proposal</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Knowledge base & document storage</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Grant discovery</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>DOCX export</span>
+                </li>
+              </ul>
+            </div>
+            
+            {/* Teams Plan */}
+            <div className="rounded-2xl border-2 border-brand bg-brand/5 p-8">
+              <div className="mb-6">
+                <div className="flex items-baseline gap-1 mb-2">
+                  <span className="text-4xl font-bold">$29</span>
+                  <span className="text-text-secondary">/mo per seat</span>
+                </div>
+                <h3 className="text-xl font-semibold">Teams</h3>
+              </div>
+              
+              <Link href="/signup">
+                <Button className="w-full mb-6">Try Brightway Free</Button>
+              </Link>
+              
+              <ul className="space-y-3 text-sm">
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>25 proposals per seat per month</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Shared knowledge base</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Team collaboration</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Everything in Personal, plus</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Priority support</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ */}
-      <section className="py-24 px-6 bg-surface-subtle">
+      <section className="py-24 px-6 bg-surface">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-16 scroll-animate float-up">
             <Badge variant="outline" className="mb-4">FAQ</Badge>
@@ -860,14 +952,13 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 px-6 bg-surface">
+      <section className="py-24 px-6 bg-surface-subtle">
         <div className="max-w-4xl mx-auto text-center scroll-animate float-up">
           <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
-            Stop spending weeks on proposals
+            Write your first proposal free
           </h2>
           <p className="text-xl text-text-secondary mb-10 max-w-2xl mx-auto">
-            Join nonprofit teams who are writing better grants in less time. 
-            Start free, no credit card required.
+            See how Brightway works with your real RFP. No credit card required.
           </p>
           <Link href="/signup">
             <Button size="lg" className="text-lg px-10 h-14">
