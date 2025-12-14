@@ -3,6 +3,7 @@ import prisma from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/primitives/card";
 import { OrganizationSettings } from "@/components/settings/organization-settings";
 import { GrantDigestSettings } from "@/components/settings/grant-digest-settings";
+import { TeamSettings } from "@/components/settings/team-settings";
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
@@ -30,6 +31,18 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <OrganizationSettings organization={organization} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Team Members</CardTitle>
+          <CardDescription>
+            Invite colleagues to collaborate on grant proposals
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TeamSettings currentUserId={user.id} currentUserRole={user.role} />
         </CardContent>
       </Card>
 

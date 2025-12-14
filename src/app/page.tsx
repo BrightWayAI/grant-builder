@@ -642,6 +642,9 @@ export default function Home() {
               <span className="text-xl font-display font-bold">Brightway</span>
             </div>
             <div className="flex items-center gap-4">
+              <Link href="/pricing" className="text-sm text-text-secondary hover:text-text-primary transition-colors">
+                Pricing
+              </Link>
               <Link href="/login">
                 <Button variant="ghost">Log In</Button>
               </Link>
