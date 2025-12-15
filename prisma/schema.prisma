@@ -40,6 +40,7 @@ model Organization {
   proposals       Proposal[]
   savedGrants     SavedGrant[]
   digestPreference GrantDigestPreference?
+  feedback        Feedback[]
 }
 
 enum SubscriptionStatus {
@@ -66,6 +67,7 @@ model User {
   
   accounts        Account[]
   sessions        Session[]
+  feedback        Feedback[]
 }
 
 model Account {
@@ -201,6 +203,27 @@ enum ProposalStatus {
   WON
   LOST
   ARCHIVED
+}
+
+enum FeedbackSentiment {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+}
+
+model Feedback {
+  id              String           @id @default(cuid())
+  organizationId  String?
+  organization    Organization?    @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  userId          String?
+  user            User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sentiment       FeedbackSentiment
+  message         String?          @db.Text
+  pageUrl         String?
+  allowContact    Boolean          @default(false)
+  metadata        Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model SavedGrant {

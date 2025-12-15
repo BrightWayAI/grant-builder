@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { getSubscriptionInfo } from "@/lib/subscription";
+import { FeedbackButton } from "@/components/feedback/feedback-button";
 
 export default async function DashboardLayout({
   children,
@@ -28,6 +29,7 @@ export default async function DashboardLayout({
         <div className="max-w-content mx-auto px-6 md:px-8 py-8">
           {children}
         </div>
+        <FeedbackButton />
       </main>
     </div>
   );
