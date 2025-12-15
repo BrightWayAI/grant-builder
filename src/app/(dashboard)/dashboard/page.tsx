@@ -60,8 +60,8 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid md:grid-cols-4 gap-6">
-        <Card>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card className="h-full">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg font-medium">Grant Opportunities</CardTitle>
             <Compass className="h-5 w-5 text-text-tertiary" />
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="h-full">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg font-medium">Proposals</CardTitle>
             <FileText className="h-5 w-5 text-text-tertiary" />
@@ -92,7 +92,9 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <KnowledgeScoreCard />
+        <div className="h-full">
+          <KnowledgeScoreCard />
+        </div>
       </div>
 
       {/* Matching Grants Section */}

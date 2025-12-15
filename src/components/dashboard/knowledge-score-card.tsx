@@ -19,7 +19,7 @@ export function KnowledgeScoreCard() {
   const recommendations: string[] = data?.recommendations || [];
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-medium">Knowledge Base Strength</CardTitle>
         <CardDescription>How well your docs can support AI drafting</CardDescription>
