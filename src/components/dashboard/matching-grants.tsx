@@ -29,6 +29,9 @@ interface Grant {
   description: string;
   eligibleApplicants: string[];
   opportunityCategory: string;
+  source?: string;
+  url?: string;
+  publisher?: string;
 }
 
 function MatchScoreBadge({ score }: { score: number }) {
@@ -192,6 +195,11 @@ export function MatchingGrantsSection() {
               <h4 className="font-medium text-text-primary text-sm truncate flex-1">
                 {grant.title}
               </h4>
+            {grant.source && (
+              <Badge variant="secondary" className="text-[10px] capitalize">
+                {humanizeSource(grant.source)}
+              </Badge>
+            )}
               <MatchScoreBadge score={grant.matchScore} />
             </div>
             <div className="flex items-center gap-3 text-xs text-text-secondary">
@@ -199,6 +207,11 @@ export function MatchingGrantsSection() {
                 <Building2 className="h-3 w-3 flex-shrink-0" />
                 <span className="truncate">{grant.agency}</span>
               </span>
+              {grant.publisher && (
+                <span className="flex items-center gap-1 truncate">
+                  <span className="text-[11px] text-text-secondary">{grant.publisher}</span>
+                </span>
+              )}
               {grant.closeDate && (
                 <span className="flex items-center gap-1 flex-shrink-0">
                   <Calendar className="h-3 w-3" />
@@ -230,7 +243,7 @@ export function MatchingGrantsSection() {
               )}
             </Button>
             <a
-              href={`https://www.grants.gov/search-results-detail/${grant.id}`}
+              href={grant.url || `https://www.grants.gov/search-results-detail/${grant.id}`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -251,4 +264,21 @@ export function MatchingGrantsSection() {
       </div>
     </div>
   );
+}
+
+function humanizeSource(source: string) {
+  switch (source) {
+    case "grants_gov":
+      return "Grants.gov";
+    case "pnd":
+      return "PND";
+    case "challenge_gov":
+      return "Challenge.gov";
+    case "foundation":
+      return "Foundation";
+    case "csr":
+      return "CSR";
+    default:
+      return source;
+  }
 }

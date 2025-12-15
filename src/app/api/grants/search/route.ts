@@ -2,16 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/db";
 import {
-  searchGrants,
   calculateMatchScore,
   GrantsGovOpportunity,
   ELIGIBILITY_MAPPING,
   CATEGORY_MAPPING,
 } from "@/lib/grants-gov";
+import { searchAllSources, UnifiedOpportunity } from "@/lib/grant-sources";
 
 export interface GrantWithScore extends GrantsGovOpportunity {
   matchScore: number;
   isSaved: boolean;
+  source: string;
+  url?: string;
+  publisher?: string;
+  confidence?: string;
 }
 
 export const dynamic = "force-dynamic";
@@ -95,11 +99,11 @@ export async function GET(request: NextRequest) {
     console.log("Search params:", JSON.stringify(searchGrantParams));
 
     // Search grants
-    const grants = await searchGrants(searchGrantParams);
+    const grants = await searchAllSources(searchGrantParams);
 
     // Calculate match scores using profile (not UI filters)
     const grantsWithScores: GrantWithScore[] = grants
-      .map((grant) => ({
+      .map((grant: UnifiedOpportunity) => ({
         ...grant,
         matchScore: calculateMatchScore(grant, {
           geography: organization.geography,

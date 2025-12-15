@@ -31,6 +31,7 @@ interface Grant {
   number: string;
   title: string;
   agency: string;
+  publisher?: string;
   agencyCode: string;
   openDate: string;
   closeDate: string | null;
@@ -42,6 +43,9 @@ interface Grant {
   cfdaList: string[];
   matchScore: number;
   isSaved: boolean;
+  source?: string;
+  url?: string;
+  confidence?: string;
 }
 
 interface SavedGrant {
@@ -466,6 +470,11 @@ export default function DiscoverPage() {
                           <h3 className="font-medium text-text-primary truncate">
                             {grant.title}
                           </h3>
+                          {grant.source && (
+                            <Badge variant="secondary" className="text-[11px] capitalize">
+                              {humanizeSource(grant.source)}
+                            </Badge>
+                          )}
                           <MatchScoreBadge score={grant.matchScore} />
                         </div>
                         <div className="flex items-center gap-4 text-sm text-text-secondary mb-2 flex-wrap">
@@ -473,6 +482,11 @@ export default function DiscoverPage() {
                             <Building2 className="h-3.5 w-3.5" />
                             {grant.agency}
                           </span>
+                          {grant.publisher && (
+                            <span className="text-xs text-text-secondary truncate">
+                              Source: {grant.publisher}
+                            </span>
+                          )}
                           {grant.closeDate && (
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3.5 w-3.5" />
@@ -507,7 +521,7 @@ export default function DiscoverPage() {
                           )}
                         </Button>
                         <a
-                          href={`https://www.grants.gov/search-results-detail/${grant.id}`}
+                          href={grant.url || `https://www.grants.gov/search-results-detail/${grant.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -595,4 +609,22 @@ export default function DiscoverPage() {
       </Tabs>
     </div>
   );
+}
+
+function humanizeSource(source?: string) {
+  if (!source) return "";
+  switch (source) {
+    case "grants_gov":
+      return "Grants.gov";
+    case "pnd":
+      return "PND";
+    case "challenge_gov":
+      return "Challenge.gov";
+    case "foundation":
+      return "Foundation";
+    case "csr":
+      return "CSR";
+    default:
+      return source;
+  }
 }
