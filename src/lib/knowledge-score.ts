@@ -70,6 +70,7 @@ export async function getKnowledgeScore(organizationId: string): Promise<ScoreBr
     return {
       score: 0,
       coverage: 0,
+      highValue: 0,
       freshness: 0,
       docStrength: 0,
       recommendations: [
