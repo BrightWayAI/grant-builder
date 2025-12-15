@@ -51,7 +51,7 @@ export function FeedbackButton() {
   return (
     <>
       <div className="fixed bottom-4 right-4 z-40">
-        <Button size="sm" variant="secondary" className="shadow-lg" onClick={() => setOpen(true)}>
+        <Button size="default" variant="primary" className="shadow-lg px-5" onClick={() => setOpen(true)}>
           <MessageSquare className="h-4 w-4 mr-2" /> Beta feedback
         </Button>
       </div>
