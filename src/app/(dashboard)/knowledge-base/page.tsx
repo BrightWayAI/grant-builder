@@ -7,7 +7,7 @@ import { Badge } from "@/components/primitives/badge";
 import { Progress } from "@/components/primitives/progress";
 import { formatFileSize } from "@/lib/utils";
 import { DOCUMENT_CATEGORIES } from "@/lib/document-categories";
-import { BookOpen } from "lucide-react";
+import { BookOpen, CheckCircle2, Circle } from "lucide-react";
 import { DocumentType } from "@prisma/client";
 import { getKnowledgeScore } from "@/lib/knowledge-score";
 
@@ -46,6 +46,9 @@ export default async function KnowledgeBasePage() {
 
   // Get existing document types
   const existingTypes = Array.from(new Set(documents.map((d) => d.documentType)));
+  const highValueKeys = HIGH_VALUE_TYPE_LABELS.map((h) => h.type);
+  const highValuePresent = highValueKeys.map((t) => existingTypes.includes(t));
+  const highValueProgress = (highValuePresent.filter(Boolean).length / highValueKeys.length) * 100;
 
   // Count documents by category
   const categoryDocCounts: Record<string, number> = {};
@@ -68,7 +71,7 @@ export default async function KnowledgeBasePage() {
       </div>
 
       {/* Stats Row */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -94,34 +97,29 @@ export default async function KnowledgeBasePage() {
             )}
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold font-display">{stats.indexed}</div>
-            <p className="text-sm text-text-secondary">Docs ready for drafting</p>
-            <div className="mt-3 text-xs text-text-secondary space-x-2">
-              <Badge variant="success" className="text-[11px]">{stats.indexed} ready</Badge>
-              {stats.processing > 0 && (
-                <Badge variant="default" className="text-[11px]">{stats.processing} processing</Badge>
-              )}
-              {stats.failed > 0 && (
-                <Badge variant="error" className="text-[11px]">{stats.failed} failed</Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold font-display">{existingTypes.length}</div>
-            <p className="text-sm text-text-secondary">Document Types</p>
-            <Progress value={(existingTypes.length / 13) * 100} className="h-1 mt-3" />
-            <p className="text-xs text-text-secondary mt-3">
-              Has: {listTypes(existingTypes, true)}
-            </p>
-            <p className="text-xs text-text-secondary mt-1">
-              Missing: {listTypes(existingTypes, false)}
-            </p>
+          <CardContent className="pt-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold font-display">{existingTypes.length}</div>
+                <p className="text-sm text-text-secondary">Document types</p>
+              </div>
+              <Badge variant="outline" className="text-[11px]">{stats.indexed} ready</Badge>
+            </div>
+            <Progress value={highValueProgress} className="h-1" />
+            <div className="grid grid-cols-2 gap-2 text-xs text-text-secondary">
+              {HIGH_VALUE_TYPE_LABELS.map(({ type, label }, idx) => (
+                <div key={type} className="flex items-center gap-2">
+                  {highValuePresent[idx] ? (
+                    <CheckCircle2 className="h-4 w-4 text-status-success" />
+                  ) : (
+                    <Circle className="h-4 w-4 text-border" />
+                  )}
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
@@ -169,18 +167,11 @@ function getHealthColor(score: number): string {
   return "bg-status-error/10 text-status-error";
 }
 
-const HIGH_VALUE_TYPE_LABELS: Record<string, string> = {
-  ORG_OVERVIEW: "Org overview",
-  PROGRAM_DESCRIPTION: "Program description",
-  IMPACT_REPORT: "Impact report",
-  LOGIC_MODEL: "Logic model",
-  AUDITED_FINANCIALS: "Financials",
-  FORM_990: "Financials",
-};
-
-function listTypes(existingTypes: DocumentType[], present: boolean): string {
-  const keys = Object.keys(HIGH_VALUE_TYPE_LABELS) as DocumentType[];
-  const filtered = keys.filter((t) => present ? existingTypes.includes(t) : !existingTypes.includes(t));
-  if (filtered.length === 0) return present ? "None" : "None";
-  return filtered.map((t) => HIGH_VALUE_TYPE_LABELS[t]).join(", ");
-}
+const HIGH_VALUE_TYPE_LABELS: { type: DocumentType; label: string }[] = [
+  { type: "ORG_OVERVIEW", label: "Org overview" },
+  { type: "PROGRAM_DESCRIPTION", label: "Program description" },
+  { type: "IMPACT_REPORT", label: "Impact report" },
+  { type: "LOGIC_MODEL", label: "Logic model" },
+  { type: "AUDITED_FINANCIALS", label: "Financials" },
+  { type: "FORM_990", label: "Financials" },
+];
