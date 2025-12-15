@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Source_Sans_3, Fraunces, JetBrains_Mono } from "next/font/google";
+import { Inter, Fraunces, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "./providers";
@@ -13,9 +13,9 @@ const fraunces = Fraunces({
   weight: ["400", "500", "600", "700"],
 });
 
-// Body font - Source Sans 3 (Variable)
+// Body font - Inter (Variable)
 // Used for: UI text, paragraphs, labels
-const sourceSans = Source_Sans_3({
+const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-body",
@@ -47,7 +47,7 @@ export default function RootLayout({
   return (
     <html 
       lang="en" 
-      className={`${fraunces.variable} ${sourceSans.variable} ${jetbrainsMono.variable}`}
+      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-body antialiased">
         <Providers>
