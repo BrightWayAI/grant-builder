@@ -43,7 +43,7 @@ run_migrations
 # Run seed if RUN_SEED is set to true
 if [ "$RUN_SEED" = "true" ]; then
   echo "Running database seed..."
-  if node node_modules/ts-node/dist/bin.js --compiler-options '{"module":"CommonJS"}' prisma/seed.ts; then
+  if node prisma/seed.js; then
     echo "Seed complete."
   else
     echo "Seed failed, but continuing startup..."

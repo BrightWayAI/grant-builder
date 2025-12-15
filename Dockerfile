@@ -18,6 +18,9 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
+# Compile seed script to JS
+RUN npx tsc prisma/seed.ts --outDir prisma --esModuleInterop --skipLibCheck --module commonjs --target es2020
+
 # Build the application
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
@@ -45,20 +48,6 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/prisma ./prisma
-
-# Copy ts-node and typescript for seeding
-COPY --from=builder /app/node_modules/ts-node ./node_modules/ts-node
-COPY --from=builder /app/node_modules/typescript ./node_modules/typescript
-COPY --from=builder /app/node_modules/@tsconfig ./node_modules/@tsconfig
-COPY --from=builder /app/node_modules/arg ./node_modules/arg
-COPY --from=builder /app/node_modules/create-require ./node_modules/create-require
-COPY --from=builder /app/node_modules/diff ./node_modules/diff
-COPY --from=builder /app/node_modules/make-error ./node_modules/make-error
-COPY --from=builder /app/node_modules/v8-compile-cache-lib ./node_modules/v8-compile-cache-lib
-COPY --from=builder /app/node_modules/yn ./node_modules/yn
-COPY --from=builder /app/node_modules/@cspotcode ./node_modules/@cspotcode
-COPY --from=builder /app/node_modules/acorn ./node_modules/acorn
-COPY --from=builder /app/node_modules/acorn-walk ./node_modules/acorn-walk
 
 # Copy startup script
 COPY --from=builder /app/start.sh ./start.sh
