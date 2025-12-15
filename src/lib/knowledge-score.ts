@@ -4,6 +4,7 @@ import { DocumentType } from "@prisma/client";
 type ScoreBreakdown = {
   score: number;
   coverage: number;
+  highValue: number;
   freshness: number;
   docStrength: number;
   recommendations: string[];
@@ -29,6 +30,17 @@ const COVERAGE_BUCKETS: { label: string; types: DocumentType[] }[] = [
   { label: "Financials", types: ["AUDITED_FINANCIALS", "FORM_990"] as DocumentType[] },
   { label: "Staff & governance", types: ["STAFF_BIOS", "BOARD_BIOS"] as DocumentType[] },
 ];
+
+const HIGH_VALUE_TYPES: DocumentType[] = [
+  "ORG_OVERVIEW",
+  "PROGRAM_DESCRIPTION",
+  "IMPACT_REPORT",
+  "LOGIC_MODEL",
+  "AUDITED_FINANCIALS",
+  "FORM_990",
+];
+
+const MIN_DOCS_FOR_FULL_SCORE = 12;
 
 function monthsSince(date: Date) {
   const now = new Date();
@@ -78,9 +90,18 @@ export async function getKnowledgeScore(organizationId: string): Promise<ScoreBr
   );
   const coverage = coverageHits.filter(Boolean).length / COVERAGE_BUCKETS.length;
 
+  const highValueHits = HIGH_VALUE_TYPES.filter((t) => docs.some((d) => d.documentType === t)).length;
+  const highValue = highValueHits / HIGH_VALUE_TYPES.length;
+
+  const docCountFactor = Math.min(1, docs.length / MIN_DOCS_FOR_FULL_SCORE);
+
   // combined score
-  const scoreRaw = docStrength * 0.45 + freshness * 0.2 + coverage * 0.35;
-  const score = Math.round(Math.min(1, scoreRaw) * 100);
+  const scoreRaw =
+    docStrength * 0.3 +
+    freshness * 0.2 +
+    coverage * 0.3 +
+    highValue * 0.2;
+  const score = Math.round(Math.min(1, scoreRaw * docCountFactor) * 100);
 
   // recommendations: missing buckets and stale data
   const recs: string[] = [];
@@ -89,6 +110,10 @@ export async function getKnowledgeScore(organizationId: string): Promise<ScoreBr
       recs.push(`Add ${bucket.label.toLowerCase()} content`);
     }
   });
+
+  if (highValue < 0.8) {
+    recs.push("Upload high-value docs (overview, program, impact, financials)");
+  }
 
   const stale = docs.filter((d) => recencyFactor(d.updatedAt) < 0.8);
   if (stale.length > 0) {
@@ -100,12 +125,17 @@ export async function getKnowledgeScore(organizationId: string): Promise<ScoreBr
     recs.push("Upload financials (audited or 990)");
   }
 
+  if (docs.length < 6) {
+    recs.push("Add more source documents for better coverage");
+  }
+
   // Limit to top 3
   const recommendations = recs.slice(0, 3);
 
   return {
     score,
     coverage: Math.round(coverage * 100),
+    highValue: Math.round(highValue * 100),
     freshness: Math.round(freshness * 100),
     docStrength: Math.round(docStrength * 100),
     recommendations,

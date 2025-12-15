@@ -34,6 +34,8 @@ export default async function KnowledgeBasePage() {
 
   const totalSize = documents.reduce((sum, doc) => sum + doc.fileSize, 0);
   const usagePercent = Math.round((totalSize / MAX_STORAGE_BYTES) * 100);
+  const avgSize = documents.length ? totalSize / documents.length : 0;
+  const lastUpload = documents.length ? documents[0].createdAt : null;
 
   const stats = {
     total: documents.length,
@@ -97,6 +99,15 @@ export default async function KnowledgeBasePage() {
           <CardContent className="pt-6">
             <div className="text-2xl font-bold font-display">{stats.indexed}</div>
             <p className="text-sm text-text-secondary">Docs ready for drafting</p>
+            <div className="mt-3 text-xs text-text-secondary space-x-2">
+              <Badge variant="success" className="text-[11px]">{stats.indexed} ready</Badge>
+              {stats.processing > 0 && (
+                <Badge variant="default" className="text-[11px]">{stats.processing} processing</Badge>
+              )}
+              {stats.failed > 0 && (
+                <Badge variant="error" className="text-[11px]">{stats.failed} failed</Badge>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -105,14 +116,24 @@ export default async function KnowledgeBasePage() {
             <div className="text-2xl font-bold font-display">{existingTypes.length}</div>
             <p className="text-sm text-text-secondary">Document Types</p>
             <Progress value={(existingTypes.length / 13) * 100} className="h-1 mt-3" />
+            <p className="text-xs text-text-secondary mt-3">
+              Has: {listTypes(existingTypes, true)}
+            </p>
+            <p className="text-xs text-text-secondary mt-1">
+              Missing: {listTypes(existingTypes, false)}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 space-y-2">
             <div className="text-2xl font-bold font-display">{formatFileSize(totalSize)}</div>
             <p className="text-sm text-text-secondary">of {formatFileSize(MAX_STORAGE_BYTES)} used</p>
-            <Progress value={usagePercent} className="h-1 mt-3" />
+            <Progress value={usagePercent} className="h-1" />
+            <p className="text-xs text-text-secondary">Avg file: {formatFileSize(avgSize)}</p>
+            {lastUpload && (
+              <p className="text-xs text-text-secondary">Last upload: {new Date(lastUpload).toLocaleDateString()}</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -142,20 +163,24 @@ export default async function KnowledgeBasePage() {
   );
 }
 
-function calculateHealthScore(existingTypes: DocumentType[], indexedCount: number): number {
-  const highPriorityTypes: DocumentType[] = [
-    "PROPOSAL", "ORG_OVERVIEW", "BOILERPLATE", "PROGRAM_DESCRIPTION", "IMPACT_REPORT"
-  ];
-  
-  const hasHighPriority = highPriorityTypes.filter((t) => existingTypes.includes(t));
-  const typeScore = (hasHighPriority.length / highPriorityTypes.length) * 60;
-  const docScore = Math.min(indexedCount / 10, 1) * 40;
-  
-  return Math.round(typeScore + docScore);
-}
-
 function getHealthColor(score: number): string {
   if (score >= 70) return "bg-status-success/10 text-status-success";
   if (score >= 40) return "bg-status-warning/10 text-status-warning";
   return "bg-status-error/10 text-status-error";
+}
+
+const HIGH_VALUE_TYPE_LABELS: Record<string, string> = {
+  ORG_OVERVIEW: "Org overview",
+  PROGRAM_DESCRIPTION: "Program description",
+  IMPACT_REPORT: "Impact report",
+  LOGIC_MODEL: "Logic model",
+  AUDITED_FINANCIALS: "Financials",
+  FORM_990: "Financials",
+};
+
+function listTypes(existingTypes: DocumentType[], present: boolean): string {
+  const keys = Object.keys(HIGH_VALUE_TYPE_LABELS) as DocumentType[];
+  const filtered = keys.filter((t) => present ? existingTypes.includes(t) : !existingTypes.includes(t));
+  if (filtered.length === 0) return present ? "None" : "None";
+  return filtered.map((t) => HIGH_VALUE_TYPE_LABELS[t]).join(", ");
 }
