@@ -39,27 +39,40 @@ export async function POST(req: NextRequest) {
     const webhook = process.env.SLACK_FEEDBACK_WEBHOOK_URL;
     const emailTo = process.env.FEEDBACK_EMAIL_TO;
 
+    let slackSent = false;
+    let emailSent = false;
+
     if (webhook) {
-      await sendSlackFeedback(webhook, {
-        email: user.email,
-        organizationName: organization?.name || null,
-        sentiment,
-        message,
-        pageUrl,
-      });
+      try {
+        await sendSlackFeedback(webhook, {
+          email: user.email,
+          organizationName: organization?.name || null,
+          sentiment,
+          message,
+          pageUrl,
+        });
+        slackSent = true;
+      } catch (err) {
+        console.error("Slack feedback send failed", err);
+      }
     }
 
     if (emailTo) {
-      await sendEmailFeedback(emailTo, {
-        email: user.email,
-        organizationName: organization?.name || null,
-        sentiment,
-        message,
-        pageUrl,
-      });
+      try {
+        await sendEmailFeedback(emailTo, {
+          email: user.email,
+          organizationName: organization?.name || null,
+          sentiment,
+          message,
+          pageUrl,
+        });
+        emailSent = true;
+      } catch (err) {
+        console.error("Email feedback send failed", err);
+      }
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, emailSent, slackSent });
   } catch (error) {
     console.error("Feedback error", error);
     return NextResponse.json({ error: "Failed to submit feedback" }, { status: 500 });

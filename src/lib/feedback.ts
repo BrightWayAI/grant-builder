@@ -72,9 +72,6 @@ Sentiment: ${data.sentiment}
 Message:
 ${data.message || ""}`;
 
-  try {
-    await sendEmail({ to, subject, html, text });
-  } catch (err) {
-    console.error("Email feedback error", err);
-  }
+  // Propagate errors to caller so we can surface status
+  await sendEmail({ to, subject, html, text });
 }
