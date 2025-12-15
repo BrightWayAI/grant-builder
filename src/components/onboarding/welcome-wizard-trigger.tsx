@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { WelcomeWizard } from "./welcome-wizard";
 
 interface WelcomeWizardTriggerProps {
@@ -8,9 +8,17 @@ interface WelcomeWizardTriggerProps {
 }
 
 export function WelcomeWizardTrigger({ shouldShow }: WelcomeWizardTriggerProps) {
-  const [open, setOpen] = useState(shouldShow);
+  const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  if (!shouldShow) return null;
+  useEffect(() => {
+    setMounted(true);
+    if (shouldShow) {
+      setOpen(true);
+    }
+  }, [shouldShow]);
+
+  if (!mounted || !shouldShow || !open) return null;
 
   return (
     <WelcomeWizard 

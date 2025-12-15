@@ -1,18 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/primitives/dialog";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/primitives/button";
 import { Progress } from "@/components/primitives/progress";
 import { Sparkles, FolderOpen, Compass, FileText, Rocket } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface WelcomeWizardProps {
   open: boolean;
@@ -105,47 +99,68 @@ export function WelcomeWizard({ open, onComplete }: WelcomeWizardProps) {
   const Icon = currentStep.icon;
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
-        <DialogHeader className="text-center sm:text-center">
-          <div className="mx-auto mb-4">
-            <div className={`inline-flex p-4 rounded-full ${currentStep.iconBg}`}>
-              <Icon className={`h-8 w-8 ${currentStep.iconColor}`} />
-            </div>
-          </div>
-          <DialogTitle className="text-xl">{currentStep.title}</DialogTitle>
-          <DialogDescription className="text-base">
-            {currentStep.description}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="py-4">
-          <Progress value={progress} className="h-1" />
-          <p className="text-center text-xs text-text-tertiary mt-2">
-            {step + 1} of {steps.length}
-          </p>
-        </div>
-
-        <DialogFooter className="flex-col sm:flex-col gap-2">
-          <Button 
-            onClick={handleNext} 
-            className="w-full" 
-            loading={isLoading && isLastStep}
-          >
-            {isLastStep ? "Go to Knowledge Base" : "Next"}
-          </Button>
-          {!isLastStep && (
-            <Button 
-              variant="ghost" 
-              onClick={handleSkip} 
-              className="w-full text-text-secondary"
-              loading={isLoading && !isLastStep}
-            >
-              Skip tour
-            </Button>
+    <DialogPrimitive.Root open={open} onOpenChange={() => {}}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay 
+          className={cn(
+            "fixed inset-0 z-50 bg-gray-950/50 backdrop-blur-sm",
+            "data-[state=open]:animate-fade-in"
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        />
+        <DialogPrimitive.Content
+          className={cn(
+            "fixed left-[50%] top-[50%] z-50 w-full max-w-md",
+            "translate-x-[-50%] translate-y-[-50%]",
+            "bg-surface-card rounded-lg border border-border shadow-xl",
+            "p-6",
+            "data-[state=open]:animate-scale-in",
+            "focus:outline-none"
+          )}
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <div className="text-center">
+            <div className="mx-auto mb-4">
+              <div className={`inline-flex p-4 rounded-full ${currentStep.iconBg}`}>
+                <Icon className={`h-8 w-8 ${currentStep.iconColor}`} />
+              </div>
+            </div>
+            <DialogPrimitive.Title className="font-display text-xl font-semibold text-text-primary">
+              {currentStep.title}
+            </DialogPrimitive.Title>
+            <DialogPrimitive.Description className="text-base text-text-secondary mt-2">
+              {currentStep.description}
+            </DialogPrimitive.Description>
+          </div>
+
+          <div className="py-6">
+            <Progress value={progress} className="h-1" />
+            <p className="text-center text-xs text-text-tertiary mt-2">
+              {step + 1} of {steps.length}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Button 
+              onClick={handleNext} 
+              className="w-full" 
+              loading={isLoading && isLastStep}
+            >
+              {isLastStep ? "Go to Knowledge Base" : "Next"}
+            </Button>
+            {!isLastStep && (
+              <Button 
+                variant="ghost" 
+                onClick={handleSkip} 
+                className="w-full text-text-secondary"
+                loading={isLoading && !isLastStep}
+              >
+                Skip tour
+              </Button>
+            )}
+          </div>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }
