@@ -213,6 +213,12 @@
   .ai-placeholder {
     @apply bg-status-warning-light text-status-warning px-1.5 py-0.5 rounded italic;
   }
+
+  /* Tour highlight for onboarding wizard */
+  .tour-highlight {
+    @apply relative z-50 ring-2 ring-brand ring-offset-2 ring-offset-surface-card rounded-md;
+    box-shadow: 0 0 0 4px rgba(var(--color-brand-rgb, 59, 130, 246), 0.2);
+  }
 }
 
 /* Scroll-triggered float-in animations */

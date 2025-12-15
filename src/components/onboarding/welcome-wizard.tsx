@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/primitives/button";
-import { Progress } from "@/components/primitives/progress";
-import { Sparkles, FolderOpen, Compass, FileText, Rocket } from "lucide-react";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface WelcomeWizardProps {
@@ -13,52 +11,124 @@ interface WelcomeWizardProps {
   onComplete: () => void;
 }
 
-const steps = [
+type TourStep = {
+  target: string | null;
+  title: string;
+  description: string;
+  position: "center" | "right";
+};
+
+const steps: TourStep[] = [
   {
-    icon: Sparkles,
+    target: null,
     title: "Welcome to Beacon",
     description: "Thanks for signing up! Let's show you around.",
-    iconBg: "bg-brand-light",
-    iconColor: "text-brand",
+    position: "center",
   },
   {
-    icon: FolderOpen,
+    target: "[data-tour='knowledge-base']",
     title: "Knowledge Base",
     description: "Upload your past proposals, reports, and org docs to teach the AI your voice.",
-    iconBg: "bg-purple-100",
-    iconColor: "text-purple-600",
+    position: "right",
   },
   {
-    icon: Compass,
+    target: "[data-tour='discover']",
     title: "Discover Grants",
     description: "We search thousands of grants daily and match them to your profile.",
-    iconBg: "bg-blue-100",
-    iconColor: "text-blue-600",
+    position: "right",
   },
   {
-    icon: FileText,
+    target: "[data-tour='proposals']",
     title: "Proposals",
     description: "Start a new proposal and let the AI draft sections using your knowledge base.",
-    iconBg: "bg-green-100",
-    iconColor: "text-green-600",
+    position: "right",
   },
   {
-    icon: Rocket,
+    target: "[data-tour='knowledge-base']",
     title: "Get Started",
     description: "Ready to dive in? Let's set up your knowledge base.",
-    iconBg: "bg-amber-100",
-    iconColor: "text-amber-600",
+    position: "right",
   },
 ];
 
 export function WelcomeWizard({ open, onComplete }: WelcomeWizardProps) {
   const [step, setStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+  const [arrowStyle, setArrowStyle] = useState<React.CSSProperties>({});
   const router = useRouter();
 
   const currentStep = steps[step];
   const isLastStep = step === steps.length - 1;
-  const progress = ((step + 1) / steps.length) * 100;
+  const isFirstStep = step === 0;
+
+  const positionTooltip = useCallback(() => {
+    if (!currentStep.target) {
+      setTooltipStyle({
+        position: "fixed",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+      });
+      setArrowStyle({ display: "none" });
+      return;
+    }
+
+    const target = document.querySelector(currentStep.target);
+    if (!target) {
+      setTooltipStyle({
+        position: "fixed",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+      });
+      setArrowStyle({ display: "none" });
+      return;
+    }
+
+    const rect = target.getBoundingClientRect();
+    const tooltipWidth = 300;
+    const gap = 12;
+
+    if (currentStep.position === "right") {
+      setTooltipStyle({
+        position: "fixed",
+        top: rect.top + rect.height / 2,
+        left: rect.right + gap,
+        transform: "translateY(-50%)",
+      });
+      setArrowStyle({
+        position: "absolute",
+        left: -6,
+        top: "50%",
+        transform: "translateY(-50%) rotate(45deg)",
+        width: 12,
+        height: 12,
+        background: "inherit",
+        borderLeft: "1px solid",
+        borderBottom: "1px solid",
+        borderColor: "inherit",
+      });
+    }
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (open) {
+      positionTooltip();
+      window.addEventListener("resize", positionTooltip);
+      return () => window.removeEventListener("resize", positionTooltip);
+    }
+  }, [open, step, positionTooltip]);
+
+  useEffect(() => {
+    if (!open || !currentStep.target) return;
+    
+    const target = document.querySelector(currentStep.target);
+    if (target) {
+      target.classList.add("tour-highlight");
+      return () => target.classList.remove("tour-highlight");
+    }
+  }, [open, step, currentStep.target]);
 
   const handleNext = () => {
     if (isLastStep) {
@@ -96,71 +166,63 @@ export function WelcomeWizard({ open, onComplete }: WelcomeWizardProps) {
     }
   };
 
-  const Icon = currentStep.icon;
+  if (!open) return null;
 
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={() => {}}>
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay 
-          className={cn(
-            "fixed inset-0 z-50 bg-gray-950/50 backdrop-blur-sm",
-            "data-[state=open]:animate-fade-in"
-          )}
-        />
-        <DialogPrimitive.Content
-          className={cn(
-            "fixed left-[50%] top-[50%] z-50 w-full max-w-md",
-            "translate-x-[-50%] translate-y-[-50%]",
-            "bg-surface-card rounded-lg border border-border shadow-xl",
-            "p-6",
-            "data-[state=open]:animate-scale-in",
-            "focus:outline-none"
-          )}
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
+    <>
+      {/* Subtle overlay */}
+      <div className="fixed inset-0 z-40 bg-gray-950/20 pointer-events-none" />
+      
+      {/* Tooltip */}
+      <div
+        style={tooltipStyle}
+        className={cn(
+          "z-50 w-[300px] bg-surface-card rounded-lg border border-border shadow-xl p-4",
+          "animate-in fade-in-0 zoom-in-95 duration-200"
+        )}
+      >
+        {/* Arrow */}
+        <div style={arrowStyle} className="bg-surface-card border-border" />
+        
+        {/* Close button */}
+        <button
+          onClick={handleSkip}
+          className="absolute top-2 right-2 p-1 rounded hover:bg-gray-100 text-text-tertiary"
         >
-          <div className="text-center">
-            <div className="mx-auto mb-4">
-              <div className={`inline-flex p-4 rounded-full ${currentStep.iconBg}`}>
-                <Icon className={`h-8 w-8 ${currentStep.iconColor}`} />
-              </div>
-            </div>
-            <DialogPrimitive.Title className="font-display text-xl font-semibold text-text-primary">
-              {currentStep.title}
-            </DialogPrimitive.Title>
-            <DialogPrimitive.Description className="text-base text-text-secondary mt-2">
-              {currentStep.description}
-            </DialogPrimitive.Description>
-          </div>
+          <X className="h-4 w-4" />
+        </button>
 
-          <div className="py-6">
-            <Progress value={progress} className="h-1" />
-            <p className="text-center text-xs text-text-tertiary mt-2">
-              {step + 1} of {steps.length}
-            </p>
-          </div>
+        {/* Content */}
+        <div className="pr-6">
+          <h3 className="font-semibold text-text-primary">{currentStep.title}</h3>
+          <p className="text-sm text-text-secondary mt-1">{currentStep.description}</p>
+        </div>
 
-          <div className="flex flex-col gap-2">
-            <Button 
-              onClick={handleNext} 
-              className="w-full" 
-              loading={isLoading && isLastStep}
-            >
-              {isLastStep ? "Go to Knowledge Base" : "Next"}
-            </Button>
-            {!isLastStep && (
+        {/* Footer */}
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+          <span className="text-xs text-text-tertiary">
+            {step + 1} of {steps.length}
+          </span>
+          <div className="flex gap-2">
+            {!isFirstStep && (
               <Button 
                 variant="ghost" 
-                onClick={handleSkip} 
-                className="w-full text-text-secondary"
-                loading={isLoading && !isLastStep}
+                size="sm"
+                onClick={() => setStep(step - 1)}
               >
-                Skip tour
+                Back
               </Button>
             )}
+            <Button 
+              size="sm"
+              onClick={handleNext}
+              loading={isLoading}
+            >
+              {isLastStep ? "Get Started" : "Next"}
+            </Button>
           </div>
-        </DialogPrimitive.Content>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
+        </div>
+      </div>
+    </>
   );
 }

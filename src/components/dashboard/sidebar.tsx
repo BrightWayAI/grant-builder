@@ -10,12 +10,12 @@ import { FileText, FolderOpen, Home, Settings, LogOut, Plus, ChevronLeft, Menu, 
 import { useState } from "react";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: Home },
-  { href: "/discover", label: "Discover Grants", icon: Compass },
-  { href: "/proposals", label: "Proposals", icon: FileText },
-  { href: "/knowledge-base", label: "Knowledge Base", icon: FolderOpen },
-  { href: "/billing", label: "Billing", icon: CreditCard },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard", label: "Dashboard", icon: Home, tourId: "dashboard" },
+  { href: "/discover", label: "Discover Grants", icon: Compass, tourId: "discover" },
+  { href: "/proposals", label: "Proposals", icon: FileText, tourId: "proposals" },
+  { href: "/knowledge-base", label: "Knowledge Base", icon: FolderOpen, tourId: "knowledge-base" },
+  { href: "/billing", label: "Billing", icon: CreditCard, tourId: "billing" },
+  { href: "/settings", label: "Settings", icon: Settings, tourId: "settings" },
 ];
 
 interface SidebarProps {
@@ -137,6 +137,7 @@ export function Sidebar({ user, isBeta = false }: SidebarProps) {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
+                data-tour={item.tourId}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-normal",
                   isActive
