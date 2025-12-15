@@ -50,8 +50,8 @@ function monthsSince(date: Date) {
 function recencyFactor(updatedAt: Date) {
   const m = monthsSince(updatedAt);
   if (m <= 12) return 1.0;
-  if (m <= 24) return 0.9;
-  if (m <= 36) return 0.7;
+  if (m <= 24) return 0.85;
+  if (m <= 36) return 0.65;
   return 0.5;
 }
 
@@ -82,8 +82,8 @@ export async function getKnowledgeScore(organizationId: string): Promise<ScoreBr
   }
 
   const perDocScores = docs.map((d) => docScore(d.documentType, d.updatedAt));
-  const docStrength = perDocScores.reduce((a, b) => a + b, 0) / perDocScores.length;
-  const freshness = Math.max(...docs.map((d) => recencyFactor(d.updatedAt)));
+  const docStrengthRaw = perDocScores.reduce((a, b) => a + b, 0) / perDocScores.length;
+  const freshnessRaw = docs.reduce((a, d) => a + recencyFactor(d.updatedAt), 0) / docs.length;
 
   // coverage: fraction of buckets that have at least one doc
   const coverageHits = COVERAGE_BUCKETS.map((bucket) =>
@@ -96,13 +96,18 @@ export async function getKnowledgeScore(organizationId: string): Promise<ScoreBr
 
   const docCountFactor = Math.min(1, docs.length / MIN_DOCS_FOR_FULL_SCORE);
 
+  const coverageAdj = coverage * docCountFactor;
+  const highValueAdj = highValue * docCountFactor;
+  const docStrengthAdj = docStrengthRaw * docCountFactor;
+  const freshnessAdj = freshnessRaw * docCountFactor;
+
   // combined score
   const scoreRaw =
-    docStrength * 0.3 +
-    freshness * 0.2 +
-    coverage * 0.3 +
-    highValue * 0.2;
-  const score = Math.round(Math.min(1, scoreRaw * docCountFactor) * 100);
+    docStrengthAdj * 0.35 +
+    freshnessAdj * 0.15 +
+    coverageAdj * 0.3 +
+    highValueAdj * 0.2;
+  const score = Math.round(Math.min(1, scoreRaw) * 100);
 
   // recommendations: missing buckets and stale data
   const recs: string[] = [];
@@ -135,10 +140,10 @@ export async function getKnowledgeScore(organizationId: string): Promise<ScoreBr
 
   return {
     score,
-    coverage: Math.round(coverage * 100),
-    highValue: Math.round(highValue * 100),
-    freshness: Math.round(freshness * 100),
-    docStrength: Math.round(docStrength * 100),
+    coverage: Math.round(coverageAdj * 100),
+    highValue: Math.round(highValueAdj * 100),
+    freshness: Math.round(freshnessAdj * 100),
+    docStrength: Math.round(docStrengthAdj * 100),
     recommendations,
   };
 }

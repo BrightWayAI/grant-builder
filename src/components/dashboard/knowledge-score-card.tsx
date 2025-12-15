@@ -3,7 +3,6 @@
 import useSWR from "swr";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/primitives/card";
 import { Progress } from "@/components/primitives/progress";
-import { AlertCircle } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -16,7 +15,7 @@ export function KnowledgeScoreCard() {
   const coverage = data?.coverage ?? 0;
   const freshness = data?.freshness ?? 0;
   const docStrength = data?.docStrength ?? 0;
-  const recommendations: string[] = data?.recommendations || [];
+  // recommendations omitted on dashboard for compactness
 
   return (
     <Card className="h-full">
@@ -24,7 +23,7 @@ export function KnowledgeScoreCard() {
         <CardTitle className="text-lg font-medium">Knowledge Base Strength</CardTitle>
         <CardDescription>How well your docs can support AI drafting</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         <div>
           <div className="flex items-center justify-between text-sm mb-2">
             <span>Overall</span>
@@ -38,20 +37,6 @@ export function KnowledgeScoreCard() {
           <Metric label="Freshness" value={freshness} />
           <Metric label="Doc quality" value={docStrength} />
         </div>
-
-        {recommendations.length > 0 && (
-          <div className="text-sm">
-            <div className="flex items-center gap-2 text-text-secondary font-medium mb-1">
-              <AlertCircle className="h-4 w-4" />
-              Recommendations
-            </div>
-            <ul className="list-disc list-inside space-y-1 text-text-secondary">
-              {recommendations.slice(0, 3).map((rec, i) => (
-                <li key={i}>{rec}</li>
-              ))}
-            </ul>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
