@@ -46,9 +46,10 @@ export default async function KnowledgeBasePage() {
 
   // Get existing document types
   const existingTypes = Array.from(new Set(documents.map((d) => d.documentType)));
-  const highValueKeys = HIGH_VALUE_TYPE_LABELS.map((h) => h.type);
-  const highValuePresent = highValueKeys.map((t) => existingTypes.includes(t));
-  const highValueProgress = (highValuePresent.filter(Boolean).length / highValueKeys.length) * 100;
+  const highValueProgressStates = HIGH_VALUE_GROUPS.map((group) =>
+    group.types.some((t) => existingTypes.includes(t))
+  );
+  const highValueProgress = (highValueProgressStates.filter(Boolean).length / HIGH_VALUE_GROUPS.length) * 100;
 
   // Count documents by category
   const categoryDocCounts: Record<string, number> = {};
@@ -109,14 +110,14 @@ export default async function KnowledgeBasePage() {
             </div>
             <Progress value={highValueProgress} className="h-1" />
             <div className="grid grid-cols-2 gap-2 text-xs text-text-secondary">
-              {HIGH_VALUE_TYPE_LABELS.map(({ type, label }, idx) => (
-                <div key={type} className="flex items-center gap-2">
-                  {highValuePresent[idx] ? (
+              {HIGH_VALUE_GROUPS.map((group, idx) => (
+                <div key={group.label} className="flex items-center gap-2">
+                  {highValueProgressStates[idx] ? (
                     <CheckCircle2 className="h-4 w-4 text-status-success" />
                   ) : (
                     <Circle className="h-4 w-4 text-border" />
                   )}
-                  <span>{label}</span>
+                  <span>{group.label}</span>
                 </div>
               ))}
             </div>
@@ -167,12 +168,11 @@ function getHealthColor(score: number): string {
   return "bg-status-error/10 text-status-error";
 }
 
-const HIGH_VALUE_TYPE_LABELS: { type: DocumentType; label: string }[] = [
-  { type: "PROPOSAL", label: "Proposals/RFPs" },
-  { type: "ORG_OVERVIEW", label: "Org overview" },
-  { type: "PROGRAM_DESCRIPTION", label: "Program description" },
-  { type: "IMPACT_REPORT", label: "Impact report" },
-  { type: "LOGIC_MODEL", label: "Logic model" },
-  { type: "AUDITED_FINANCIALS", label: "Financials" },
-  { type: "FORM_990", label: "Financials" },
+const HIGH_VALUE_GROUPS: { label: string; types: DocumentType[] }[] = [
+  { label: "Proposals/RFPs", types: ["PROPOSAL"] },
+  { label: "Org overview", types: ["ORG_OVERVIEW"] },
+  { label: "Program description", types: ["PROGRAM_DESCRIPTION"] },
+  { label: "Impact report", types: ["IMPACT_REPORT"] },
+  { label: "Logic model", types: ["LOGIC_MODEL"] },
+  { label: "Financials (audit/990)", types: ["AUDITED_FINANCIALS", "FORM_990"] },
 ];
