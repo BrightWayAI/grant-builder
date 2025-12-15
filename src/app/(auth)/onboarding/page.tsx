@@ -13,6 +13,8 @@ import { Progress } from "@/components/primitives/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { PageContainer } from "@/components/layouts/page-container";
 import { Check } from "lucide-react";
+import { GeographicFocusSelector } from "@/components/settings/geographic-focus-selector";
+import { GeographicFocus } from "@/lib/geography";
 
 const BUDGET_RANGES = [
   { value: "under_500k", label: "Under $500,000" },
@@ -65,6 +67,7 @@ export default function OnboardingPage() {
     mission: "",
     orgType: "",
     geography: "",
+    geographicFocus: { countries: [], states: [], regions: [] } as GeographicFocus,
     budgetRange: "",
     populationsServed: "",
     programAreas: [] as string[],
@@ -120,6 +123,7 @@ export default function OnboardingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
+          geographicFocus: formData.geographicFocus,
           fundingMin: formData.fundingMin ? parseInt(formData.fundingMin) : null,
           fundingMax: formData.fundingMax ? parseInt(formData.fundingMax) : null,
         }),
@@ -218,6 +222,14 @@ export default function OnboardingPage() {
                     onChange={(e) => setFormData({ ...formData, mission: e.target.value })}
                     placeholder="Our mission is to..."
                     rows={4}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Geographic Focus</Label>
+                  <GeographicFocusSelector
+                    value={formData.geographicFocus}
+                    onChange={(value) => setFormData({ ...formData, geographicFocus: value })}
                   />
                 </div>
               </div>
