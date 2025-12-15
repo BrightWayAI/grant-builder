@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { saveFeedback, sendSlackFeedback } from "@/lib/feedback";
+import { saveFeedback, sendSlackFeedback, sendEmailFeedback } from "@/lib/feedback";
 import prisma from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -37,8 +37,20 @@ export async function POST(req: NextRequest) {
     });
 
     const webhook = process.env.SLACK_FEEDBACK_WEBHOOK_URL;
+    const emailTo = process.env.FEEDBACK_EMAIL_TO;
+
     if (webhook) {
       await sendSlackFeedback(webhook, {
+        email: user.email,
+        organizationName: organization?.name || null,
+        sentiment,
+        message,
+        pageUrl,
+      });
+    }
+
+    if (emailTo) {
+      await sendEmailFeedback(emailTo, {
         email: user.email,
         organizationName: organization?.name || null,
         sentiment,
