@@ -11,6 +11,7 @@ type ScoreBreakdown = {
 };
 
 const DOC_WEIGHTS: Partial<Record<DocumentType, number>> = {
+  PROPOSAL: 1.3,
   AUDITED_FINANCIALS: 1.2,
   ANNUAL_REPORT: 1.1,
   PROGRAM_DESCRIPTION: 1.0,
@@ -25,6 +26,7 @@ const DOC_WEIGHTS: Partial<Record<DocumentType, number>> = {
 };
 
 const COVERAGE_BUCKETS: { label: string; types: DocumentType[]; targetCount: number }[] = [
+  { label: "Proposals & RFPs", types: ["PROPOSAL"] as DocumentType[], targetCount: 3 },
   { label: "Org overview", types: ["ORG_OVERVIEW"] as DocumentType[], targetCount: 1 },
   { label: "Programs & outcomes", types: ["PROGRAM_DESCRIPTION", "IMPACT_REPORT", "LOGIC_MODEL"] as DocumentType[], targetCount: 3 },
   { label: "Financials", types: ["AUDITED_FINANCIALS", "FORM_990"] as DocumentType[], targetCount: 2 },
@@ -32,6 +34,7 @@ const COVERAGE_BUCKETS: { label: string; types: DocumentType[]; targetCount: num
 ];
 
 const HIGH_VALUE_TYPES: DocumentType[] = [
+  "PROPOSAL",
   "ORG_OVERVIEW",
   "PROGRAM_DESCRIPTION",
   "IMPACT_REPORT",

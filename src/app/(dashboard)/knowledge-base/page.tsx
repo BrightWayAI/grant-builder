@@ -168,6 +168,7 @@ function getHealthColor(score: number): string {
 }
 
 const HIGH_VALUE_TYPE_LABELS: { type: DocumentType; label: string }[] = [
+  { type: "PROPOSAL", label: "Proposals/RFPs" },
   { type: "ORG_OVERVIEW", label: "Org overview" },
   { type: "PROGRAM_DESCRIPTION", label: "Program description" },
   { type: "IMPACT_REPORT", label: "Impact report" },
