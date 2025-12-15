@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/primitives/button";
@@ -9,15 +9,45 @@ import { Label } from "@/components/primitives/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/primitives/card";
 import { useToast } from "@/components/ui/use-toast";
 import { signIn } from "next-auth/react";
+import { Eye, EyeOff, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+function getPasswordStrength(password: string): { score: number; label: string; color: string } {
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+  if (/\d/.test(password)) score++;
+  if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+  if (score <= 1) return { score, label: "Weak", color: "bg-status-error" };
+  if (score <= 2) return { score, label: "Fair", color: "bg-status-warning" };
+  if (score <= 3) return { score, label: "Good", color: "bg-status-info" };
+  return { score, label: "Strong", color: "bg-status-success" };
+}
 
 export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+
+  const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
+  
+  const passwordRequirements = useMemo(() => [
+    { met: password.length >= 8, label: "At least 8 characters" },
+    { met: /[a-z]/.test(password) && /[A-Z]/.test(password), label: "Upper & lowercase letters" },
+    { met: /\d/.test(password), label: "At least one number" },
+    { met: /[^a-zA-Z0-9]/.test(password), label: "At least one special character" },
+  ], [password]);
+
+  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
+  const isPasswordValid = password.length >= 8;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,24 +149,95 @@ export default function SignupPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="At least 8 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Create a password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {password && (
+                <div className="space-y-2 mt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className={cn("h-full transition-all", passwordStrength.color)}
+                        style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                      />
+                    </div>
+                    <span className={cn(
+                      "text-xs font-medium",
+                      passwordStrength.score <= 1 && "text-status-error",
+                      passwordStrength.score === 2 && "text-status-warning",
+                      passwordStrength.score === 3 && "text-status-info",
+                      passwordStrength.score >= 4 && "text-status-success"
+                    )}>
+                      {passwordStrength.label}
+                    </span>
+                  </div>
+                  <ul className="space-y-1">
+                    {passwordRequirements.map((req, i) => (
+                      <li key={i} className="flex items-center gap-2 text-xs">
+                        {req.met ? (
+                          <Check className="h-3 w-3 text-status-success" />
+                        ) : (
+                          <X className="h-3 w-3 text-text-tertiary" />
+                        )}
+                        <span className={req.met ? "text-status-success" : "text-text-tertiary"}>
+                          {req.label}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {confirmPassword && (
+                <div className="flex items-center gap-2 text-xs mt-1">
+                  {passwordsMatch ? (
+                    <>
+                      <Check className="h-3 w-3 text-status-success" />
+                      <span className="text-status-success">Passwords match</span>
+                    </>
+                  ) : (
+                    <>
+                      <X className="h-3 w-3 text-status-error" />
+                      <span className="text-status-error">Passwords do not match</span>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
             <Button type="submit" className="w-full" loading={isLoading}>
               {isLoading ? "Creating account..." : "Create Account"}

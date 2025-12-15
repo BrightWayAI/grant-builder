@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { KnowledgeBaseManager } from "@/components/documents/knowledge-base-manager";
 import { DocumentList } from "@/components/documents/document-list";
+import { AddDocumentButton } from "@/components/documents/add-document-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/primitives/card";
 import { Badge } from "@/components/primitives/badge";
 import { Progress } from "@/components/primitives/progress";
@@ -64,11 +65,14 @@ export default async function KnowledgeBasePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-title">Knowledge Base</h1>
-        <p className="text-text-secondary">
-          Upload documents to teach the AI about your organization and improve proposal generation
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-title">Knowledge Base</h1>
+          <p className="text-text-secondary">
+            Upload documents to teach the AI about your organization and improve proposal generation
+          </p>
+        </div>
+        <AddDocumentButton organizationId={user.organizationId} />
       </div>
 
       {/* Stats Row */}
