@@ -12,7 +12,7 @@ function getResend(): Resend {
   return resendInstance;
 }
 
-const FROM_EMAIL = process.env.EMAIL_FROM || "Beacon by BrightWay <noreply@brightwayai.com>";
+const FROM_EMAIL = process.env.EMAIL_FROM || "Beacon by BrightWay <noreply@notifications.brightwayai.com>";
 
 interface SendEmailOptions {
   to: string;
