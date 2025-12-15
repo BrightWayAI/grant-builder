@@ -24,11 +24,11 @@ const DOC_WEIGHTS: Partial<Record<DocumentType, number>> = {
   OTHER: 0.3,
 };
 
-const COVERAGE_BUCKETS: { label: string; types: DocumentType[] }[] = [
-  { label: "Org overview", types: ["ORG_OVERVIEW"] as DocumentType[] },
-  { label: "Programs & outcomes", types: ["PROGRAM_DESCRIPTION", "IMPACT_REPORT", "LOGIC_MODEL"] as DocumentType[] },
-  { label: "Financials", types: ["AUDITED_FINANCIALS", "FORM_990"] as DocumentType[] },
-  { label: "Staff & governance", types: ["STAFF_BIOS", "BOARD_BIOS"] as DocumentType[] },
+const COVERAGE_BUCKETS: { label: string; types: DocumentType[]; targetCount: number }[] = [
+  { label: "Org overview", types: ["ORG_OVERVIEW"] as DocumentType[], targetCount: 1 },
+  { label: "Programs & outcomes", types: ["PROGRAM_DESCRIPTION", "IMPACT_REPORT", "LOGIC_MODEL"] as DocumentType[], targetCount: 3 },
+  { label: "Financials", types: ["AUDITED_FINANCIALS", "FORM_990"] as DocumentType[], targetCount: 2 },
+  { label: "Staff & governance", types: ["STAFF_BIOS", "BOARD_BIOS"] as DocumentType[], targetCount: 2 },
 ];
 
 const HIGH_VALUE_TYPES: DocumentType[] = [
@@ -85,18 +85,19 @@ export async function getKnowledgeScore(organizationId: string): Promise<ScoreBr
   const docStrengthRaw = perDocScores.reduce((a, b) => a + b, 0) / perDocScores.length;
   const freshnessRaw = docs.reduce((a, d) => a + recencyFactor(d.updatedAt), 0) / docs.length;
 
-  // coverage: fraction of buckets that have at least one doc
-  const coverageHits = COVERAGE_BUCKETS.map((bucket) =>
-    docs.some((d) => bucket.types.includes(d.documentType))
-  );
-  const coverage = coverageHits.filter(Boolean).length / COVERAGE_BUCKETS.length;
+  // coverage: depth-aware per bucket (count vs target)
+  const coverageScores = COVERAGE_BUCKETS.map((bucket) => {
+    const count = docs.filter((d) => bucket.types.includes(d.documentType)).length;
+    return Math.min(1, count / bucket.targetCount);
+  });
+  const coverageRaw = coverageScores.reduce((a, b) => a + b, 0) / COVERAGE_BUCKETS.length;
 
   const highValueHits = HIGH_VALUE_TYPES.filter((t) => docs.some((d) => d.documentType === t)).length;
   const highValue = highValueHits / HIGH_VALUE_TYPES.length;
 
   const docCountFactor = Math.min(1, docs.length / MIN_DOCS_FOR_FULL_SCORE);
 
-  const coverageAdj = coverage * docCountFactor;
+  const coverageAdj = coverageRaw * docCountFactor;
   const highValueAdj = highValue * docCountFactor;
   const docStrengthAdj = docStrengthRaw * docCountFactor;
   const freshnessAdj = freshnessRaw * docCountFactor;
@@ -111,9 +112,9 @@ export async function getKnowledgeScore(organizationId: string): Promise<ScoreBr
 
   // recommendations: missing buckets and stale data
   const recs: string[] = [];
-  COVERAGE_BUCKETS.forEach((bucket) => {
-    if (!coverageHits[COVERAGE_BUCKETS.indexOf(bucket)]) {
-      recs.push(`Add ${bucket.label.toLowerCase()} content`);
+  COVERAGE_BUCKETS.forEach((bucket, idx) => {
+    if (coverageScores[idx] < 1) {
+      recs.push(`Add more ${bucket.label.toLowerCase()} depth`);
     }
   });
 
