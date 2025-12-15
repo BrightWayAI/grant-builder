@@ -1,5 +1,6 @@
 FROM node:20-alpine AS base
-RUN apk add --no-cache libc6-compat openssl
+# Needed for Prisma engines (libssl 1.1 compatibility) on Alpine
+RUN apk add --no-cache libc6-compat openssl openssl1.1-compat
 
 # Install dependencies only when needed
 FROM base AS deps
