@@ -66,7 +66,6 @@ export default function OnboardingPage() {
     ein: "",
     mission: "",
     orgType: "",
-    geography: "",
     geographicFocus: { countries: [], states: [], regions: [] } as GeographicFocus,
     budgetRange: "",
     populationsServed: "",
@@ -261,15 +260,6 @@ export default function OnboardingPage() {
                       </button>
                     ))}
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="geography">Geographic Focus</Label>
-                  <Input
-                    id="geography"
-                    value={formData.geography}
-                    onChange={(e) => setFormData({ ...formData, geography: e.target.value })}
-                    placeholder="e.g., San Francisco Bay Area, Texas, National"
-                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="budgetRange">Annual Operating Budget</Label>
