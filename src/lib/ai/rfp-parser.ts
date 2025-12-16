@@ -2,19 +2,19 @@ import { z } from "zod";
 import { getOpenAI, GENERATION_MODEL } from "./openai";
 
 export const RFPSectionSchema = z.object({
-  name: z.string(),
-  description: z.string(),
+  name: z.string().nullable().default("Untitled Section"),
+  description: z.string().nullable().default(""),
   wordLimit: z.number().nullable().optional(),
   charLimit: z.number().nullable().optional(),
   pageLimit: z.number().nullable().optional(),
-  isRequired: z.boolean(),
+  isRequired: z.boolean().nullable().default(true),
   pointValue: z.number().nullable().optional(),
 });
 
 export const ParsedRFPSchema = z.object({
-  funderName: z.string(),
-  programTitle: z.string(),
-  deadline: z.string().optional(),
+  funderName: z.string().nullable().default("Unknown Funder"),
+  programTitle: z.string().nullable().default("Grant Program"),
+  deadline: z.string().nullable().optional(),
   fundingAmount: z
     .object({
       min: z.number().nullable().optional(),
@@ -22,15 +22,15 @@ export const ParsedRFPSchema = z.object({
     })
     .nullable()
     .optional(),
-  sections: z.array(RFPSectionSchema),
-  eligibility: z.array(z.string()),
-  attachments: z.array(z.string()),
-  evaluationCriteria: z.array(z.string()).optional(),
-  submissionInstructions: z.string().optional(),
+  sections: z.array(RFPSectionSchema).nullable().default([]),
+  eligibility: z.array(z.string()).nullable().default([]),
+  attachments: z.array(z.string()).nullable().default([]),
+  evaluationCriteria: z.array(z.string()).nullable().optional(),
+  submissionInstructions: z.string().nullable().optional(),
   keyDates: z.array(z.object({
     date: z.string(),
     description: z.string(),
-  })).optional(),
+  })).nullable().optional(),
 });
 
 export type ParsedRFP = z.infer<typeof ParsedRFPSchema>;
