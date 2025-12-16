@@ -713,6 +713,10 @@ export default function Home() {
           <p className="text-sm text-text-tertiary mt-4">
             No credit card required · 3 free proposals
           </p>
+          <div className="flex items-center justify-center gap-2 mt-3 text-sm text-text-tertiary">
+            <Shield className="h-4 w-4" />
+            <span>Your data is never used to train AI</span>
+          </div>
         </div>
       </section>
 
