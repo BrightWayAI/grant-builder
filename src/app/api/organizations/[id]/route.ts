@@ -14,7 +14,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { name, ein, mission, geographicFocus, budgetRange, populationsServed, programAreas } = body;
+    const { name, ein, mission, geographicFocus, budgetRange, populationsServed, programAreas, orgType, fundingMin, fundingMax } = body;
 
     const updated = await prisma.organization.update({
       where: { id: params.id },
@@ -26,6 +26,9 @@ export async function PATCH(
         ...(budgetRange !== undefined && { budgetRange: budgetRange || null }),
         ...(populationsServed !== undefined && { populationsServed: populationsServed || null }),
         ...(programAreas !== undefined && { programAreas }),
+        ...(orgType !== undefined && { orgType: orgType || null }),
+        ...(fundingMin !== undefined && { fundingMin: fundingMin || null }),
+        ...(fundingMax !== undefined && { fundingMax: fundingMax || null }),
       },
     });
 
