@@ -255,3 +255,25 @@ model GrantDigestPreference {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 }
+
+model ErrorLog {
+  id              String       @id @default(cuid())
+  organizationId  String?
+  userId          String?
+  errorType       ErrorType
+  message         String       @db.Text
+  stack           String?      @db.Text
+  endpoint        String?
+  statusCode      Int?
+  metadata        Json?
+  resolved        Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+}
+
+enum ErrorType {
+  API_ERROR
+  AI_ERROR
+  CLIENT_ERROR
+  DOCUMENT_ERROR
+  AUTH_ERROR
+}
