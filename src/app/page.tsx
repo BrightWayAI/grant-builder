@@ -22,6 +22,8 @@ import {
   Zap,
   FolderOpen,
   Database,
+  Lock,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BillingToggle, PRICING } from "@/components/subscription/billing-toggle";
@@ -852,8 +854,55 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Security & Trust */}
+      <section className="py-24 px-6 bg-surface-subtle">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12 scroll-animate float-up">
+            <Badge variant="outline" className="mb-4">Security & Privacy</Badge>
+            <h2 className="text-4xl font-display font-bold mb-4">
+              Your data stays yours
+            </h2>
+            <p className="text-text-secondary text-lg">
+              We take the security of your grant documents seriously
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6 scroll-animate float-up delay-100">
+            <div className="bg-surface rounded-xl p-6 border border-border">
+              <div className="w-10 h-10 rounded-lg bg-brand/10 flex items-center justify-center mb-4">
+                <ShieldCheck className="h-5 w-5 text-brand" />
+              </div>
+              <h3 className="font-semibold mb-2">Never used for AI training</h3>
+              <p className="text-sm text-text-secondary">
+                Your documents and proposals are never used to train AI models. We use the OpenAI API which has a strict no-training policy.
+              </p>
+            </div>
+            
+            <div className="bg-surface rounded-xl p-6 border border-border">
+              <div className="w-10 h-10 rounded-lg bg-brand/10 flex items-center justify-center mb-4">
+                <Lock className="h-5 w-5 text-brand" />
+              </div>
+              <h3 className="font-semibold mb-2">Encrypted & secure</h3>
+              <p className="text-sm text-text-secondary">
+                All data is encrypted at rest and in transit. Your documents are stored securely and only accessible to your team.
+              </p>
+            </div>
+            
+            <div className="bg-surface rounded-xl p-6 border border-border">
+              <div className="w-10 h-10 rounded-lg bg-brand/10 flex items-center justify-center mb-4">
+                <Download className="h-5 w-5 text-brand" />
+              </div>
+              <h3 className="font-semibold mb-2">You own your content</h3>
+              <p className="text-sm text-text-secondary">
+                Export your proposals and data anytime. Your content belongs to you, and you can take it with you if you leave.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
-      <section id="pricing" className="py-24 px-6 bg-surface-subtle">
+      <section id="pricing" className="py-24 px-6 bg-surface">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 scroll-animate float-up">
             <Badge className="mb-4 bg-purple-100 text-purple-800 border-purple-200">
