@@ -2,18 +2,18 @@ import { z } from "zod";
 import { getOpenAI, GENERATION_MODEL } from "./openai";
 
 export const RFPSectionSchema = z.object({
-  name: z.string().nullable().default("Untitled Section"),
-  description: z.string().nullable().default(""),
+  name: z.string().nullable().transform(v => v ?? "Untitled Section"),
+  description: z.string().nullable().transform(v => v ?? ""),
   wordLimit: z.number().nullable().optional(),
   charLimit: z.number().nullable().optional(),
   pageLimit: z.number().nullable().optional(),
-  isRequired: z.boolean().nullable().default(true),
+  isRequired: z.boolean().nullable().transform(v => v ?? true),
   pointValue: z.number().nullable().optional(),
 });
 
 export const ParsedRFPSchema = z.object({
-  funderName: z.string().nullable().default("Unknown Funder"),
-  programTitle: z.string().nullable().default("Grant Program"),
+  funderName: z.string().nullable().transform(v => v ?? "Unknown Funder"),
+  programTitle: z.string().nullable().transform(v => v ?? "Grant Program"),
   deadline: z.string().nullable().optional(),
   fundingAmount: z
     .object({
@@ -22,9 +22,9 @@ export const ParsedRFPSchema = z.object({
     })
     .nullable()
     .optional(),
-  sections: z.array(RFPSectionSchema).nullable().default([]),
-  eligibility: z.array(z.string()).nullable().default([]),
-  attachments: z.array(z.string()).nullable().default([]),
+  sections: z.array(RFPSectionSchema).nullable().transform(v => v ?? []),
+  eligibility: z.array(z.string()).nullable().transform(v => v ?? []),
+  attachments: z.array(z.string()).nullable().transform(v => v ?? []),
   evaluationCriteria: z.array(z.string()).nullable().optional(),
   submissionInstructions: z.string().nullable().optional(),
   keyDates: z.array(z.object({
