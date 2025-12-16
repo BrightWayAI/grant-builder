@@ -17,9 +17,10 @@ export const ParsedRFPSchema = z.object({
   deadline: z.string().optional(),
   fundingAmount: z
     .object({
-      min: z.number().optional(),
-      max: z.number().optional(),
+      min: z.number().nullable().optional(),
+      max: z.number().nullable().optional(),
     })
+    .nullable()
     .optional(),
   sections: z.array(RFPSectionSchema),
   eligibility: z.array(z.string()),
