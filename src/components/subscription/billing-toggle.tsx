@@ -12,14 +12,14 @@ interface BillingToggleProps {
 
 export function BillingToggle({ value, onChange, className }: BillingToggleProps) {
   return (
-    <div className={cn("inline-flex items-center gap-1 p-1 bg-surface-secondary rounded-full", className)}>
+    <div className={cn("inline-flex items-center gap-1 p-1 bg-gray-100 border border-gray-200 rounded-full", className)}>
       <button
         onClick={() => onChange("monthly")}
         className={cn(
           "px-4 py-2 text-sm font-medium rounded-full transition-all",
           value === "monthly"
-            ? "bg-white text-text-primary shadow-sm"
-            : "text-text-secondary hover:text-text-primary"
+            ? "bg-white text-gray-900 shadow-sm border border-gray-200"
+            : "text-gray-600 hover:text-gray-900"
         )}
       >
         Monthly
@@ -29,17 +29,12 @@ export function BillingToggle({ value, onChange, className }: BillingToggleProps
         className={cn(
           "px-4 py-2 text-sm font-medium rounded-full transition-all flex items-center gap-2",
           value === "yearly"
-            ? "bg-white text-text-primary shadow-sm"
-            : "text-text-secondary hover:text-text-primary"
+            ? "bg-white text-gray-900 shadow-sm border border-gray-200"
+            : "text-gray-600 hover:text-gray-900"
         )}
       >
         Yearly
-        <span className={cn(
-          "px-1.5 py-0.5 text-xs font-semibold rounded-full",
-          value === "yearly"
-            ? "bg-green-100 text-green-700"
-            : "bg-green-100 text-green-700"
-        )}>
+        <span className="px-1.5 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-700">
           Save 20%
         </span>
       </button>
