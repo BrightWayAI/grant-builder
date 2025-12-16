@@ -8,6 +8,7 @@ import {
   CATEGORY_MAPPING,
 } from "@/lib/grants-gov";
 import { searchAllSources, UnifiedOpportunity } from "@/lib/grant-sources";
+import { logApiError } from "@/lib/error-logging";
 
 export interface GrantWithScore extends GrantsGovOpportunity {
   matchScore: number;
@@ -123,6 +124,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error searching grants:", error);
+    
+    await logApiError(error, "/api/grants/search", { statusCode: 500 });
+    
     return NextResponse.json(
       { error: "Failed to search grants", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }

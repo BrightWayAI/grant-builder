@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { extractTextFromFile, isValidFileType } from "@/lib/ai/document-parser";
 import { parseRFP } from "@/lib/ai/rfp-parser";
+import { logAiError } from "@/lib/error-logging";
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,6 +40,12 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    
+    // Log RFP parsing errors (AI-related)
+    await logAiError(error, {
+      sectionName: "RFP Parse",
+    });
+    
     return NextResponse.json(
       { error: "Failed to parse RFP. Please try again or enter requirements manually." },
       { status: 500 }

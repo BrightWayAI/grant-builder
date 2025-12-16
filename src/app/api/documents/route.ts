@@ -5,6 +5,7 @@ import { uploadDocument } from "@/lib/storage";
 import { isValidFileType, getFileTypeFromMime } from "@/lib/ai/document-processor";
 import { indexDocument } from "@/lib/ai/embeddings";
 import { DocumentType } from "@prisma/client";
+import { logDocumentError } from "@/lib/error-logging";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
@@ -80,6 +81,10 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message === "No organization") {
       return NextResponse.json({ error: "No organization found" }, { status: 400 });
     }
+    
+    // Log document upload errors
+    await logDocumentError(error, {});
+    
     return NextResponse.json({ error: "Failed to upload document" }, { status: 500 });
   }
 }
@@ -105,7 +110,11 @@ async function processDocumentAsync(
     );
   } catch (error) {
     console.error("Document processing error:", error);
-    // Error is already handled in indexDocument
+    await logDocumentError(error, {
+      organizationId,
+      documentId,
+      filename,
+    });
   }
 }
 
