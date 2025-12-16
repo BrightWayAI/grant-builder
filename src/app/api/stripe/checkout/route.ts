@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/db";
-import { stripe, PLANS, PlanType } from "@/lib/stripe";
+import { stripe, getPlanConfig, PlanType, BillingInterval } from "@/lib/stripe";
 import { z } from "zod";
 
 const checkoutSchema = z.object({
   plan: z.enum(["individual", "teams", "enterprise"]),
   seats: z.number().int().min(1).optional().default(1),
   lockInDiscount: z.boolean().optional().default(false),
+  billingInterval: z.enum(["monthly", "yearly"]).optional().default("monthly"),
 });
 
 export async function POST(req: NextRequest) {
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { plan, seats, lockInDiscount } = checkoutSchema.parse(body);
+    const { plan, seats, lockInDiscount, billingInterval } = checkoutSchema.parse(body);
 
     if (plan === "teams" && seats < 3) {
       return NextResponse.json(
@@ -65,19 +66,19 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const selectedPlan = PLANS[plan as PlanType];
+    const selectedPlan = getPlanConfig(plan as PlanType, billingInterval);
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
     // Validate price ID exists
     if (!selectedPlan.priceId) {
-      console.error(`Missing price ID for plan: ${plan}`);
+      console.error(`Missing price ID for plan: ${plan}, interval: ${billingInterval}`);
       return NextResponse.json(
-        { error: `Price not configured for ${plan} plan` },
+        { error: `Price not configured for ${plan} plan (${billingInterval})` },
         { status: 500 }
       );
     }
 
-    console.log(`Creating checkout for plan: ${plan}, priceId: ${selectedPlan.priceId}`);
+    console.log(`Creating checkout for plan: ${plan}, interval: ${billingInterval}, priceId: ${selectedPlan.priceId}`);
 
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
@@ -96,6 +97,7 @@ export async function POST(req: NextRequest) {
         organizationId: organization.id,
         plan,
         seats: (plan === "teams" ? seats : 1).toString(),
+        billingInterval,
         lockInDiscount: lockInDiscount ? "true" : "false",
       },
       subscription_data: {
@@ -103,6 +105,7 @@ export async function POST(req: NextRequest) {
           organizationId: organization.id,
           plan,
           seats: (plan === "teams" ? seats : 1).toString(),
+          billingInterval,
           lockInDiscount: lockInDiscount ? "true" : "false",
         },
       },

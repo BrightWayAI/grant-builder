@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/primitives/button";
 import { Badge } from "@/components/primitives/badge";
 import { Progress } from "@/components/primitives/progress";
+import { BillingToggle, PRICING, BillingInterval } from "@/components/subscription/billing-toggle";
 import { 
   CreditCard, 
   FileText, 
@@ -43,6 +44,7 @@ export default function BillingPage() {
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [teamSeats, setTeamSeats] = useState(3);
   const [showSeatModal, setShowSeatModal] = useState(false);
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>("monthly");
 
   useEffect(() => {
     fetchSubscription();
@@ -90,7 +92,7 @@ export default function BillingPage() {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, seats, lockInDiscount: subscription?.isBeta }),
+        body: JSON.stringify({ plan, seats, billingInterval, lockInDiscount: subscription?.isBeta }),
       });
       const data = await res.json();
       
@@ -352,15 +354,26 @@ export default function BillingPage() {
       {/* Plan Comparison */}
       <Card>
         <CardHeader>
-          <CardTitle>Plan Comparison</CardTitle>
-          <CardDescription>Lock in 20% off your first year (applied at checkout)</CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle>Plan Comparison</CardTitle>
+              <CardDescription>Choose the plan that works for your organization</CardDescription>
+            </div>
+            <BillingToggle value={billingInterval} onChange={setBillingInterval} />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-4">
             <div className={`p-4 rounded-lg border ${subscription?.plan === "individual" ? "border-brand bg-brand/5" : "border-border"}`}>
               <h3 className="font-semibold mb-1">Individual</h3>
-              <div className="text-sm text-text-secondary mb-1 line-through">$49/mo</div>
-              <p className="text-2xl font-bold mb-3">$39<span className="text-sm font-normal text-text-secondary">/mo first year</span></p>
+              <p className="text-2xl font-bold">
+                {PRICING.individual[billingInterval].label}
+                <span className="text-sm font-normal text-text-secondary">{PRICING.individual[billingInterval].sublabel}</span>
+              </p>
+              {billingInterval === "yearly" && (
+                <p className="text-xs text-text-tertiary mb-3">{PRICING.individual.yearly.billed}</p>
+              )}
+              {billingInterval === "monthly" && <div className="mb-3" />}
               <ul className="space-y-2 text-sm text-text-secondary">
                 <li>2 proposals per month</li>
                 <li>250 MB knowledge base</li>
@@ -380,8 +393,14 @@ export default function BillingPage() {
 
             <div className={`p-4 rounded-lg border ${subscription?.plan === "teams" ? "border-brand bg-brand/5" : "border-border"}`}>
               <h3 className="font-semibold mb-1">Teams</h3>
-              <div className="text-sm text-text-secondary mb-1 line-through">$29/seat/mo</div>
-              <p className="text-2xl font-bold mb-3">$23<span className="text-sm font-normal text-text-secondary">/seat/mo first year</span></p>
+              <p className="text-2xl font-bold">
+                {PRICING.teams[billingInterval].label}
+                <span className="text-sm font-normal text-text-secondary">{PRICING.teams[billingInterval].sublabel}</span>
+              </p>
+              {billingInterval === "yearly" && (
+                <p className="text-xs text-text-tertiary mb-3">{PRICING.teams.yearly.billed}</p>
+              )}
+              {billingInterval === "monthly" && <div className="mb-3" />}
               <ul className="space-y-2 text-sm text-text-secondary">
                 <li>5 proposals per seat</li>
                 <li>1 GB shared knowledge base</li>
@@ -401,8 +420,14 @@ export default function BillingPage() {
 
             <div className={`p-4 rounded-lg border ${subscription?.plan === "enterprise" ? "border-brand bg-brand/5" : "border-border"}`}>
               <h3 className="font-semibold mb-1">Enterprise</h3>
-              <div className="text-sm text-text-secondary mb-1 line-through">$199/mo</div>
-              <p className="text-2xl font-bold mb-3">$159<span className="text-sm font-normal text-text-secondary">/mo first year</span></p>
+              <p className="text-2xl font-bold">
+                {PRICING.enterprise[billingInterval].label}
+                <span className="text-sm font-normal text-text-secondary">{PRICING.enterprise[billingInterval].sublabel}</span>
+              </p>
+              {billingInterval === "yearly" && (
+                <p className="text-xs text-text-tertiary mb-3">{PRICING.enterprise.yearly.billed}</p>
+              )}
+              {billingInterval === "monthly" && <div className="mb-3" />}
               <ul className="space-y-2 text-sm text-text-secondary">
                 <li>50 proposals per month</li>
                 <li>5 GB knowledge base</li>
@@ -427,7 +452,10 @@ export default function BillingPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-2">Choose seats</h3>
-            <p className="text-sm text-text-secondary mb-4">Teams requires at least 3 seats. 20% off first year will be applied.</p>
+            <p className="text-sm text-text-secondary mb-4">
+              Teams requires at least 3 seats. 
+              {billingInterval === "yearly" ? " Billed annually." : " Billed monthly."}
+            </p>
             <div className="flex items-center gap-3 mb-4">
               <Button
                 variant="outline"
@@ -459,7 +487,10 @@ export default function BillingPage() {
                 }}
                 disabled={upgradeLoading}
               >
-                Continue - ${Math.max(3, teamSeats) * 23}/mo first year
+                {billingInterval === "yearly" 
+                  ? `Continue - $${Math.max(3, teamSeats) * PRICING.teams.yearly.price}/year`
+                  : `Continue - $${Math.max(3, teamSeats) * PRICING.teams.monthly.price}/mo`
+                }
               </Button>
             </div>
           </div>
