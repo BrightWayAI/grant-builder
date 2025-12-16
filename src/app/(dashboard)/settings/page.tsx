@@ -20,6 +20,7 @@ export default async function SettingsPage() {
   const orgWithTypedGeo = {
     ...organization,
     geographicFocus: organization.geographicFocus as GeographicFocus | null,
+    programAreas: organization.programAreas || [],
   };
 
   return (
