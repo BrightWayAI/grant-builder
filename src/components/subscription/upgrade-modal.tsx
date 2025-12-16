@@ -11,6 +11,7 @@ import {
 } from "@/components/primitives/dialog";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BillingToggle, PRICING, BillingInterval } from "./billing-toggle";
 
 interface UpgradeModalProps {
   open: boolean;
@@ -20,9 +21,8 @@ interface UpgradeModalProps {
 
 const plans = [
   {
-    id: "individual",
+    id: "individual" as const,
     name: "Individual",
-    price: 49,
     features: [
       "2 proposals per month",
       "250 MB knowledge base",
@@ -31,10 +31,8 @@ const plans = [
     ],
   },
   {
-    id: "teams",
+    id: "teams" as const,
     name: "Teams",
-    price: 29,
-    priceLabel: "per seat",
     features: [
       "5 proposals per seat",
       "1 GB shared storage",
@@ -44,9 +42,8 @@ const plans = [
     popular: true,
   },
   {
-    id: "enterprise",
+    id: "enterprise" as const,
     name: "Enterprise",
-    price: 199,
     features: [
       "50 proposals per month",
       "5 GB knowledge base",
@@ -60,6 +57,7 @@ export function UpgradeModal({ open, onOpenChange, trigger }: UpgradeModalProps)
   const [selectedPlan, setSelectedPlan] = useState<"individual" | "teams" | "enterprise">("individual");
   const [seats, setSeats] = useState(3);
   const [loading, setLoading] = useState(false);
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>("monthly");
 
   const handleCheckout = async () => {
     setLoading(true);
@@ -70,6 +68,7 @@ export function UpgradeModal({ open, onOpenChange, trigger }: UpgradeModalProps)
         body: JSON.stringify({
           plan: selectedPlan,
           seats: selectedPlan === "teams" ? seats : 1,
+          billingInterval,
           lockInDiscount: true,
         }),
       });
@@ -110,44 +109,54 @@ export function UpgradeModal({ open, onOpenChange, trigger }: UpgradeModalProps)
           <DialogDescription>{getMessage()}</DialogDescription>
         </DialogHeader>
 
+        <div className="flex justify-center mt-2">
+          <BillingToggle value={billingInterval} onChange={setBillingInterval} />
+        </div>
+
         <div className="grid md:grid-cols-3 gap-4 mt-4">
-          {plans.map((plan) => (
-            <button
-              key={plan.id}
-              onClick={() => setSelectedPlan(plan.id as "individual" | "teams" | "enterprise")}
-              className={cn(
-                "relative text-left p-5 rounded-xl border-2 transition-all",
-                selectedPlan === plan.id
-                  ? "border-brand bg-brand/5"
-                  : "border-border hover:border-border-hover"
-              )}
-            >
-              {plan.popular && (
-                <span className="absolute -top-2.5 right-4 px-2 py-0.5 bg-brand text-white text-xs font-medium rounded-full">
-                  Best Value
-                </span>
-              )}
-
-              <div className="mb-3">
-                <h3 className="font-semibold">{plan.name}</h3>
-                <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-2xl font-bold">${plan.price}</span>
-                  <span className="text-sm text-text-secondary">
-                    /mo {plan.priceLabel || ""}
+          {plans.map((plan) => {
+            const pricing = PRICING[plan.id][billingInterval];
+            return (
+              <button
+                key={plan.id}
+                onClick={() => setSelectedPlan(plan.id)}
+                className={cn(
+                  "relative text-left p-5 rounded-xl border-2 transition-all",
+                  selectedPlan === plan.id
+                    ? "border-brand bg-brand/5"
+                    : "border-border hover:border-border-hover"
+                )}
+              >
+                {plan.popular && (
+                  <span className="absolute -top-2.5 right-4 px-2 py-0.5 bg-brand text-white text-xs font-medium rounded-full">
+                    Best Value
                   </span>
-                </div>
-              </div>
+                )}
 
-              <ul className="space-y-2">
-                {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </button>
-          ))}
+                <div className="mb-3">
+                  <h3 className="font-semibold">{plan.name}</h3>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className="text-2xl font-bold">{pricing.label}</span>
+                    <span className="text-sm text-text-secondary">
+                      {pricing.sublabel}
+                    </span>
+                  </div>
+                  {billingInterval === "yearly" && (
+                    <p className="text-xs text-text-tertiary mt-1">{PRICING[plan.id].yearly.billed}</p>
+                  )}
+                </div>
+
+                <ul className="space-y-2">
+                  {plan.features.map((feature, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </button>
+            );
+          })}
         </div>
 
         {selectedPlan === "teams" && (
@@ -172,7 +181,10 @@ export function UpgradeModal({ open, onOpenChange, trigger }: UpgradeModalProps)
               </Button>
             </div>
             <span className="text-sm text-text-secondary ml-auto">
-              ${seats * 29 * 0.8}/mo (20% off, year 1)
+              {billingInterval === "yearly" 
+                ? `$${seats * PRICING.teams.yearly.price}/year`
+                : `$${seats * PRICING.teams.monthly.price}/mo`
+              }
             </span>
           </div>
         )}
@@ -189,7 +201,7 @@ export function UpgradeModal({ open, onOpenChange, trigger }: UpgradeModalProps)
               </>
             ) : (
               <>
-                Lock in {selectedPlan === "teams" ? `${seats} seats` : selectedPlan} at 20% off
+                Continue with {selectedPlan === "teams" ? `${seats} seats` : selectedPlan}
               </>
             )}
           </Button>

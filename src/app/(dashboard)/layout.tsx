@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { getSubscriptionInfo } from "@/lib/subscription";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { WelcomeWizardTrigger } from "@/components/onboarding/welcome-wizard-trigger";
 
 export default async function DashboardLayout({
   children,
@@ -21,6 +22,8 @@ export default async function DashboardLayout({
 
   const subscription = await getSubscriptionInfo(user.organizationId);
 
+  const showWelcomeWizard = !user.hasSeenWelcome;
+
   return (
     <div className="min-h-screen bg-surface-page">
       {process.env.APP_ENV === "staging" && (
@@ -37,6 +40,7 @@ export default async function DashboardLayout({
         </div>
         <FeedbackButton />
       </main>
+      <WelcomeWizardTrigger shouldShow={showWelcomeWizard} />
     </div>
   );
 }

@@ -24,6 +24,7 @@ import {
   Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BillingToggle, PRICING } from "@/components/subscription/billing-toggle";
 
 // Hook to set up global scroll observer
 function useScrollAnimations() {
@@ -585,6 +586,7 @@ function WhyBeacon() {
 
 export default function Home() {
   const [scrollY, setScrollY] = useState(0);
+  const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly");
 
   // Set up scroll animations
   useScrollAnimations();
@@ -853,16 +855,17 @@ export default function Home() {
       {/* Pricing */}
       <section id="pricing" className="py-24 px-6 bg-surface-subtle">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16 scroll-animate float-up">
+          <div className="text-center mb-8 scroll-animate float-up">
             <Badge className="mb-4 bg-purple-100 text-purple-800 border-purple-200">
               Free during beta
             </Badge>
             <h2 className="text-4xl font-display font-bold mb-4">
               Simple pricing
             </h2>
-            <p className="text-xl text-text-secondary">
+            <p className="text-xl text-text-secondary mb-8">
               Full access free during beta. These will be our prices at launch.
             </p>
+            <BillingToggle value={billingInterval} onChange={setBillingInterval} />
           </div>
           
           <div className="grid md:grid-cols-3 gap-6 scroll-animate float-up delay-100">
@@ -870,10 +873,13 @@ export default function Home() {
             <div className="rounded-2xl border border-border bg-surface p-6">
               <div className="mb-5">
                 <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-3xl font-bold">$49</span>
-                  <span className="text-text-secondary text-sm">/mo</span>
+                  <span className="text-3xl font-bold">{PRICING.individual[billingInterval].label}</span>
+                  <span className="text-text-secondary text-sm">{PRICING.individual[billingInterval].sublabel}</span>
                 </div>
-                <h3 className="text-lg font-semibold">Individual</h3>
+                {billingInterval === "yearly" && (
+                  <p className="text-xs text-text-tertiary">{PRICING.individual.yearly.billed}</p>
+                )}
+                <h3 className="text-lg font-semibold mt-1">Individual</h3>
                 <p className="text-sm text-text-tertiary mt-1">For solo grant writers</p>
               </div>
               
@@ -910,10 +916,13 @@ export default function Home() {
               </div>
               <div className="mb-5">
                 <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-3xl font-bold">$29</span>
-                  <span className="text-text-secondary text-sm">/seat/mo</span>
+                  <span className="text-3xl font-bold">{PRICING.teams[billingInterval].label}</span>
+                  <span className="text-text-secondary text-sm">{PRICING.teams[billingInterval].sublabel}</span>
                 </div>
-                <h3 className="text-lg font-semibold">Teams</h3>
+                {billingInterval === "yearly" && (
+                  <p className="text-xs text-text-tertiary">{PRICING.teams.yearly.billed}</p>
+                )}
+                <h3 className="text-lg font-semibold mt-1">Teams</h3>
                 <p className="text-sm text-text-tertiary mt-1">For growing organizations</p>
               </div>
               
@@ -945,10 +954,13 @@ export default function Home() {
             <div className="rounded-2xl border border-border bg-surface p-6">
               <div className="mb-5">
                 <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-3xl font-bold">$199</span>
-                  <span className="text-text-secondary text-sm">/mo</span>
+                  <span className="text-3xl font-bold">{PRICING.enterprise[billingInterval].label}</span>
+                  <span className="text-text-secondary text-sm">{PRICING.enterprise[billingInterval].sublabel}</span>
                 </div>
-                <h3 className="text-lg font-semibold">Enterprise</h3>
+                {billingInterval === "yearly" && (
+                  <p className="text-xs text-text-tertiary">{PRICING.enterprise.yearly.billed}</p>
+                )}
+                <h3 className="text-lg font-semibold mt-1">Enterprise</h3>
                 <p className="text-sm text-text-tertiary mt-1">For high-volume programs</p>
               </div>
               

@@ -24,24 +24,38 @@ export const stripe = {
   get webhooks() { return getStripe().webhooks; },
 };
 
+export type BillingInterval = "monthly" | "yearly";
+
 // Lazy-loaded to ensure env vars are available at runtime
-export function getPlanConfig(plan: "individual" | "teams" | "enterprise") {
+export function getPlanConfig(plan: "individual" | "teams" | "enterprise", interval: BillingInterval = "monthly") {
   const configs = {
     individual: {
       name: "Individual",
-      priceId: process.env.STRIPE_PRICE_INDIVIDUAL || process.env.STRIPE_PRICE_PERSONAL,
-      proposalsPerMonth: 2,   // 2 per month
+      priceId: interval === "yearly" 
+        ? process.env.STRIPE_PRICE_INDIVIDUAL_YEARLY 
+        : (process.env.STRIPE_PRICE_INDIVIDUAL || process.env.STRIPE_PRICE_PERSONAL),
+      priceIdMonthly: process.env.STRIPE_PRICE_INDIVIDUAL || process.env.STRIPE_PRICE_PERSONAL,
+      priceIdYearly: process.env.STRIPE_PRICE_INDIVIDUAL_YEARLY,
+      proposalsPerMonth: 2,
       seats: 1,
     },
     teams: {
       name: "Teams",
-      priceId: process.env.STRIPE_PRICE_TEAMS,
-      proposalsPerMonth: 5,   // 5 per seat per month
+      priceId: interval === "yearly"
+        ? process.env.STRIPE_PRICE_TEAMS_YEARLY
+        : process.env.STRIPE_PRICE_TEAMS,
+      priceIdMonthly: process.env.STRIPE_PRICE_TEAMS,
+      priceIdYearly: process.env.STRIPE_PRICE_TEAMS_YEARLY,
+      proposalsPerMonth: 5,
       seats: null,
     },
     enterprise: {
       name: "Enterprise",
-      priceId: process.env.STRIPE_PRICE_ENTERPRISE,
+      priceId: interval === "yearly"
+        ? process.env.STRIPE_PRICE_ENTERPRISE_YEARLY
+        : process.env.STRIPE_PRICE_ENTERPRISE,
+      priceIdMonthly: process.env.STRIPE_PRICE_ENTERPRISE,
+      priceIdYearly: process.env.STRIPE_PRICE_ENTERPRISE_YEARLY,
       proposalsPerMonth: 50,
       seats: null,
     },

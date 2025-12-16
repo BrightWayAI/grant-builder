@@ -18,6 +18,9 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
+# Compile seed script to JS
+RUN npx tsc prisma/seed.ts --outDir prisma --esModuleInterop --skipLibCheck --module commonjs --target es2020
+
 # Build the application
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
