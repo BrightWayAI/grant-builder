@@ -648,7 +648,7 @@ export default function Home() {
               <div className="flex flex-col">
                 <span className="text-2xl font-display font-bold leading-tight">Beacon</span>
                 <span className="text-xs text-text-tertiary leading-tight flex items-center gap-1">
-                  by <Image src="/brightway-mark.png" alt="BrightWay" width={80} height={13} className="inline" />
+                  by <Image src="/brightway-mark.png" alt="BrightWay" width={100} height={16} className="inline" />
                 </span>
               </div>
             </div>
@@ -1039,7 +1039,7 @@ export default function Home() {
               <div className="flex flex-col">
                 <span className="text-lg font-display font-bold leading-tight">Beacon</span>
                 <span className="text-xs text-text-tertiary leading-tight flex items-center gap-1">
-                  by <Image src="/brightway-mark.png" alt="BrightWay" width={80} height={13} className="inline" />
+                  by <Image src="/brightway-mark.png" alt="BrightWay" width={100} height={16} className="inline" />
                 </span>
               </div>
             </div>
