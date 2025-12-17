@@ -102,11 +102,16 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // If going to onboarding, check if user already has an org
-      if (url.includes("/onboarding")) {
-        return url; // Let middleware handle the redirect
+      // Handle relative URLs
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`;
       }
-      return url.startsWith(baseUrl) ? url : baseUrl;
+      // Handle absolute URLs on the same origin
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      // Default to dashboard for authenticated users
+      return `${baseUrl}/dashboard`;
     },
   },
 };
