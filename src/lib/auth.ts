@@ -55,10 +55,36 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async signIn({ user, account }) {
+      // For OAuth providers, check if user was invited (exists with organizationId but no password)
+      if (account?.provider === "google" && user.email) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+        });
+        
+        // If invited user signs in with Google, link their account
+        if (existingUser && existingUser.organizationId && !existingUser.passwordHash) {
+          // Update the existing user's name/image if not set
+          await prisma.user.update({
+            where: { id: existingUser.id },
+            data: {
+              name: existingUser.name || user.name,
+              image: existingUser.image || user.image,
+            },
+          });
+        }
+      }
+      return true;
+    },
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
-        token.organizationId = (user as { organizationId?: string }).organizationId;
+        // Fetch fresh organizationId from DB in case it was set during invite
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { organizationId: true },
+        });
+        token.organizationId = dbUser?.organizationId || (user as { organizationId?: string }).organizationId;
       }
       
       if (trigger === "update" && session?.organizationId) {
@@ -73,6 +99,13 @@ export const authOptions: NextAuthOptions = {
         session.user.organizationId = token.organizationId as string | undefined;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // If going to onboarding, check if user already has an org
+      if (url.includes("/onboarding")) {
+        return url; // Let middleware handle the redirect
+      }
+      return url.startsWith(baseUrl) ? url : baseUrl;
     },
   },
 };

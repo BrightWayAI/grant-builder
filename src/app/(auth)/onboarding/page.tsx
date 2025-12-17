@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/primitives/button";
@@ -9,7 +9,7 @@ import { Label } from "@/components/primitives/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/primitives/card";
 import { useToast } from "@/components/ui/use-toast";
 import { PageContainer } from "@/components/layouts/page-container";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 
 const ORG_TYPES = [
   { value: "501c3", label: "501(c)(3) Nonprofit" },
@@ -42,9 +42,33 @@ export default function OnboardingPage() {
     programAreas: [] as string[],
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [checkingOrg, setCheckingOrg] = useState(true);
   const router = useRouter();
-  const { update } = useSession();
+  const { data: session, update } = useSession();
   const { toast } = useToast();
+
+  // Check if user already has an organization (invited user)
+  useEffect(() => {
+    async function checkExistingOrg() {
+      try {
+        const res = await fetch("/api/organizations");
+        if (res.ok) {
+          // User already has an organization, redirect to dashboard
+          router.replace("/dashboard");
+          return;
+        }
+      } catch {
+        // No org found, continue with onboarding
+      }
+      setCheckingOrg(false);
+    }
+    
+    if (session?.user) {
+      checkExistingOrg();
+    } else {
+      setCheckingOrg(false);
+    }
+  }, [session, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,6 +141,14 @@ export default function OnboardingPage() {
         : [...prev.programAreas, area],
     }));
   };
+
+  if (checkingOrg) {
+    return (
+      <div className="min-h-screen bg-surface-page flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-brand" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface-page py-12 px-4">

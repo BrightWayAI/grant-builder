@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/primitives/button";
 import { Input } from "@/components/primitives/input";
@@ -9,7 +9,7 @@ import { Label } from "@/components/primitives/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/primitives/card";
 import { useToast } from "@/components/ui/use-toast";
 import { signIn } from "next-auth/react";
-import { Eye, EyeOff, Check, X } from "lucide-react";
+import { Eye, EyeOff, Check, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
@@ -26,9 +26,12 @@ function getPasswordStrength(password: string): { score: number; label: string; 
   return { score, label: "Strong", color: "bg-status-success" };
 }
 
-export default function SignupPage() {
+function SignupForm() {
+  const searchParams = useSearchParams();
+  const inviteEmail = searchParams.get("email") || "";
+  
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -36,6 +39,13 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  
+  // Update email if invite param changes
+  useEffect(() => {
+    if (inviteEmail) {
+      setEmail(inviteEmail);
+    }
+  }, [inviteEmail]);
 
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
   
@@ -99,7 +109,8 @@ export default function SignupPage() {
       if (result?.error) {
         router.push("/login");
       } else {
-        router.push("/onboarding");
+        // Invited users already have an organization, skip onboarding
+        router.push(data.invited && data.organizationId ? "/dashboard" : "/onboarding");
       }
     } catch (error) {
       toast({
@@ -285,5 +296,29 @@ export default function SignupPage() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+function SignupLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-surface-page px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="font-display text-2xl">Create an account</CardTitle>
+          <CardDescription>Start generating grant proposals in minutes</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-brand" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<SignupLoading />}>
+      <SignupForm />
+    </Suspense>
   );
 }

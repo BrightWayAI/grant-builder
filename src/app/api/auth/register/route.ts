@@ -24,14 +24,34 @@ export async function POST(request: NextRequest) {
       where: { email },
     });
 
-    if (existingUser) {
-      return NextResponse.json(
-        { error: "An account with this email already exists" },
-        { status: 400 }
-      );
-    }
-
     const passwordHash = await bcrypt.hash(password, 12);
+
+    // Handle invited users: if user exists but has no password, complete their registration
+    if (existingUser) {
+      if (existingUser.passwordHash) {
+        return NextResponse.json(
+          { error: "An account with this email already exists" },
+          { status: 400 }
+        );
+      }
+
+      // User was invited but hasn't set up their account yet - complete registration
+      const user = await prisma.user.update({
+        where: { email },
+        data: {
+          name,
+          passwordHash,
+        },
+      });
+
+      return NextResponse.json({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        organizationId: user.organizationId,
+        invited: true,
+      });
+    }
 
     const user = await prisma.user.create({
       data: {
