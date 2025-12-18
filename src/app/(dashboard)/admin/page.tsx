@@ -155,8 +155,8 @@ export default async function AdminPage() {
 
       {/* Overview Stats */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard label="Users" value={userCount} delta={newUsers7d} deltaLabel="last 7d" />
-        <MetricCard label="Organizations" value={orgCount} delta={newOrgs7d} deltaLabel="last 7d" />
+        <MetricCard label="Users" value={userCount} delta={newUsers7d} deltaLabel="last 7d" href="/admin/users" />
+        <MetricCard label="Organizations" value={orgCount} delta={newOrgs7d} deltaLabel="last 7d" href="/admin/orgs" />
         <MetricCard label="Documents" value={docCount} />
         <MetricCard label="Proposals" value={proposalCount} />
       </div>
@@ -212,18 +212,18 @@ export default async function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-3 bg-surface-subtle rounded-lg">
+              <Link href="/admin/users/active?period=day" className="text-center p-3 bg-surface-subtle rounded-lg hover:bg-surface-strong transition-colors">
                 <div className="text-2xl font-bold font-display">{activeUsers1d}</div>
                 <div className="text-xs text-text-secondary">DAU</div>
-              </div>
-              <div className="text-center p-3 bg-surface-subtle rounded-lg">
+              </Link>
+              <Link href="/admin/users/active?period=week" className="text-center p-3 bg-surface-subtle rounded-lg hover:bg-surface-strong transition-colors">
                 <div className="text-2xl font-bold font-display">{activeUsers7d}</div>
                 <div className="text-xs text-text-secondary">WAU</div>
-              </div>
-              <div className="text-center p-3 bg-surface-subtle rounded-lg">
+              </Link>
+              <Link href="/admin/users/active?period=month" className="text-center p-3 bg-surface-subtle rounded-lg hover:bg-surface-strong transition-colors">
                 <div className="text-2xl font-bold font-display">{activeUsers30d}</div>
                 <div className="text-xs text-text-secondary">MAU</div>
-              </div>
+              </Link>
             </div>
             <div className="mt-4 pt-4 border-t border-border">
               <div className="flex justify-between text-sm">
@@ -377,9 +377,9 @@ export default async function AdminPage() {
   );
 }
 
-function MetricCard({ label, value, delta, deltaLabel }: { label: string; value: number; delta?: number; deltaLabel?: string }) {
-  return (
-    <Card>
+function MetricCard({ label, value, delta, deltaLabel, href }: { label: string; value: number; delta?: number; deltaLabel?: string; href?: string }) {
+  const content = (
+    <Card className={href ? "hover:bg-surface-subtle transition-colors cursor-pointer" : ""}>
       <CardHeader className="pb-2">
         <CardDescription>{label}</CardDescription>
         <CardTitle className="text-3xl font-display">{value}</CardTitle>
@@ -391,6 +391,11 @@ function MetricCard({ label, value, delta, deltaLabel }: { label: string; value:
       </CardContent>
     </Card>
   );
+
+  if (href) {
+    return <Link href={href}>{content}</Link>;
+  }
+  return content;
 }
 
 function StatusBadge({ status }: { status: string }) {
