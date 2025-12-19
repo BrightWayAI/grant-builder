@@ -277,3 +277,68 @@ enum ErrorType {
   DOCUMENT_ERROR
   AUTH_ERROR
 }
+
+// SOC 2 Audit Logging
+model AuditLog {
+  id              String       @id @default(cuid())
+  userId          String?
+  userEmail       String?
+  organizationId  String?
+  action          AuditAction
+  resourceType    String?      // e.g., "proposal", "document", "user", "organization"
+  resourceId      String?
+  description     String?
+  ipAddress       String?
+  userAgent       String?
+  metadata        Json?
+  createdAt       DateTime     @default(now())
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+enum AuditAction {
+  // Authentication
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+  PASSWORD_CHANGED
+  PASSWORD_RESET_REQUESTED
+  
+  // User management
+  USER_CREATED
+  USER_UPDATED
+  USER_DELETED
+  USER_INVITED
+  
+  // Organization
+  ORG_CREATED
+  ORG_UPDATED
+  ORG_DELETED
+  
+  // Documents
+  DOCUMENT_UPLOADED
+  DOCUMENT_VIEWED
+  DOCUMENT_DELETED
+  
+  // Proposals
+  PROPOSAL_CREATED
+  PROPOSAL_UPDATED
+  PROPOSAL_DELETED
+  PROPOSAL_EXPORTED
+  AI_CONTENT_GENERATED
+  
+  // Grants
+  GRANT_SAVED
+  GRANT_REMOVED
+  
+  // Admin actions
+  ADMIN_ACCESS
+  SUBSCRIPTION_CHANGED
+  
+  // Data access
+  DATA_EXPORTED
+  DATA_DELETED
+}

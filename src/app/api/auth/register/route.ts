@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/db";
+import { auditUserCreated } from "@/lib/audit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +45,8 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      await auditUserCreated(user.id, user.email, user.organizationId || undefined);
+
       return NextResponse.json({
         id: user.id,
         name: user.name,
@@ -60,6 +63,8 @@ export async function POST(request: NextRequest) {
         passwordHash,
       },
     });
+
+    await auditUserCreated(user.id, user.email);
 
     return NextResponse.json({
       id: user.id,

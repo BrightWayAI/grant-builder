@@ -3,13 +3,14 @@ import { requireOrganization } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { deleteFile, getKeyFromUrl } from "@/lib/storage";
 import { deleteDocumentIndex } from "@/lib/ai/embeddings";
+import { auditDocumentDeleted } from "@/lib/audit";
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { organizationId } = await requireOrganization();
+    const { user, organizationId } = await requireOrganization();
 
     const document = await prisma.document.findFirst({
       where: {
@@ -48,6 +49,8 @@ export async function DELETE(
     await prisma.document.delete({
       where: { id: document.id },
     });
+
+    await auditDocumentDeleted(document.id, document.filename, organizationId, user.id, user.email || "");
 
     return NextResponse.json({ success: true });
   } catch (error) {

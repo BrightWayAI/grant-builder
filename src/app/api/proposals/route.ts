@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireOrganization } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { getSubscriptionInfo, incrementProposalCount } from "@/lib/subscription";
+import { auditProposalCreated } from "@/lib/audit";
 
 export async function POST(request: NextRequest) {
   try {
-    const { organizationId } = await requireOrganization();
+    const { user, organizationId } = await requireOrganization();
 
     // Check subscription limits
     const subscription = await getSubscriptionInfo(organizationId);
@@ -78,6 +79,8 @@ export async function POST(request: NextRequest) {
 
     // Increment proposal count for subscription tracking
     await incrementProposalCount(organizationId);
+
+    await auditProposalCreated(proposal.id, title, organizationId, user.id, user.email || "");
 
     return NextResponse.json(proposal);
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireOrganization } from "@/lib/auth";
 import prisma from "@/lib/db";
+import { auditProposalDeleted } from "@/lib/audit";
 
 export async function GET(
   request: NextRequest,
@@ -87,7 +88,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { organizationId } = await requireOrganization();
+    const { user, organizationId } = await requireOrganization();
 
     const proposal = await prisma.proposal.findFirst({
       where: {
@@ -103,6 +104,8 @@ export async function DELETE(
     await prisma.proposal.delete({
       where: { id: params.id },
     });
+
+    await auditProposalDeleted(proposal.id, proposal.title, organizationId, user.id, user.email || "");
 
     return NextResponse.json({ success: true });
   } catch (error) {

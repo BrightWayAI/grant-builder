@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireOrganization } from "@/lib/auth";
+import { requireOrganization, getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { uploadDocument } from "@/lib/storage";
 import { isValidFileType, getFileTypeFromMime } from "@/lib/ai/document-processor";
 import { indexDocument } from "@/lib/ai/embeddings";
 import { DocumentType } from "@prisma/client";
 import { logDocumentError } from "@/lib/error-logging";
+import { auditDocumentUploaded } from "@/lib/audit";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 export async function POST(request: NextRequest) {
   try {
-    const { organizationId } = await requireOrganization();
+    const { user, organizationId } = await requireOrganization();
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -60,6 +61,8 @@ export async function POST(request: NextRequest) {
         status: "PROCESSING",
       },
     });
+
+    await auditDocumentUploaded(document.id, file.name, organizationId, user.id, user.email || "");
 
     // Process asynchronously (don't await)
     processDocumentAsync(
