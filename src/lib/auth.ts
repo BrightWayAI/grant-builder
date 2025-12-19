@@ -1,50 +1,13 @@
 import { NextAuthOptions, getServerSession } from "next-auth";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/db";
 import { checkRateLimit, recordLoginAttempt } from "@/lib/rate-limit";
 import { auditLogin } from "@/lib/audit";
-import type { Adapter, AdapterUser } from "next-auth/adapters";
-
-// Custom adapter that allows OAuth account linking to existing email users
-function CustomPrismaAdapter(): Adapter {
-  const baseAdapter = PrismaAdapter(prisma);
-  
-  return {
-    ...baseAdapter,
-    // Override createUser to return existing user if email matches
-    createUser: async (data: { email: string; name?: string | null; image?: string | null; emailVerified?: Date | null }) => {
-      const existingUser = await prisma.user.findUnique({
-        where: { email: data.email },
-      });
-      
-      if (existingUser) {
-        // Update existing user with OAuth data and return it
-        return prisma.user.update({
-          where: { id: existingUser.id },
-          data: {
-            name: existingUser.name || data.name,
-            image: existingUser.image || data.image,
-            emailVerified: existingUser.emailVerified || data.emailVerified,
-          },
-        }) as Promise<AdapterUser>;
-      }
-      
-      // Create new user if doesn't exist
-      return prisma.user.create({ data }) as Promise<AdapterUser>;
-    },
-    // Return null to bypass OAuthAccountNotLinked error
-    // createUser will handle returning the existing user
-    getUserByEmail: async () => {
-      return null;
-    },
-  } as Adapter;
-}
 
 export const authOptions: NextAuthOptions = {
-  adapter: CustomPrismaAdapter(),
+  // No adapter - we handle user creation manually in signIn callback
   session: {
     strategy: "jwt",
   },
@@ -109,24 +72,78 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
+      // Handle Google OAuth - create or link user
       if (account?.provider === "google" && user.email) {
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email },
-          include: { accounts: true },
-        });
-        
-        if (existingUser) {
-          // Check if Google account is already linked
-          const googleAccountLinked = existingUser.accounts.some(
-            (acc) => acc.provider === "google"
-          );
+        try {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email },
+            include: { accounts: true },
+          });
           
-          if (!googleAccountLinked && account) {
-            // Link Google account to existing user
+          if (existingUser) {
+            const dbUser = existingUser;
+            // User exists - check if Google account is linked
+            const googleAccountLinked = dbUser.accounts.some(
+              (acc) => acc.provider === "google" && acc.providerAccountId === account.providerAccountId
+            );
+            
+            if (!googleAccountLinked) {
+              // Link Google account to existing user
+              await prisma.account.upsert({
+                where: {
+                  provider_providerAccountId: {
+                    provider: account.provider,
+                    providerAccountId: account.providerAccountId,
+                  },
+                },
+                create: {
+                  userId: dbUser.id,
+                  type: account.type,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  access_token: account.access_token,
+                  refresh_token: account.refresh_token,
+                  expires_at: account.expires_at,
+                  token_type: account.token_type,
+                  scope: account.scope,
+                  id_token: account.id_token,
+                },
+                update: {
+                  access_token: account.access_token,
+                  refresh_token: account.refresh_token,
+                  expires_at: account.expires_at,
+                },
+              });
+            }
+            
+            // Update user's name/image if not set
+            await prisma.user.update({
+              where: { id: dbUser.id },
+              data: {
+                name: dbUser.name || user.name,
+                image: dbUser.image || user.image,
+                emailVerified: dbUser.emailVerified || new Date(),
+              },
+            });
+            
+            // Use existing user's ID for the session
+            user.id = dbUser.id;
+          } else {
+            // Create new user
+            const newUser = await prisma.user.create({
+              data: {
+                email: user.email,
+                name: user.name,
+                image: user.image,
+                emailVerified: new Date(),
+              },
+            });
+            
+            // Create account link
             await prisma.account.create({
               data: {
-                userId: existingUser.id,
+                userId: newUser.id,
                 type: account.type,
                 provider: account.provider,
                 providerAccountId: account.providerAccountId,
@@ -138,20 +155,12 @@ export const authOptions: NextAuthOptions = {
                 id_token: account.id_token,
               },
             });
+            
+            user.id = newUser.id;
           }
-          
-          // Update user's name/image if not set
-          await prisma.user.update({
-            where: { id: existingUser.id },
-            data: {
-              name: existingUser.name || user.name,
-              image: existingUser.image || user.image,
-              emailVerified: existingUser.emailVerified || new Date(),
-            },
-          });
-          
-          // Use existing user's ID for the session
-          user.id = existingUser.id;
+        } catch (error) {
+          console.error("Error in Google signIn callback:", error);
+          return false;
         }
       }
       return true;
