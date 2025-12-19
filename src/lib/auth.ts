@@ -13,7 +13,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/login",
-    newUser: "/onboarding",
+    // Don't use newUser - we handle onboarding redirect manually in redirect callback
   },
   providers: [
     GoogleProvider({
@@ -133,6 +133,8 @@ export const authOptions: NextAuthOptions = {
             
             // Use existing user's ID for the session
             user.id = dbUser.id;
+            // @ts-expect-error - custom property to track existing user
+            user.isNewUser = false;
           } else {
             // Create new user
             const newUser = await prisma.user.create({
@@ -161,6 +163,8 @@ export const authOptions: NextAuthOptions = {
             });
             
             user.id = newUser.id;
+            // @ts-expect-error - custom property to track new user
+            user.isNewUser = true;
             console.log("[AUTH] Created new user:", newUser.id);
           }
           console.log("[AUTH] signIn callback success, user.id =", user.id);
@@ -187,6 +191,8 @@ export const authOptions: NextAuthOptions = {
           token.id = dbUser.id;
           token.organizationId = dbUser.organizationId || undefined;
         }
+        // Track if this is a new user (from signIn callback)
+        token.isNewUser = (user as { isNewUser?: boolean })?.isNewUser ?? false;
       } else if (user) {
         // For credentials login, user.id is correct
         token.id = user.id;
@@ -211,6 +217,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
+      console.log("[AUTH] redirect callback", { url, baseUrl });
       // Handle relative URLs
       if (url.startsWith("/")) {
         return `${baseUrl}${url}`;
