@@ -6,9 +6,45 @@ import bcrypt from "bcryptjs";
 import prisma from "@/lib/db";
 import { checkRateLimit, recordLoginAttempt } from "@/lib/rate-limit";
 import { auditLogin } from "@/lib/audit";
+import type { Adapter, AdapterUser } from "next-auth/adapters";
+
+// Custom adapter that allows OAuth account linking to existing email users
+function CustomPrismaAdapter(): Adapter {
+  const baseAdapter = PrismaAdapter(prisma);
+  
+  return {
+    ...baseAdapter,
+    // Override createUser to return existing user if email matches
+    createUser: async (data: { email: string; name?: string | null; image?: string | null; emailVerified?: Date | null }) => {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: data.email },
+      });
+      
+      if (existingUser) {
+        // Update existing user with OAuth data and return it
+        return prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            name: existingUser.name || data.name,
+            image: existingUser.image || data.image,
+            emailVerified: existingUser.emailVerified || data.emailVerified,
+          },
+        }) as Promise<AdapterUser>;
+      }
+      
+      // Create new user if doesn't exist
+      return prisma.user.create({ data }) as Promise<AdapterUser>;
+    },
+    // Return null to bypass OAuthAccountNotLinked error
+    // createUser will handle returning the existing user
+    getUserByEmail: async () => {
+      return null;
+    },
+  } as Adapter;
+}
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
+  adapter: CustomPrismaAdapter(),
   session: {
     strategy: "jwt",
   },
