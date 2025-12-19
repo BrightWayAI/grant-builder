@@ -73,23 +73,49 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
-      // For OAuth providers, check if user was invited (exists with organizationId but no password)
+    async signIn({ user, account, profile }) {
       if (account?.provider === "google" && user.email) {
         const existingUser = await prisma.user.findUnique({
           where: { email: user.email },
+          include: { accounts: true },
         });
         
-        // If invited user signs in with Google, link their account
-        if (existingUser && existingUser.organizationId && !existingUser.passwordHash) {
-          // Update the existing user's name/image if not set
+        if (existingUser) {
+          // Check if Google account is already linked
+          const googleAccountLinked = existingUser.accounts.some(
+            (acc) => acc.provider === "google"
+          );
+          
+          if (!googleAccountLinked && account) {
+            // Link Google account to existing user
+            await prisma.account.create({
+              data: {
+                userId: existingUser.id,
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                access_token: account.access_token,
+                refresh_token: account.refresh_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+              },
+            });
+          }
+          
+          // Update user's name/image if not set
           await prisma.user.update({
             where: { id: existingUser.id },
             data: {
               name: existingUser.name || user.name,
               image: existingUser.image || user.image,
+              emailVerified: existingUser.emailVerified || new Date(),
             },
           });
+          
+          // Use existing user's ID for the session
+          user.id = existingUser.id;
         }
       }
       return true;
