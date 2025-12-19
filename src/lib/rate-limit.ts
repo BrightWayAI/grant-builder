@@ -1,9 +1,8 @@
 import prisma from "./db";
 import { headers } from "next/headers";
+import { RATE_LIMITS } from "./constants";
 
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_MINUTES = 15;
-const WINDOW_MINUTES = 15;
+const { EMAIL_MAX_ATTEMPTS, IP_MAX_ATTEMPTS, LOCKOUT_MINUTES, WINDOW_MINUTES } = RATE_LIMITS;
 
 export async function getClientIp(): Promise<string> {
   const headersList = await headers();
@@ -28,18 +27,7 @@ export async function recordLoginAttempt(
       success,
     },
   });
-
-  // Clean up old attempts (older than 24 hours)
-  const oneDayAgo = new Date();
-  oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-
-  await prisma.loginAttempt.deleteMany({
-    where: {
-      createdAt: { lt: oneDayAgo },
-    },
-  }).catch(() => {
-    // Ignore cleanup errors
-  });
+  // Cleanup is handled by /api/cron/cleanup
 }
 
 // Check if email is rate limited
@@ -58,12 +46,12 @@ export async function isEmailRateLimited(email: string): Promise<{
       createdAt: { gte: windowStart },
     },
     orderBy: { createdAt: "desc" },
-    take: MAX_ATTEMPTS + 1,
+    take: EMAIL_MAX_ATTEMPTS + 1,
   });
 
   const failedCount = recentAttempts.length;
 
-  if (failedCount >= MAX_ATTEMPTS) {
+  if (failedCount >= EMAIL_MAX_ATTEMPTS) {
     const lastAttempt = recentAttempts[0];
     const lockoutEndsAt = new Date(lastAttempt.createdAt);
     lockoutEndsAt.setMinutes(lockoutEndsAt.getMinutes() + LOCKOUT_MINUTES);
@@ -79,7 +67,7 @@ export async function isEmailRateLimited(email: string): Promise<{
 
   return {
     limited: false,
-    remainingAttempts: Math.max(0, MAX_ATTEMPTS - failedCount),
+    remainingAttempts: Math.max(0, EMAIL_MAX_ATTEMPTS - failedCount),
   };
 }
 
@@ -91,9 +79,6 @@ export async function isIpRateLimited(): Promise<{
   const ipAddress = await getClientIp();
   const windowStart = new Date();
   windowStart.setMinutes(windowStart.getMinutes() - WINDOW_MINUTES);
-
-  // Higher threshold for IP (multiple users might share an IP)
-  const IP_MAX_ATTEMPTS = 20;
 
   const recentAttempts = await prisma.loginAttempt.count({
     where: {

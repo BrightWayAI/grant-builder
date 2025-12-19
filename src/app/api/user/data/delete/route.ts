@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Log the deletion before it happens
+    // Log the deletion before it happens (outside transaction for audit trail)
     await audit({
       userId: user.id,
       userEmail: user.email,
@@ -49,91 +49,94 @@ export async function POST(request: NextRequest) {
       description: `User ${user.email} requested account deletion`,
     });
 
-    // Delete user's feedback
-    await prisma.feedback.deleteMany({
-      where: { userId: user.id },
-    });
-
-    // Delete login attempts
-    await prisma.loginAttempt.deleteMany({
-      where: { email: user.email },
-    });
-
-    // Delete OAuth accounts
-    await prisma.account.deleteMany({
-      where: { userId: user.id },
-    });
-
-    // Delete sessions
-    await prisma.session.deleteMany({
-      where: { userId: user.id },
-    });
-
-    // Check if user is the only member of their organization
-    if (user.organizationId) {
-      const orgMemberCount = await prisma.user.count({
-        where: { organizationId: user.organizationId },
+    // Use transaction for atomic deletion
+    await prisma.$transaction(async (tx) => {
+      // Delete user's feedback
+      await tx.feedback.deleteMany({
+        where: { userId: user.id },
       });
 
-      // If last member, delete the entire organization and its data
-      if (orgMemberCount === 1) {
-        // Delete organization's saved grants
-        await prisma.savedGrant.deleteMany({
+      // Delete login attempts
+      await tx.loginAttempt.deleteMany({
+        where: { email: user.email },
+      });
+
+      // Delete OAuth accounts
+      await tx.account.deleteMany({
+        where: { userId: user.id },
+      });
+
+      // Delete sessions
+      await tx.session.deleteMany({
+        where: { userId: user.id },
+      });
+
+      // Check if user is the only member of their organization
+      if (user.organizationId) {
+        const orgMemberCount = await tx.user.count({
           where: { organizationId: user.organizationId },
         });
 
-        // Delete grant digest preferences
-        await prisma.grantDigestPreference.deleteMany({
-          where: { organizationId: user.organizationId },
-        });
+        // If last member, delete the entire organization and its data
+        if (orgMemberCount === 1) {
+          // Delete organization's saved grants
+          await tx.savedGrant.deleteMany({
+            where: { organizationId: user.organizationId },
+          });
 
-        // Delete proposal sections first (due to FK constraints)
-        const proposals = await prisma.proposal.findMany({
-          where: { organizationId: user.organizationId },
-          select: { id: true },
-        });
-        for (const proposal of proposals) {
-          await prisma.proposalSection.deleteMany({
-            where: { proposalId: proposal.id },
+          // Delete grant digest preferences
+          await tx.grantDigestPreference.deleteMany({
+            where: { organizationId: user.organizationId },
+          });
+
+          // Delete proposal sections first (due to FK constraints)
+          const proposals = await tx.proposal.findMany({
+            where: { organizationId: user.organizationId },
+            select: { id: true },
+          });
+          for (const proposal of proposals) {
+            await tx.proposalSection.deleteMany({
+              where: { proposalId: proposal.id },
+            });
+          }
+
+          // Delete proposals
+          await tx.proposal.deleteMany({
+            where: { organizationId: user.organizationId },
+          });
+
+          // Delete document chunks first
+          const documents = await tx.document.findMany({
+            where: { organizationId: user.organizationId },
+            select: { id: true },
+          });
+          for (const doc of documents) {
+            await tx.documentChunk.deleteMany({
+              where: { documentId: doc.id },
+            });
+          }
+
+          // Delete documents
+          await tx.document.deleteMany({
+            where: { organizationId: user.organizationId },
+          });
+
+          // Delete organization feedback
+          await tx.feedback.deleteMany({
+            where: { organizationId: user.organizationId },
+          });
+
+          // Delete organization
+          await tx.organization.delete({
+            where: { id: user.organizationId },
           });
         }
-
-        // Delete proposals
-        await prisma.proposal.deleteMany({
-          where: { organizationId: user.organizationId },
-        });
-
-        // Delete document chunks first
-        const documents = await prisma.document.findMany({
-          where: { organizationId: user.organizationId },
-          select: { id: true },
-        });
-        for (const doc of documents) {
-          await prisma.documentChunk.deleteMany({
-            where: { documentId: doc.id },
-          });
-        }
-
-        // Delete documents
-        await prisma.document.deleteMany({
-          where: { organizationId: user.organizationId },
-        });
-
-        // Delete organization feedback
-        await prisma.feedback.deleteMany({
-          where: { organizationId: user.organizationId },
-        });
-
-        // Delete organization
-        await prisma.organization.delete({
-          where: { id: user.organizationId },
-        });
       }
-    }
 
-    // Finally, delete the user
-    await prisma.user.delete({
-      where: { id: user.id },
+      // Finally, delete the user
+      await tx.user.delete({
+        where: { id: user.id },
+      });
     });
 
     return NextResponse.json({

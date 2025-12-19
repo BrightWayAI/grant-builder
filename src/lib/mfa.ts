@@ -3,8 +3,10 @@ import * as QRCode from "qrcode";
 import bcrypt from "bcryptjs";
 import prisma from "./db";
 import crypto from "crypto";
+import { encrypt, decrypt, isEncrypted } from "./encryption";
+import { MFA } from "./constants";
 
-const APP_NAME = "Grant Builder";
+const { APP_NAME, BACKUP_CODE_COUNT } = MFA;
 
 // Generate a new TOTP secret for a user
 export function generateMfaSecret(): string {
@@ -27,7 +29,7 @@ export function verifyToken(token: string, secret: string): boolean {
 }
 
 // Generate backup codes
-export function generateBackupCodes(count: number = 10): string[] {
+export function generateBackupCodes(count: number = BACKUP_CODE_COUNT): string[] {
   const codes: string[] = [];
   for (let i = 0; i < count; i++) {
     codes.push(crypto.randomBytes(4).toString("hex").toUpperCase());
@@ -86,11 +88,14 @@ export async function enableMfa(
   const backupCodes = generateBackupCodes();
   const hashedCodes = await hashBackupCodes(backupCodes);
 
+  // Encrypt the secret before storing
+  const encryptedSecret = encrypt(secret);
+
   await prisma.user.update({
     where: { id: userId },
     data: {
       mfaEnabled: true,
-      mfaSecret: secret,
+      mfaSecret: encryptedSecret,
       mfaBackupCodes: hashedCodes,
     },
   });
@@ -124,8 +129,19 @@ export async function verifyMfa(
     return false;
   }
 
+  // Decrypt the secret (handle both encrypted and legacy plaintext)
+  let secret: string;
+  try {
+    secret = isEncrypted(user.mfaSecret) 
+      ? decrypt(user.mfaSecret) 
+      : user.mfaSecret;
+  } catch {
+    console.error("Failed to decrypt MFA secret");
+    return false;
+  }
+
   // Try TOTP first
-  if (verifyToken(code, user.mfaSecret)) {
+  if (verifyToken(code, secret)) {
     return true;
   }
 
