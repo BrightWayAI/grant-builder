@@ -35,15 +35,15 @@ export function middleware(request: NextRequest) {
   // Content Security Policy
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://accounts.google.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://*.googleusercontent.com https://*.s3.*.amazonaws.com",
-    "connect-src 'self' https://api.stripe.com https://api.openai.com https://*.pinecone.io",
-    "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+    "connect-src 'self' https://api.stripe.com https://api.openai.com https://*.pinecone.io https://accounts.google.com https://oauth2.googleapis.com",
+    "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://accounts.google.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
+    "form-action 'self' https://accounts.google.com",
   ];
   
   response.headers.set("Content-Security-Policy", cspDirectives.join("; "));
