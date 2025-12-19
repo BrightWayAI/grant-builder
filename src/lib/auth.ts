@@ -73,13 +73,17 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
+      console.log("[AUTH] signIn callback started", { provider: account?.provider, email: user.email });
+      
       // Handle Google OAuth - create or link user
       if (account?.provider === "google" && user.email) {
         try {
+          console.log("[AUTH] Looking up user by email:", user.email);
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email },
             include: { accounts: true },
           });
+          console.log("[AUTH] User lookup result:", existingUser ? { id: existingUser.id, hasAccounts: existingUser.accounts.length } : "NOT FOUND");
           
           if (existingUser) {
             const dbUser = existingUser;
@@ -157,21 +161,28 @@ export const authOptions: NextAuthOptions = {
             });
             
             user.id = newUser.id;
+            console.log("[AUTH] Created new user:", newUser.id);
           }
+          console.log("[AUTH] signIn callback success, user.id =", user.id);
         } catch (error) {
-          console.error("Error in Google signIn callback:", error);
+          console.error("[AUTH] Error in Google signIn callback:", error);
           return false;
         }
       }
+      console.log("[AUTH] signIn returning true");
       return true;
     },
     async jwt({ token, user, trigger, session, account }) {
+      console.log("[AUTH] jwt callback", { hasAccount: !!account, provider: account?.provider, email: token.email, hasUser: !!user });
+      
       // For OAuth logins, look up the real user by email since user.id from OAuth is unreliable
       if (account?.provider === "google" && token.email) {
+        console.log("[AUTH] JWT: OAuth login, looking up user by email");
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email as string },
           select: { id: true, organizationId: true },
         });
+        console.log("[AUTH] JWT: User found:", dbUser ? { id: dbUser.id, orgId: dbUser.organizationId } : "NOT FOUND");
         if (dbUser) {
           token.id = dbUser.id;
           token.organizationId = dbUser.organizationId || undefined;
