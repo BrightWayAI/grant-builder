@@ -1,12 +1,11 @@
 import { NextAuthOptions, getServerSession } from "next-auth";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/db";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  // No adapter - we handle everything manually to avoid OAuthAccountNotLinked
   session: {
     strategy: "jwt",
   },
@@ -17,7 +16,6 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      allowDangerousEmailAccountLinking: true,
     }),
     CredentialsProvider({
       name: "credentials",
@@ -53,20 +51,78 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
-      if (user) {
-        token.id = user.id;
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { organizationId: true },
+    async signIn({ user, account }) {
+      // Handle Google OAuth manually
+      if (account?.provider === "google" && user.email) {
+        // Find or create user
+        let dbUser = await prisma.user.findUnique({
+          where: { email: user.email },
         });
-        token.organizationId = dbUser?.organizationId || undefined;
+
+        if (!dbUser) {
+          // Create new user
+          dbUser = await prisma.user.create({
+            data: {
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              emailVerified: new Date(),
+            },
+          });
+        }
+
+        // Link Google account if not already linked
+        const existingAccount = await prisma.account.findUnique({
+          where: {
+            provider_providerAccountId: {
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+            },
+          },
+        });
+
+        if (!existingAccount) {
+          await prisma.account.create({
+            data: {
+              userId: dbUser.id,
+              type: account.type,
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+              access_token: account.access_token,
+              refresh_token: account.refresh_token,
+              expires_at: account.expires_at,
+              token_type: account.token_type,
+              scope: account.scope,
+              id_token: account.id_token,
+            },
+          });
+        }
+
+        // Update user info if needed
+        if (!dbUser.name || !dbUser.image) {
+          await prisma.user.update({
+            where: { id: dbUser.id },
+            data: {
+              name: dbUser.name || user.name,
+              image: dbUser.image || user.image,
+            },
+          });
+        }
       }
-      
-      if (trigger === "update" && session?.organizationId) {
-        token.organizationId = session.organizationId;
+      return true;
+    },
+    async jwt({ token, account }) {
+      // On initial sign-in, look up user by email
+      if (account && token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email },
+          select: { id: true, organizationId: true },
+        });
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.organizationId = dbUser.organizationId || undefined;
+        }
       }
-      
       return token;
     },
     async session({ session, token }) {
