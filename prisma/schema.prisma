@@ -63,6 +63,12 @@ model User {
   organizationId  String?
   organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   hasSeenWelcome  Boolean       @default(false)
+  
+  // MFA fields
+  mfaEnabled      Boolean       @default(false)
+  mfaSecret       String?       // Encrypted TOTP secret
+  mfaBackupCodes  String[]      // Hashed backup codes
+  
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   
@@ -341,4 +347,21 @@ enum AuditAction {
   // Data access
   DATA_EXPORTED
   DATA_DELETED
+  
+  // MFA
+  MFA_ENABLED
+  MFA_DISABLED
+  MFA_VERIFIED
+}
+
+// Rate limiting for auth attempts
+model LoginAttempt {
+  id          String   @id @default(cuid())
+  email       String
+  ipAddress   String
+  success     Boolean
+  createdAt   DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([ipAddress, createdAt])
 }

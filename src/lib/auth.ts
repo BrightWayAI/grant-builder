@@ -4,6 +4,8 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/db";
+import { checkRateLimit, recordLoginAttempt } from "@/lib/rate-limit";
+import { auditLogin } from "@/lib/audit";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
@@ -31,19 +33,33 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email and password are required");
         }
 
+        // Check rate limiting
+        const rateLimit = await checkRateLimit(credentials.email);
+        if (!rateLimit.allowed) {
+          throw new Error(rateLimit.reason || "Too many login attempts");
+        }
+
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
           include: { organization: true },
         });
 
         if (!user || !user.passwordHash) {
+          await recordLoginAttempt(credentials.email, false);
+          await auditLogin("", credentials.email, false);
           throw new Error("Invalid email or password");
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!isValid) {
+          await recordLoginAttempt(credentials.email, false);
+          await auditLogin(user.id, credentials.email, false);
           throw new Error("Invalid email or password");
         }
+
+        // Record successful login
+        await recordLoginAttempt(credentials.email, true);
+        await auditLogin(user.id, user.email, true);
 
         return {
           id: user.id,
@@ -51,6 +67,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           organizationId: user.organizationId || undefined,
+          mfaEnabled: user.mfaEnabled,
         };
       },
     }),
