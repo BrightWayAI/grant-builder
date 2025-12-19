@@ -165,10 +165,20 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    async jwt({ token, user, trigger, session }) {
-      if (user) {
+    async jwt({ token, user, trigger, session, account }) {
+      // For OAuth logins, look up the real user by email since user.id from OAuth is unreliable
+      if (account?.provider === "google" && token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string },
+          select: { id: true, organizationId: true },
+        });
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.organizationId = dbUser.organizationId || undefined;
+        }
+      } else if (user) {
+        // For credentials login, user.id is correct
         token.id = user.id;
-        // Fetch fresh organizationId from DB in case it was set during invite
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { organizationId: true },
