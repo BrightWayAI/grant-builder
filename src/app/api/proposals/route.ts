@@ -3,6 +3,7 @@ import { requireOrganization } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { getSubscriptionInfo, incrementProposalCount } from "@/lib/subscription";
 import { auditProposalCreated } from "@/lib/audit";
+import { ambiguityDetector } from "@/lib/enforcement/ambiguity-detector";
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,6 +34,8 @@ export async function POST(request: NextRequest) {
       attachments,
       submissionInstructions,
       sections,
+      rfpText,       // Raw RFP text for ambiguity detection
+      ambiguities,   // Pre-detected ambiguities from RFP parse
     } = body;
 
     if (!title) {
@@ -81,6 +84,17 @@ export async function POST(request: NextRequest) {
     await incrementProposalCount(organizationId);
 
     await auditProposalCreated(proposal.id, title, organizationId, user.id, user.email || "");
+
+    // Persist ambiguities if provided from RFP parse (AC-2.4)
+    if (rfpText && ambiguities && ambiguities.length > 0) {
+      try {
+        // Persist the detected ambiguities for this proposal
+        await ambiguityDetector.analyzeAndPersist(proposal.id, rfpText);
+      } catch (ambiguityError) {
+        console.error('Failed to persist ambiguities:', ambiguityError);
+        // Don't fail proposal creation - ambiguities will be checked at export
+      }
+    }
 
     return NextResponse.json(proposal);
   } catch (error) {

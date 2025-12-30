@@ -3,6 +3,7 @@
  * 
  * POST /api/export/gate
  * Evaluates export gate for a proposal and returns decision.
+ * Runs full enforcement pipeline to ensure all checks are current.
  * 
  * Request: { proposalId: string, exportFormat: 'DOCX' | 'PDF' | 'CLIPBOARD' }
  * Response: { gateResult: ExportGateResult, enforcement: EnforcementData }
@@ -14,6 +15,9 @@ import prisma from '@/lib/db';
 import { exportGatekeeper } from '@/lib/enforcement/export-gate';
 import { complianceChecker } from '@/lib/enforcement/compliance-checker';
 import { placeholderDetector } from '@/lib/enforcement/placeholder-detector';
+import { citationMapper } from '@/lib/enforcement/citation-mapper';
+import { claimVerifier } from '@/lib/enforcement/claim-verifier';
+import { coverageScorer } from '@/lib/enforcement/coverage-scorer';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,6 +39,9 @@ export async function POST(request: NextRequest) {
       where: {
         id: proposalId,
         organizationId
+      },
+      include: {
+        sections: true
       }
     });
 
@@ -45,8 +52,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Scan for placeholders before gate evaluation
-    await placeholderDetector.scanAndPersistPlaceholders(proposalId);
+    // Run full enforcement pipeline before gate evaluation (AC-5.3)
+    // This ensures all enforcement data is current, even if not run during save
+    try {
+      // 1. Scan for placeholders (AC-1.2)
+      await placeholderDetector.scanAndPersistPlaceholders(proposalId);
+
+      // 2. Run citation mapping for all sections with content (AC-1.1, AC-1.4, AC-1.5)
+      for (const section of proposal.sections) {
+        if (section.content && section.content.trim().length > 0) {
+          await citationMapper.mapAndPersist({
+            sectionId: section.id,
+            generatedText: section.content,
+            retrievedChunks: [],
+            organizationId
+          });
+        }
+      }
+
+      // 3. Run claim verification (AC-1.3)
+      await claimVerifier.extractAndVerifyProposal(proposalId, organizationId);
+
+    } catch (enforcementError) {
+      console.error('Pre-export enforcement pipeline error:', enforcementError);
+      // Continue to gate evaluation - fail-closed will handle missing data
+    }
 
     // Evaluate export gate
     const { gateResult, auditRecord } = await exportGatekeeper.evaluate(
@@ -56,9 +86,11 @@ export async function POST(request: NextRequest) {
     );
 
     // Get enforcement data for display
-    const [compliance, placeholders] = await Promise.all([
+    const [compliance, placeholders, coverage, claims] = await Promise.all([
       complianceChecker.checkCompliance(proposalId),
-      placeholderDetector.getPlaceholderSummary(proposalId)
+      placeholderDetector.getPlaceholderSummary(proposalId),
+      coverageScorer.computeProposalCoverage(proposalId),
+      claimVerifier.getVerificationSummary(proposalId)
     ]);
 
     return NextResponse.json({
@@ -67,8 +99,8 @@ export async function POST(request: NextRequest) {
       enforcement: {
         compliance,
         placeholders,
-        coverage: null, // Will be populated when coverage scorer is implemented
-        claims: null    // Will be populated when claim verifier is implemented
+        coverage,
+        claims
       }
     });
   } catch (error) {

@@ -161,7 +161,11 @@ export interface PlaceholderSummary {
 }
 
 // Placeholder format in content: [[PLACEHOLDER:TYPE:DESCRIPTION:ID]]
+// ID can be alphanumeric or "auto" for LLM-generated placeholders
 export const PLACEHOLDER_REGEX = /\[\[PLACEHOLDER:([A-Z_]+):([^:\]]+):([a-z0-9_]+)\]\]/g;
+
+// Legacy LLM format: [PLACEHOLDER: description] - converted to MISSING_DATA type
+export const LEGACY_PLACEHOLDER_REGEX = /\[PLACEHOLDER:\s*([^\]]+)\]/g;
 
 // ============ COMPLIANCE ============
 

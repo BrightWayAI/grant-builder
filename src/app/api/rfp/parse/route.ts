@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { extractTextFromFile, isValidFileType } from "@/lib/ai/document-parser";
 import { parseRFP } from "@/lib/ai/rfp-parser";
 import { logAiError } from "@/lib/error-logging";
+import { ambiguityDetector } from "@/lib/enforcement/ambiguity-detector";
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,7 +35,28 @@ export async function POST(request: NextRequest) {
 
     const parsed = await parseRFP(text);
 
-    return NextResponse.json(parsed);
+    // Detect ambiguities in the RFP text (AC-2.4)
+    // Note: proposalId will be set when proposal is created
+    let ambiguities: { type: string; description: string; requiresUserInput: boolean }[] = [];
+    try {
+      const detected = await ambiguityDetector.detectAmbiguities(text, 'pending');
+      ambiguities = detected.map(a => ({
+        type: a.type,
+        description: a.description,
+        requiresUserInput: a.requiresUserInput,
+        sourceTexts: a.sourceTexts,
+        suggestedResolutions: a.suggestedResolutions
+      }));
+    } catch (ambiguityError) {
+      console.error('Ambiguity detection failed:', ambiguityError);
+      // Continue without ambiguities - they'll be checked at export
+    }
+
+    return NextResponse.json({ 
+      ...parsed, 
+      rfpText: text, // Include raw text for later ambiguity persistence
+      ambiguities 
+    });
   } catch (error) {
     console.error("RFP parse error:", error);
     if (error instanceof Error && error.message === "Unauthorized") {

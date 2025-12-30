@@ -105,7 +105,10 @@ Writing Guidelines:
 2. Use specific data, statistics, and examples from the provided context
 3. Be concise and impactful - every sentence should add value
 4. Follow standard grant writing best practices
-5. If you lack specific information, mark it with [PLACEHOLDER: description of needed info]
+5. If you lack specific information, you MUST use this EXACT placeholder format:
+   [[PLACEHOLDER:MISSING_DATA:description of needed info:auto]]
+   Example: [[PLACEHOLDER:MISSING_DATA:annual budget amount:auto]]
+   Example: [[PLACEHOLDER:USER_INPUT_REQUIRED:project start date:auto]]
 6. Match the organization's existing writing style when context is provided
 7. Focus on outcomes and impact, not just activities
 

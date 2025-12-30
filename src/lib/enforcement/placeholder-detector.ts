@@ -15,29 +15,59 @@ import {
   Placeholder, 
   PlaceholderSummary,
   PlaceholderType,
-  PLACEHOLDER_REGEX
+  PLACEHOLDER_REGEX,
+  LEGACY_PLACEHOLDER_REGEX
 } from '@/types/enforcement';
 import { generateId } from '@/lib/utils';
 
 export class PlaceholderDetector {
   /**
    * Detect placeholders in content and return matches
+   * Supports both enforced format [[PLACEHOLDER:TYPE:DESC:ID]] and legacy [PLACEHOLDER: desc]
    */
   detectPlaceholders(content: string): Omit<Placeholder, 'sectionId'>[] {
     const placeholders: Omit<Placeholder, 'sectionId'>[] = [];
+    const foundPositions = new Set<number>();
     
-    // Reset regex lastIndex for global matching
-    const regex = new RegExp(PLACEHOLDER_REGEX.source, 'g');
+    // 1. Detect enforced format: [[PLACEHOLDER:TYPE:DESCRIPTION:ID]]
+    const enforcedRegex = new RegExp(PLACEHOLDER_REGEX.source, 'g');
     let match;
     
-    while ((match = regex.exec(content)) !== null) {
+    while ((match = enforcedRegex.exec(content)) !== null) {
       const [fullMatch, type, description, id] = match;
+      foundPositions.add(match.index);
       
       placeholders.push({
-        id: id || generateId(),
+        id: id === 'auto' ? generateId() : id,
         type: type as PlaceholderType,
-        description: description,
+        description: description.trim(),
         suggestedSources: this.getSuggestedSources(type as PlaceholderType, description),
+        position: {
+          start: match.index,
+          end: match.index + fullMatch.length
+        },
+        resolved: false
+      });
+    }
+    
+    // 2. Detect legacy LLM format: [PLACEHOLDER: description]
+    // Convert to MISSING_DATA type for blocking
+    // BUT skip if it's inside a double-bracket enforced placeholder
+    const legacyRegex = new RegExp(LEGACY_PLACEHOLDER_REGEX.source, 'g');
+    
+    while ((match = legacyRegex.exec(content)) !== null) {
+      // Skip if this is part of an enforced placeholder (preceded by '[')
+      if (match.index > 0 && content[match.index - 1] === '[') {
+        continue;
+      }
+      
+      const [fullMatch, description] = match;
+      
+      placeholders.push({
+        id: generateId(),
+        type: 'MISSING_DATA', // Legacy placeholders are treated as missing data
+        description: description.trim(),
+        suggestedSources: this.getSuggestedSources('MISSING_DATA', description),
         position: {
           start: match.index,
           end: match.index + fullMatch.length
@@ -50,11 +80,12 @@ export class PlaceholderDetector {
   }
 
   /**
-   * Check if content has any placeholders
+   * Check if content has any placeholders (either format)
    */
   hasPlaceholders(content: string): boolean {
-    const regex = new RegExp(PLACEHOLDER_REGEX.source, 'g');
-    return regex.test(content);
+    const enforcedRegex = new RegExp(PLACEHOLDER_REGEX.source, 'g');
+    const legacyRegex = new RegExp(LEGACY_PLACEHOLDER_REGEX.source, 'g');
+    return enforcedRegex.test(content) || legacyRegex.test(content);
   }
 
   /**

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireOrganization } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { citationMapper } from "@/lib/enforcement/citation-mapper";
+import { claimVerifier } from "@/lib/enforcement/claim-verifier";
+import { placeholderDetector } from "@/lib/enforcement/placeholder-detector";
 
 export async function PATCH(
   request: NextRequest,
@@ -33,7 +35,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { content, generatedContent, skipCitationMapping } = body;
+    const { content, generatedContent, skipEnforcement } = body;
 
     const updated = await prisma.proposalSection.update({
       where: { id: params.sectionId },
@@ -48,18 +50,26 @@ export async function PATCH(
       data: { updatedAt: new Date() },
     });
 
-    // Compute citation mapping for the updated content (async, non-blocking)
-    if (content && !skipCitationMapping) {
-      // Run citation mapping in background (don't await)
-      citationMapper.mapAndPersist({
-        sectionId: params.sectionId,
-        generatedText: content,
-        retrievedChunks: [], // Will fetch fresh chunks
-        organizationId
-      }).catch(error => {
-        console.error('Citation mapping failed:', error);
-        // Non-blocking - don't fail the request
-      });
+    // Run enforcement pipeline on content save (synchronous - must complete)
+    if (content && !skipEnforcement) {
+      try {
+        // 1. Citation mapping - compute source coverage
+        await citationMapper.mapAndPersist({
+          sectionId: params.sectionId,
+          generatedText: content,
+          retrievedChunks: [], // Will fetch fresh chunks
+          organizationId
+        });
+
+        // 2. Claim verification - extract and verify factual claims
+        await claimVerifier.extractAndVerifyProposal(params.id, organizationId);
+
+        // 3. Placeholder detection - scan for missing data markers
+        await placeholderDetector.scanAndPersistPlaceholders(params.id);
+      } catch (enforcementError) {
+        // Log but don't fail the request - enforcement data will be checked at export
+        console.error('Enforcement pipeline error:', enforcementError);
+      }
     }
 
     return NextResponse.json(updated);
