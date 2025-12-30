@@ -1,10 +1,18 @@
 import { getOpenAI, GENERATION_MODEL } from "./openai";
-import { retrieveRelevantChunks, formatContextForPrompt } from "./retrieval";
+import { retrieveRelevantChunks, formatContextForPrompt, RetrievedChunk } from "./retrieval";
 import prisma from "@/lib/db";
+import {
+  checkRetrievalSufficiency,
+  generatePlaceholderOnlyContent,
+  enforceGeneration,
+  sanitizeCustomInstructions,
+  EnforcementResult,
+} from "@/lib/enforcement/generation-enforcer";
 
 interface GenerationContext {
   organizationId: string;
   proposalId: string;
+  sectionId?: string;
   funderName?: string;
   programTitle?: string;
   fundingAmount?: { min?: number; max?: number };
@@ -20,6 +28,28 @@ interface SectionGenerationOptions {
   customInstructions?: string;
 }
 
+export interface EnforcedGenerationResult {
+  stream: ReadableStream<Uint8Array>;
+  metadata: {
+    retrievedChunkCount: number;
+    usedGenericKnowledge: boolean;
+    enforcementApplied: boolean;
+    claimsReplaced: number;
+    paragraphsPlaceholdered: number;
+  };
+}
+
+/**
+ * Generate section draft with HARD ENFORCEMENT (AC-1.1, AC-1.2, AC-4.2, AC-4.4, AC-5.1)
+ * 
+ * Key behaviors:
+ * 1. If KB retrieval returns insufficient sources -> return placeholder-only content
+ * 2. After LLM generation -> verify all claims against KB, replace unsupported with placeholders
+ * 3. After claim verification -> check paragraph grounding, replace ungrounded with placeholders
+ * 4. Custom instructions are sanitized to prevent policy bypass
+ * 
+ * This is a BLOCKING enforcement - content is NOT shown until enforcement completes
+ */
 export async function generateSectionDraft(
   options: SectionGenerationOptions
 ): Promise<ReadableStream<Uint8Array>> {
@@ -41,12 +71,67 @@ export async function generateSectionDraft(
     throw new Error("Organization not found");
   }
 
+  // Step 1: Retrieve relevant chunks from KB
   const queryText = `${sectionName} ${description || ""} for grant proposal to ${context.funderName || "funder"}`;
   const relevantChunks = await retrieveRelevantChunks(queryText, context.organizationId, {
     topK: 8,
   });
-  const formattedContext = formatContextForPrompt(relevantChunks);
 
+  // Step 2: PRE-GENERATION CHECK - Verify KB has sufficient sources (AC-4.4)
+  const sufficiencyCheck = checkRetrievalSufficiency(relevantChunks);
+  
+  if (!sufficiencyCheck.proceed) {
+    // KB is empty or insufficient - return placeholder-only content (AC-1.2)
+    const placeholderContent = generatePlaceholderOnlyContent(sectionName, description);
+    
+    // Persist the generation attempt metadata
+    if (context.sectionId) {
+      try {
+        await prisma.generationMetadata.create({
+          data: {
+            sectionId: context.sectionId,
+            organizationId: context.organizationId,
+            retrievedChunkCount: 0,
+            usedGenericKnowledge: true,
+            enforcementApplied: true,
+            claimsReplaced: 0,
+            paragraphsPlaceholdered: 1,
+            policyOverride: false,
+            rawGeneration: null,
+            enforcedGeneration: placeholderContent,
+          },
+        });
+        
+        await prisma.proposalSection.update({
+          where: { id: context.sectionId },
+          data: {
+            usedGenericKnowledge: true,
+            retrievedChunkCount: 0,
+            enforcementApplied: true,
+          },
+        });
+      } catch (error) {
+        console.error('Failed to persist empty KB generation metadata:', error);
+      }
+    }
+    
+    // Stream the placeholder content
+    const encoder = new TextEncoder();
+    return new ReadableStream({
+      start(controller) {
+        // Add a warning header
+        const warning = `[BEACON ENFORCEMENT: ${sufficiencyCheck.reason}]\n\n`;
+        controller.enqueue(encoder.encode(warning));
+        controller.enqueue(encoder.encode(placeholderContent));
+        controller.close();
+      },
+    });
+  }
+
+  // Step 3: Sanitize custom instructions (AC-5.1)
+  const { sanitized: safeInstructions, policyOverride } = sanitizeCustomInstructions(customInstructions);
+  
+  const formattedContext = formatContextForPrompt(relevantChunks);
   const systemPrompt = buildSystemPrompt(org, context);
   const userPrompt = buildUserPrompt({
     sectionName,
@@ -55,12 +140,13 @@ export async function generateSectionDraft(
     charLimit,
     formattedContext,
     existingContent,
-    customInstructions,
+    customInstructions: safeInstructions,
     funderName: context.funderName,
     programTitle: context.programTitle,
     fundingAmount: context.fundingAmount,
   });
 
+  // Step 4: Generate content (non-streaming to enable enforcement)
   const response = await getOpenAI().chat.completions.create({
     model: GENERATION_MODEL,
     messages: [
@@ -68,23 +154,68 @@ export async function generateSectionDraft(
       { role: "user", content: userPrompt },
     ],
     temperature: 0.7,
-    stream: true,
+    stream: false, // Must be non-streaming for enforcement
   });
 
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    async start(controller) {
-      for await (const chunk of response) {
-        const content = chunk.choices[0]?.delta?.content || "";
-        if (content) {
-          controller.enqueue(encoder.encode(content));
-        }
+  const rawContent = response.choices[0]?.message?.content || "";
+
+  // Step 5: POST-GENERATION ENFORCEMENT (AC-1.1, AC-1.3, AC-4.2)
+  let enforcedContent = rawContent;
+  let enforcementResult: EnforcementResult | null = null;
+  
+  if (context.sectionId) {
+    try {
+      enforcementResult = await enforceGeneration(
+        rawContent,
+        relevantChunks,
+        context.sectionId,
+        context.organizationId
+      );
+      enforcedContent = enforcementResult.enforcedContent;
+      
+      // Update metadata with policy override flag
+      if (policyOverride) {
+        await prisma.generationMetadata.updateMany({
+          where: { sectionId: context.sectionId },
+          data: { policyOverride: true },
+        });
       }
+    } catch (error) {
+      console.error('Enforcement failed, using raw content with warning:', error);
+      // FAIL CLOSED: If enforcement fails, add warning and still show content
+      enforcedContent = `[BEACON WARNING: Enforcement validation could not complete. Content may contain unverified claims.]\n\n${rawContent}`;
+      
+      // Mark proposal as having enforcement failure
+      try {
+        const section = await prisma.proposalSection.findUnique({
+          where: { id: context.sectionId },
+          select: { proposalId: true },
+        });
+        if (section) {
+          await prisma.proposal.update({
+            where: { id: section.proposalId },
+            data: { enforcementFailure: true },
+          });
+        }
+      } catch (e) {
+        console.error('Failed to set enforcement failure flag:', e);
+      }
+    }
+  }
+
+  // Step 6: Stream the enforced content
+  const encoder = new TextEncoder();
+  return new ReadableStream({
+    start(controller) {
+      // Add enforcement summary header if claims/paragraphs were modified
+      if (enforcementResult && (enforcementResult.metadata.claimsReplaced > 0 || enforcementResult.metadata.paragraphsPlaceholdered > 0)) {
+        const summary = `[BEACON ENFORCEMENT APPLIED: ${enforcementResult.metadata.claimsReplaced} unverified claims replaced, ${enforcementResult.metadata.paragraphsPlaceholdered} ungrounded paragraphs placeholdered]\n\n`;
+        controller.enqueue(encoder.encode(summary));
+      }
+      controller.enqueue(encoder.encode(enforcedContent));
       controller.close();
     },
   });
-
-  return stream;
 }
 
 function buildSystemPrompt(

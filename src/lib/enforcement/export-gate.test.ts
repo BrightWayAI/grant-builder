@@ -8,6 +8,7 @@ import { ENFORCEMENT_THRESHOLDS } from './thresholds';
 // Mock dependencies
 vi.mock('@/lib/db', () => ({
   default: {
+    proposal: { findUnique: vi.fn() },
     proposalSection: { findMany: vi.fn() },
     verifiedClaim: { findMany: vi.fn() },
     ambiguityFlagRecord: { findMany: vi.fn() },
@@ -58,6 +59,12 @@ describe('ExportGatekeeper', () => {
       placeholders: []
     });
 
+    // Mock proposal with enforcement fields
+    vi.mocked(prisma.proposal.findUnique).mockResolvedValue({
+      id: 'prop1',
+      enforcementFailure: false,
+      sections: []
+    } as any);
     vi.mocked(prisma.proposalSection.findMany).mockResolvedValue([]);
     vi.mocked(prisma.verifiedClaim.findMany).mockResolvedValue([]);
     vi.mocked(prisma.ambiguityFlagRecord.findMany).mockResolvedValue([]);

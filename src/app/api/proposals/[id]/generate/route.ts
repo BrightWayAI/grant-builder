@@ -28,21 +28,24 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { sectionId } = body;
+    const { sectionId, customInstructions } = body;
 
     const section = proposal.sections.find((s) => s.id === sectionId);
     if (!section) {
       return NextResponse.json({ error: "Section not found" }, { status: 404 });
     }
 
+    // Generate with HARD ENFORCEMENT (AC-1.1, AC-1.2, AC-4.2, AC-4.4, AC-5.1)
     const stream = await generateSectionDraft({
       sectionName: section.sectionName,
       description: section.description || undefined,
       wordLimit: section.wordLimit || undefined,
       charLimit: section.charLimit || undefined,
+      customInstructions,
       context: {
         organizationId,
         proposalId: proposal.id,
+        sectionId: section.id, // Pass sectionId for enforcement persistence
         funderName: proposal.funderName || undefined,
         programTitle: proposal.programTitle || undefined,
         fundingAmount: {

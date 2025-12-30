@@ -153,16 +153,20 @@ model Proposal {
   fundingAmountMin    Int?
   fundingAmountMax    Int?
   status              ProposalStatus  @default(DRAFT)
+  proposalType        ProposalType    @default(FREEFORM)  // AC-2.1: FUNDER requires RFP
   rfpFileUrl          String?
   rfpFilename         String?
+  rfpText             String?         @db.Text  // Raw RFP text for ambiguity re-analysis
   parsedRequirements  Json?
   eligibility         String[]
   attachments         String[]
   submissionInstructions String?      @db.Text
+  enforcementFailure  Boolean         @default(false)  // AC-5.3: fail-closed flag
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
   
   sections            ProposalSection[]
+  checklistItems      ChecklistItem[]
   
   // Enforcement relations
   ambiguityFlags      AmbiguityFlagRecord[]
@@ -184,10 +188,16 @@ model ProposalSection {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   
+  // Generation metadata (AC-4.4)
+  usedGenericKnowledge  Boolean   @default(false)
+  retrievedChunkCount   Int?
+  enforcementApplied    Boolean   @default(false)
+  
   // Enforcement relations
   attributedParagraphs AttributedParagraph[]
   coverageRecord       SectionCoverageRecord?
   placeholders         PlaceholderRecord[]
+  voiceScore           VoiceScoreRecord?
 }
 
 enum DocumentType {
@@ -490,4 +500,109 @@ model ExportAuditLog {
   @@index([userId])
   @@index([timestamp])
   @@index([decision])
+}
+
+// ============ GENERATION METADATA ============
+
+// Generation attempt metadata for AC-4.4 (warn generic knowledge)
+model GenerationMetadata {
+  id                      String   @id @default(cuid())
+  sectionId               String
+  organizationId          String
+  generatedAt             DateTime @default(now())
+  retrievedChunkCount     Int
+  usedGenericKnowledge    Boolean
+  minChunkSimilarity      Float?
+  maxChunkSimilarity      Float?
+  avgChunkSimilarity      Float?
+  enforcementApplied      Boolean  @default(true)
+  claimsReplaced          Int      @default(0)
+  paragraphsPlaceholdered Int      @default(0)
+  policyOverride          Boolean  @default(false)
+  rawGeneration           String?  @db.Text  // Original before enforcement
+  enforcedGeneration      String?  @db.Text  // After enforcement applied
+  
+  @@index([sectionId])
+  @@index([organizationId])
+}
+
+// ============ CHECKLIST SYSTEM (AC-2.1, AC-2.2) ============
+
+// Parsed RFP checklist items
+model ChecklistItem {
+  id                String   @id @default(cuid())
+  proposalId        String
+  proposal          Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  name              String
+  description       String?  @db.Text
+  isRequired        Boolean  @default(true)
+  wordLimit         Int?
+  charLimit         Int?
+  pageLimit         Int?
+  pointValue        Int?
+  parserConfidence  Float?   // How confident parser was in extraction
+  userVerified      Boolean  @default(false)  // User confirmed this item
+  order             Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Many-to-many with sections
+  sectionMappings   ChecklistSectionMapping[]
+  
+  @@index([proposalId])
+}
+
+// Many-to-many mapping between checklist items and sections
+model ChecklistSectionMapping {
+  id              String          @id @default(cuid())
+  checklistItemId String
+  checklistItem   ChecklistItem   @relation(fields: [checklistItemId], references: [id], onDelete: Cascade)
+  sectionId       String
+  mappingType     String          // AUTO | MANUAL
+  confidence      Float?
+  createdAt       DateTime        @default(now())
+  
+  @@unique([checklistItemId, sectionId])
+  @@index([checklistItemId])
+  @@index([sectionId])
+}
+
+// ============ VOICE PROFILE (AC-3.1-3.4) ============
+
+model VoiceProfile {
+  id              String   @id @default(cuid())
+  organizationId  String   @unique
+  preferredTerms  String[] // Terms the org uses
+  bannedTerms     String[] // Terms to avoid
+  toneDescriptors String[] // e.g., "professional", "warm", "data-driven"
+  samplePhrases   Json     // { phrase: string, source: string }[]
+  buildStatus     String   // PENDING | BUILDING | READY | FAILED
+  buildError      String?
+  documentsUsed   Int      @default(0)
+  lastBuiltAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([organizationId])
+}
+
+// Voice scoring for sections
+model VoiceScoreRecord {
+  id              String          @id @default(cuid())
+  sectionId       String          @unique
+  section         ProposalSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  score           Int             // 0-100
+  bannedTermsUsed String[]
+  nonPreferredTerms String[]
+  suggestions     Json            // { original: string, suggested: string, reason: string }[]
+  computedAt      DateTime        @default(now())
+  
+  @@index([sectionId])
+}
+
+// ============ PROPOSAL TYPE FOR FUNDER MODE (AC-2.1) ============
+
+enum ProposalType {
+  FUNDER      // Requires RFP upload, checklist validation
+  FREEFORM    // No funder constraints
 }

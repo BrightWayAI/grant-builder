@@ -131,6 +131,36 @@ const EXPORT_RULES: ExportRule[] = [
       .filter(a => a.requiresUserInput && !a.resolved)
       .map(a => a.description) || []
   },
+  {
+    id: 'ENFORCEMENT_FAILURE_FLAG',
+    ac: 'AC-5.3',
+    check: (data) => data.enforcementFailure === true,
+    action: 'BLOCK',
+    message: () => 'Enforcement validation failed during generation. Some content may not have been verified.',
+    resolution: 'Regenerate the affected sections or manually verify all claims and statistics',
+    getAffectedItems: () => ['Proposal enforcement validation']
+  },
+  {
+    id: 'NULL_COVERAGE_DATA',
+    ac: 'AC-5.3',
+    check: (data) => data.coverage === null && data.hasGeneratedContent === true,
+    action: 'BLOCK',
+    message: () => 'Source coverage could not be computed. Export blocked for safety.',
+    resolution: 'Refresh the proposal page to trigger coverage computation, or regenerate sections',
+    getAffectedItems: () => ['Coverage validation']
+  },
+  {
+    id: 'GENERIC_KNOWLEDGE_CONTENT',
+    ac: 'AC-4.4',
+    check: (data) => {
+      if (!data.sectionsWithGenericKnowledge) return false;
+      return data.sectionsWithGenericKnowledge.length > 0;
+    },
+    action: 'BLOCK',
+    message: (data) => `${data.sectionsWithGenericKnowledge?.length || 0} section(s) were generated without supporting sources`,
+    resolution: 'Upload relevant documents to your knowledge base and regenerate these sections',
+    getAffectedItems: (data) => data.sectionsWithGenericKnowledge || []
+  },
 
   // WARN rules - can be overridden with attestation
   {
@@ -347,6 +377,22 @@ export class ExportGatekeeper {
    * Gather all enforcement data for a proposal
    */
   private async gatherEnforcementData(proposalId: string): Promise<EnforcementData> {
+    // Fetch proposal with enforcement data
+    const proposal = await prisma.proposal.findUnique({
+      where: { id: proposalId },
+      include: {
+        sections: {
+          select: {
+            id: true,
+            sectionName: true,
+            content: true,
+            usedGenericKnowledge: true,
+            enforcementApplied: true,
+          },
+        },
+      },
+    });
+
     // Run compliance and placeholder checks (these are fast, synchronous with DB)
     const [compliance, placeholders, ambiguities] = await Promise.all([
       complianceChecker.checkCompliance(proposalId),
@@ -360,13 +406,28 @@ export class ExportGatekeeper {
     // Try to get claims data (may not exist yet)
     const claims = await this.getClaimsSummary(proposalId);
 
+    // Check for sections with generic knowledge (AC-4.4)
+    const sectionsWithGenericKnowledge = proposal?.sections
+      .filter(s => s.usedGenericKnowledge && s.content.trim().length > 0)
+      .map(s => s.sectionName) || [];
+
+    // Check if any sections have generated content
+    const hasGeneratedContent = proposal?.sections.some(s => 
+      s.content.trim().length > 0 && s.enforcementApplied
+    ) || false;
+
     return {
       coverage,
       claims,
       compliance,
       placeholders,
       ambiguities,
-      voice: null // Voice not implemented for blocking
+      voice: null, // Voice not implemented for blocking
+      // AC-5.3: Fail-closed enforcement
+      enforcementFailure: proposal?.enforcementFailure || false,
+      hasGeneratedContent,
+      // AC-4.4: Track sections using generic knowledge
+      sectionsWithGenericKnowledge,
     };
   }
 

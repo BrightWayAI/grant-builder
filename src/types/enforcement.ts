@@ -285,6 +285,11 @@ export interface EnforcementData {
   placeholders: PlaceholderSummary | null;
   ambiguities: AmbiguitySummary | null;
   voice: { score: number; violations: unknown[] } | null;
+  // AC-5.3: Fail-closed enforcement
+  enforcementFailure?: boolean;
+  hasGeneratedContent?: boolean;
+  // AC-4.4: Track sections using generic knowledge
+  sectionsWithGenericKnowledge?: string[];
 }
 
 // ============ GATE RESULT (for API) ============
