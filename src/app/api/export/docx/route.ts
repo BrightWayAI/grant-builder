@@ -9,13 +9,16 @@ import {
   HeadingLevel,
   AlignmentType,
 } from "docx";
+import { exportGatekeeper } from "@/lib/enforcement/export-gate";
+import { placeholderDetector } from "@/lib/enforcement/placeholder-detector";
 
 export async function POST(request: NextRequest) {
   try {
-    const { organizationId } = await requireOrganization();
+    const { organizationId, user } = await requireOrganization();
+    const userId = user.id;
 
     const body = await request.json();
-    const { proposalId } = body;
+    const { proposalId, skipGate, auditRecordId } = body;
 
     const proposal = await prisma.proposal.findFirst({
       where: {
@@ -32,6 +35,39 @@ export async function POST(request: NextRequest) {
 
     if (!proposal) {
       return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
+    }
+
+    // Run export gate check unless explicitly skipped (for warned exports with attestation)
+    if (!skipGate) {
+      // Scan for placeholders first
+      await placeholderDetector.scanAndPersistPlaceholders(proposalId);
+      
+      const { gateResult } = await exportGatekeeper.evaluate(
+        proposalId,
+        userId,
+        'DOCX'
+      );
+
+      if (!gateResult.allowed) {
+        return NextResponse.json(
+          { 
+            error: "Export blocked",
+            gateResult
+          },
+          { status: 403 }
+        );
+      }
+
+      // If warnings exist and attestation required, check for attestation
+      if (gateResult.attestationRequired && !auditRecordId) {
+        return NextResponse.json(
+          {
+            error: "Attestation required",
+            gateResult
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const children: Paragraph[] = [];

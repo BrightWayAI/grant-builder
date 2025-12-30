@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireOrganization } from "@/lib/auth";
 import prisma from "@/lib/db";
+import { citationMapper } from "@/lib/enforcement/citation-mapper";
 
 export async function PATCH(
   request: NextRequest,
@@ -32,7 +33,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { content, generatedContent } = body;
+    const { content, generatedContent, skipCitationMapping } = body;
 
     const updated = await prisma.proposalSection.update({
       where: { id: params.sectionId },
@@ -46,6 +47,20 @@ export async function PATCH(
       where: { id: params.id },
       data: { updatedAt: new Date() },
     });
+
+    // Compute citation mapping for the updated content (async, non-blocking)
+    if (content && !skipCitationMapping) {
+      // Run citation mapping in background (don't await)
+      citationMapper.mapAndPersist({
+        sectionId: params.sectionId,
+        generatedText: content,
+        retrievedChunks: [], // Will fetch fresh chunks
+        organizationId
+      }).catch(error => {
+        console.error('Citation mapping failed:', error);
+        // Non-blocking - don't fail the request
+      });
+    }
 
     return NextResponse.json(updated);
   } catch (error) {

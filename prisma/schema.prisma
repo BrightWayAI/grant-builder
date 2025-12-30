@@ -163,6 +163,10 @@ model Proposal {
   updatedAt           DateTime        @updatedAt
   
   sections            ProposalSection[]
+  
+  // Enforcement relations
+  ambiguityFlags      AmbiguityFlagRecord[]
+  exportAuditLogs     ExportAuditLog[]
 }
 
 model ProposalSection {
@@ -179,6 +183,11 @@ model ProposalSection {
   order             Int
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  
+  // Enforcement relations
+  attributedParagraphs AttributedParagraph[]
+  coverageRecord       SectionCoverageRecord?
+  placeholders         PlaceholderRecord[]
 }
 
 enum DocumentType {
@@ -364,4 +373,121 @@ model LoginAttempt {
 
   @@index([email, createdAt])
   @@index([ipAddress, createdAt])
+}
+
+// ============ ENFORCEMENT SYSTEM MODELS ============
+
+// Paragraph-level source attribution
+model AttributedParagraph {
+  id                String   @id @default(cuid())
+  sectionId         String
+  section           ProposalSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  paragraphIndex    Int
+  text              String   @db.Text
+  attributionScore  Float
+  status            String   // GROUNDED | PARTIAL | UNGROUNDED | FAILED
+  flags             String[]
+  supportingChunks  Json     // ChunkAttribution[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  claims            VerifiedClaim[]
+  
+  @@unique([sectionId, paragraphIndex])
+  @@index([sectionId])
+}
+
+// Verified claims extracted from paragraphs
+model VerifiedClaim {
+  id                String   @id @default(cuid())
+  paragraphId       String
+  paragraph         AttributedParagraph @relation(fields: [paragraphId], references: [id], onDelete: Cascade)
+  claimType         String   // NUMBER | PERCENTAGE | CURRENCY | DATE | ORGANIZATION | LOCATION | OUTCOME
+  value             String
+  context           String   @db.Text
+  positionStart     Int
+  positionEnd       Int
+  riskLevel         String   // HIGH | MEDIUM | LOW
+  status            String   // VERIFIED | UNVERIFIED | CONFLICTING | OUTDATED
+  verificationScore Float
+  evidence          Json     // ClaimEvidence[]
+  createdAt         DateTime @default(now())
+  
+  @@index([paragraphId])
+  @@index([status])
+  @@index([riskLevel])
+}
+
+// Section-level coverage scores
+model SectionCoverageRecord {
+  id                String   @id @default(cuid())
+  sectionId         String   @unique
+  section           ProposalSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  coverageScore     Int
+  groundedCount     Int
+  partialCount      Int
+  ungroundedCount   Int
+  totalParagraphs   Int
+  sourceDocuments   Json     // SourceContribution[]
+  computedAt        DateTime @default(now())
+}
+
+// RFP ambiguity flags
+model AmbiguityFlagRecord {
+  id                    String   @id @default(cuid())
+  proposalId            String
+  proposal              Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  ambiguityType         String   // CONTRADICTORY | VAGUE | IMPLICIT | SCOPE_UNCLEAR
+  description           String   @db.Text
+  sourceTexts           String[]
+  suggestedResolutions  String[]
+  requiresUserInput     Boolean
+  resolved              Boolean  @default(false)
+  resolution            String?  @db.Text
+  resolvedBy            String?
+  resolvedAt            DateTime?
+  createdAt             DateTime @default(now())
+  
+  @@index([proposalId])
+  @@index([resolved])
+}
+
+// Placeholders in section content
+model PlaceholderRecord {
+  id                String   @id @default(cuid())
+  sectionId         String
+  section           ProposalSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  placeholderType   String   // MISSING_DATA | USER_INPUT_REQUIRED | VERIFICATION_NEEDED
+  description       String
+  suggestedSources  String[]
+  positionStart     Int
+  positionEnd       Int
+  resolved          Boolean  @default(false)
+  resolvedContent   String?  @db.Text
+  resolvedAt        DateTime?
+  createdAt         DateTime @default(now())
+  
+  @@index([sectionId])
+  @@index([resolved])
+}
+
+// Export audit log for compliance
+model ExportAuditLog {
+  id                    String   @id @default(cuid())
+  proposalId            String
+  proposal              Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  userId                String
+  timestamp             DateTime @default(now())
+  decision              String   // ALLOW | WARN | BLOCK
+  exportFormat          String   // DOCX | PDF | CLIPBOARD
+  blocks                Json     // ExportBlock[]
+  warnings              Json     // ExportWarning[]
+  attestationText       String?  @db.Text
+  attestationTimestamp  DateTime?
+  enforcementSnapshot   Json     // { coverageScore, verificationRate, complianceScore, voiceScore }
+  
+  @@index([proposalId])
+  @@index([userId])
+  @@index([timestamp])
+  @@index([decision])
 }
