@@ -6,6 +6,7 @@ import {
   generatePlaceholderOnlyContent,
   enforceGeneration,
   sanitizeCustomInstructions,
+  enforceClaimVerification,
   EnforcementResult,
 } from "@/lib/enforcement/generation-enforcer";
 
@@ -329,25 +330,40 @@ export interface CopilotAction {
   context: GenerationContext;
 }
 
+/**
+ * Run copilot action with ENFORCEMENT (AC-1.1, AC-1.3, AC-4.2, AC-5.1)
+ * 
+ * Key behaviors:
+ * 1. Custom prompts are sanitized to prevent bypass (AC-5.1)
+ * 2. Actions requiring data (expand, strengthen) check KB first
+ * 3. Output is verified against KB, unverified claims replaced with placeholders (AC-1.3)
+ * 4. If no KB sources available, warns user (AC-4.4)
+ */
 export async function runCopilotAction(
   action: CopilotAction
 ): Promise<ReadableStream<Uint8Array>> {
   const { type, selectedText, customPrompt, context } = action;
 
+  // Step 1: Sanitize custom prompt (AC-5.1)
+  const { sanitized: safePrompt, policyOverride } = sanitizeCustomInstructions(customPrompt);
+
   let instruction: string;
   let needsContext = false;
+  let requiresVerification = false;
 
   switch (type) {
     case "expand":
-      instruction = "Expand this text with more detail, examples, or supporting information. Approximately double the length.";
+      instruction = "Expand this text with more detail, examples, or supporting information from the knowledge base. Approximately double the length. If you don't have supporting data, use [[PLACEHOLDER:VERIFICATION_NEEDED:specific data needed:auto]] format.";
       needsContext = true;
+      requiresVerification = true;
       break;
     case "condense":
       instruction = "Condense this text to be more concise while preserving the key message. Reduce by approximately 30-50%.";
       break;
     case "strengthen":
-      instruction = "Strengthen this text by adding data, evidence, or citations from the knowledge base. Make the argument more compelling.";
+      instruction = "Strengthen this text by adding data, evidence, or citations from the knowledge base. Make the argument more compelling. If you lack specific data, use [[PLACEHOLDER:VERIFICATION_NEEDED:specific data needed:auto]] format.";
       needsContext = true;
+      requiresVerification = true;
       break;
     case "clarify":
       instruction = "Clarify this text by simplifying the language and making it easier to understand. Avoid jargon.";
@@ -359,33 +375,50 @@ export async function runCopilotAction(
       instruction = "Fix any grammar, spelling, or style issues. Improve readability.";
       break;
     case "custom":
-      instruction = customPrompt || "Improve this text.";
-      needsContext = !!(customPrompt?.toLowerCase().includes("data") || 
-                     customPrompt?.toLowerCase().includes("evidence") ||
-                     customPrompt?.toLowerCase().includes("example"));
+      instruction = safePrompt || "Improve this text.";
+      needsContext = !!(safePrompt?.toLowerCase().includes("data") || 
+                     safePrompt?.toLowerCase().includes("evidence") ||
+                     safePrompt?.toLowerCase().includes("example") ||
+                     safePrompt?.toLowerCase().includes("statistic"));
+      requiresVerification = needsContext;
       break;
     default:
       instruction = "Improve this text.";
   }
 
+  // Step 2: Retrieve KB context if needed
+  let chunks: RetrievedChunk[] = [];
   let contextStr = "";
+  let usedGenericKnowledge = false;
+  
   if (needsContext) {
-    const chunks = await retrieveRelevantChunks(selectedText, context.organizationId, { topK: 5 });
+    chunks = await retrieveRelevantChunks(selectedText, context.organizationId, { topK: 5 });
     contextStr = formatContextForPrompt(chunks);
+    
+    // Check if we have sufficient sources (AC-4.4)
+    const relevantChunks = chunks.filter(c => c.score >= 0.65);
+    if (relevantChunks.length === 0 && requiresVerification) {
+      usedGenericKnowledge = true;
+    }
   }
 
   const systemPrompt = `You are a grant writing assistant. Your task is to modify the provided text according to the instructions.
 Return ONLY the modified text without any explanations, prefixes, or surrounding quotes.
-Maintain the same format (if it's a paragraph, return a paragraph; if it's a list, return a list).`;
+Maintain the same format (if it's a paragraph, return a paragraph; if it's a list, return a list).
+
+CRITICAL: Do NOT invent statistics, numbers, percentages, dates, partner names, or specific outcomes.
+If you need to add data that isn't in the provided context, use this EXACT placeholder format:
+[[PLACEHOLDER:VERIFICATION_NEEDED:description of data needed:auto]]`;
 
   const userPrompt = `${instruction}
 
 TEXT TO MODIFY:
 ${selectedText}
-${contextStr ? `\nRELEVANT CONTEXT FROM KNOWLEDGE BASE:\n${contextStr}` : ""}
+${contextStr ? `\nRELEVANT CONTEXT FROM KNOWLEDGE BASE:\n${contextStr}` : "\n[No relevant context found in knowledge base - do not invent data]"}
 
 Modified text:`;
 
+  // Step 3: Generate content (non-streaming to enable enforcement)
   const response = await getOpenAI().chat.completions.create({
     model: GENERATION_MODEL,
     messages: [
@@ -393,21 +426,37 @@ Modified text:`;
       { role: "user", content: userPrompt },
     ],
     temperature: 0.7,
-    stream: true,
+    stream: false, // Must be non-streaming for enforcement
   });
 
+  const rawContent = response.choices[0]?.message?.content || "";
+
+  // Step 4: POST-GENERATION ENFORCEMENT (AC-1.3, AC-4.2)
+  let enforcedContent = rawContent;
+  let claimsReplaced = 0;
+  
+  if (requiresVerification && chunks.length > 0) {
+    const { enforcedText, replacedClaims } = enforceClaimVerification(rawContent, chunks);
+    enforcedContent = enforcedText;
+    claimsReplaced = replacedClaims.length;
+  }
+
+  // Step 5: Stream the enforced content with warnings
   const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    async start(controller) {
-      for await (const chunk of response) {
-        const content = chunk.choices[0]?.delta?.content || "";
-        if (content) {
-          controller.enqueue(encoder.encode(content));
-        }
+  return new ReadableStream({
+    start(controller) {
+      // Add warnings if applicable
+      if (policyOverride) {
+        controller.enqueue(encoder.encode("[BEACON: Some instructions were blocked by policy]\n\n"));
       }
+      if (usedGenericKnowledge) {
+        controller.enqueue(encoder.encode("[BEACON WARNING: No supporting sources found. Content may need verification.]\n\n"));
+      }
+      if (claimsReplaced > 0) {
+        controller.enqueue(encoder.encode(`[BEACON: ${claimsReplaced} unverified claim(s) replaced with placeholders]\n\n`));
+      }
+      controller.enqueue(encoder.encode(enforcedContent));
       controller.close();
     },
   });
-
-  return stream;
 }

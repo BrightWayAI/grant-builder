@@ -4,6 +4,7 @@ import prisma from "@/lib/db";
 import { getSubscriptionInfo, incrementProposalCount } from "@/lib/subscription";
 import { auditProposalCreated } from "@/lib/audit";
 import { ambiguityDetector } from "@/lib/enforcement/ambiguity-detector";
+import { createChecklistFromRFP, autoMapSectionsToChecklist, ChecklistItemInput } from "@/lib/enforcement/checklist-mapper";
 
 export async function POST(request: NextRequest) {
   try {
@@ -93,6 +94,38 @@ export async function POST(request: NextRequest) {
       } catch (ambiguityError) {
         console.error('Failed to persist ambiguities:', ambiguityError);
         // Don't fail proposal creation - ambiguities will be checked at export
+      }
+    }
+
+    // AC-2.1: Create checklist from RFP requirements and auto-map sections
+    if (sections && sections.length > 0 && rfpText) {
+      try {
+        // Convert parsed sections to checklist items
+        const checklistInputs: ChecklistItemInput[] = sections.map((section: {
+          name: string;
+          description?: string;
+          wordLimit?: number;
+          charLimit?: number;
+          isRequired?: boolean;
+        }) => ({
+          name: section.name,
+          description: section.description,
+          wordLimit: section.wordLimit,
+          charLimit: section.charLimit,
+          isRequired: section.isRequired ?? true,
+          parserConfidence: 0.8, // Sections from RFP parse have moderate confidence
+        }));
+        
+        // Create checklist items from RFP requirements
+        const checklistItemIds = await createChecklistFromRFP(proposal.id, checklistInputs);
+        
+        // Auto-map sections to checklist items (AC-2.3)
+        if (checklistItemIds.length > 0 && proposal.sections.length > 0) {
+          await autoMapSectionsToChecklist(proposal.id);
+        }
+      } catch (checklistError) {
+        console.error('Failed to create checklist from RFP:', checklistError);
+        // Don't fail proposal creation - checklist can be created later
       }
     }
 

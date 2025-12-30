@@ -7,6 +7,7 @@ import { indexDocument } from "@/lib/ai/embeddings";
 import { DocumentType } from "@prisma/client";
 import { logDocumentError } from "@/lib/error-logging";
 import { auditDocumentUploaded } from "@/lib/audit";
+import { buildVoiceProfile } from "@/lib/enforcement/voice-profile";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
@@ -111,6 +112,22 @@ async function processDocumentAsync(
       documentType,
       programArea
     );
+    
+    // AC-3.1: Trigger voice profile build after successful indexing
+    // Check if we have enough documents (>= 3)
+    const docCount = await prisma.document.count({
+      where: {
+        organizationId,
+        status: 'INDEXED',
+      },
+    });
+    
+    if (docCount >= 3) {
+      // Build or rebuild voice profile asynchronously
+      buildVoiceProfile(organizationId).catch(err => {
+        console.error('Voice profile build failed:', err);
+      });
+    }
   } catch (error) {
     console.error("Document processing error:", error);
     await logDocumentError(error, {

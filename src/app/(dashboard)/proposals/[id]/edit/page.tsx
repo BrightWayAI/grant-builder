@@ -10,6 +10,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { ProposalEditor } from "@/components/editor/proposal-editor";
 import { CopilotPanel } from "@/components/editor/copilot-panel";
 import { ExportDialog } from "@/components/proposals/export-dialog";
+import { EnforcementPanel } from "@/components/editor/enforcement-panel";
+import { ChecklistPanel } from "@/components/editor/checklist-panel";
 import {
   ArrowLeft,
   Download,
@@ -19,6 +21,8 @@ import {
   CheckCircle,
   FileText,
   Edit3,
+  Shield,
+  ClipboardList,
 } from "lucide-react";
 import { formatDate, countWords } from "@/lib/utils";
 import Link from "next/link";
@@ -106,8 +110,11 @@ export default function ProposalEditPage() {
   const [generatingSection, setGeneratingSection] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
   const [showCopilot, setShowCopilot] = useState(false);
+  const [showEnforcement, setShowEnforcement] = useState(true); // Show by default for AC-2.5
+  const [showChecklist, setShowChecklist] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<"edit" | "preview">("edit");
+  const [complianceRefreshKey, setComplianceRefreshKey] = useState(0);
 
   const shouldGenerate = searchParams.get("generate") === "true";
 
@@ -160,6 +167,8 @@ export default function ProposalEditPage() {
               }
             : null
         );
+        // Trigger compliance panel refresh after save (AC-2.5)
+        setComplianceRefreshKey(k => k + 1);
       } catch {
         toast({
           title: "Error",
@@ -320,6 +329,20 @@ export default function ProposalEditPage() {
             </span>
           )}
           <Button
+            variant={showChecklist ? "default" : "outline"}
+            onClick={() => setShowChecklist(!showChecklist)}
+          >
+            <ClipboardList className="h-4 w-4 mr-2" />
+            Checklist
+          </Button>
+          <Button
+            variant={showEnforcement ? "default" : "outline"}
+            onClick={() => setShowEnforcement(!showEnforcement)}
+          >
+            <Shield className="h-4 w-4 mr-2" />
+            Compliance
+          </Button>
+          <Button
             variant="outline"
             onClick={() => setShowCopilot(!showCopilot)}
           >
@@ -348,7 +371,11 @@ export default function ProposalEditPage() {
 
         {/* Edit Mode */}
         <TabsContent value="edit" className="mt-4">
-          <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+          <div className={`grid gap-6 ${
+            showEnforcement || showChecklist 
+              ? "lg:grid-cols-[280px_1fr_320px]" 
+              : "lg:grid-cols-[280px_1fr]"
+          }`}>
             <Card className="h-fit">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium">Sections</CardTitle>
@@ -474,6 +501,50 @@ export default function ProposalEditPage() {
                 </Card>
               )}
             </div>
+
+            {/* Right Sidebar - Enforcement & Checklist (AC-1.4, AC-2.2, AC-2.5, AC-4.3, AC-5.2) */}
+            {(showEnforcement || showChecklist) && (
+              <div className="space-y-4">
+                {showEnforcement && (
+                  <Card className="overflow-hidden">
+                    <CardHeader className="py-3 px-4 border-b bg-muted/30">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          Compliance Status
+                        </CardTitle>
+                      </div>
+                    </CardHeader>
+                    <div className="max-h-[500px] overflow-y-auto">
+                      <EnforcementPanel
+                        key={complianceRefreshKey}
+                        proposalId={proposal.id}
+                        onSectionClick={(sectionId) => setActiveSection(sectionId)}
+                      />
+                    </div>
+                  </Card>
+                )}
+                
+                {showChecklist && (
+                  <Card>
+                    <CardHeader className="py-3 px-4 border-b bg-muted/30">
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <ClipboardList className="h-4 w-4" />
+                        RFP Checklist
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 max-h-[400px] overflow-y-auto">
+                      <ChecklistPanel
+                        proposalId={proposal.id}
+                        sections={proposal.sections.map(s => ({ id: s.id, name: s.sectionName }))}
+                        onSectionClick={(sectionId) => setActiveSection(sectionId)}
+                        onMappingChange={() => setComplianceRefreshKey(k => k + 1)}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
 
             {showCopilot && (
               <CopilotPanel

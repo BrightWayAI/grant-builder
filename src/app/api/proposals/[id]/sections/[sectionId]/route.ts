@@ -4,6 +4,7 @@ import prisma from "@/lib/db";
 import { citationMapper } from "@/lib/enforcement/citation-mapper";
 import { claimVerifier } from "@/lib/enforcement/claim-verifier";
 import { placeholderDetector } from "@/lib/enforcement/placeholder-detector";
+import { scoreAndPersistSection } from "@/lib/enforcement/voice-profile";
 
 export async function PATCH(
   request: NextRequest,
@@ -66,6 +67,9 @@ export async function PATCH(
 
         // 3. Placeholder detection - scan for missing data markers
         await placeholderDetector.scanAndPersistPlaceholders(params.id);
+        
+        // 4. Voice scoring - evaluate against org voice profile (AC-3.2)
+        await scoreAndPersistSection(params.sectionId, content, organizationId);
       } catch (enforcementError) {
         // Log but don't fail the request - enforcement data will be checked at export
         console.error('Enforcement pipeline error:', enforcementError);
