@@ -117,14 +117,13 @@ export async function generateSectionDraft(
       }
     }
     
-    // Stream the placeholder content
+    // Stream a clean empty state message (no ugly technical text)
     const encoder = new TextEncoder();
+    const emptyStateContent = `[[EMPTY_KB:${sectionName}]]`;
+    
     return new ReadableStream({
       start(controller) {
-        // Add a warning header
-        const warning = `[BEACON ENFORCEMENT: ${sufficiencyCheck.reason}]\n\n`;
-        controller.enqueue(encoder.encode(warning));
-        controller.enqueue(encoder.encode(placeholderContent));
+        controller.enqueue(encoder.encode(emptyStateContent));
         controller.close();
       },
     });

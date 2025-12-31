@@ -13,6 +13,7 @@ import { ExportDialog } from "@/components/proposals/export-dialog";
 import { EnforcementPanel } from "@/components/editor/enforcement-panel";
 import { ChecklistPanel } from "@/components/editor/checklist-panel";
 import { SectionContentView } from "@/components/editor/section-content-view";
+import { EmptyKBState, isEmptyKBContent, hasPlaceholders } from "@/components/editor/empty-kb-state";
 import {
   ArrowLeft,
   Download,
@@ -504,7 +505,62 @@ export default function ProposalEditPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {editorMode === "write" ? (
+                    {/* Check for empty KB state first */}
+                    {isEmptyKBContent(currentSection.content).isEmpty ? (
+                      <EmptyKBState
+                        sectionName={currentSection.sectionName}
+                        onWriteManually={() => {
+                          // Clear the empty state marker and switch to editor
+                          const newContent = "";
+                          setProposal((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  sections: prev.sections.map((s) =>
+                                    s.id === currentSection.id ? { ...s, content: newContent } : s
+                                  ),
+                                }
+                              : null
+                          );
+                        }}
+                      />
+                    ) : hasPlaceholders(currentSection.content) && editorMode === "write" ? (
+                      /* Auto-show annotated view when placeholders present */
+                      <div>
+                        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
+                          <p className="text-sm text-amber-800">
+                            This section contains items that need your attention. View in Sources mode to resolve them.
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditorMode("annotated")}
+                            className="ml-4 shrink-0"
+                          >
+                            <BookOpen className="h-4 w-4 mr-1" />
+                            View Sources
+                          </Button>
+                        </div>
+                        <ProposalEditor
+                          content={currentSection.content}
+                          onChange={(content) => {
+                            setProposal((prev) =>
+                              prev
+                                ? {
+                                    ...prev,
+                                    sections: prev.sections.map((s) =>
+                                      s.id === currentSection.id ? { ...s, content } : s
+                                    ),
+                                }
+                              : null
+                          );
+                          }}
+                          onSave={(content) => saveSection(currentSection.id, content)}
+                          onSelectionChange={setSelectedText}
+                          placeholder={`Write your ${currentSection.sectionName.toLowerCase()} here...`}
+                        />
+                      </div>
+                    ) : editorMode === "write" ? (
                       <ProposalEditor
                         content={currentSection.content}
                         onChange={(content) => {
@@ -518,7 +574,7 @@ export default function ProposalEditPage() {
                               }
                             : null
                         );
-                      }}
+                        }}
                         onSave={(content) => saveSection(currentSection.id, content)}
                         onSelectionChange={setSelectedText}
                         placeholder={`Write your ${currentSection.sectionName.toLowerCase()} here...`}
