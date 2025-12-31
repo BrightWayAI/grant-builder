@@ -539,13 +539,13 @@ function WhyBeacon() {
       icon: Target,
       stat: "100%",
       label: "your voice",
-      description: "AI trained on your actual documents",
+      description: "AI learns from your actual documents",
     },
     {
       icon: Zap,
-      stat: "Zero",
-      label: "hallucinations",
-      description: "Every stat grounded in your data",
+      stat: "100%",
+      label: "fact-checked",
+      description: "See where every claim comes from",
     },
   ];
 
@@ -602,11 +602,11 @@ export default function Home() {
   const faqs = [
     {
       question: "How is this different from ChatGPT?",
-      answer: "ChatGPT is a general-purpose tool that requires extensive prompting to get good results. Beacon is purpose-built for grant writing. It understands RFP structures, knows what funders look for, and uses YOUR organization's data to write in YOUR voice. No prompt engineering required—just upload and generate.",
+      answer: "ChatGPT is a general-purpose tool that requires extensive prompting to get good results. Beacon is purpose-built for grant writing. It understands RFP structures, knows what funders look for, and uses YOUR organization's data to write in YOUR voice. Plus, our built-in fact-checking flags unverified claims before export—something ChatGPT can't do.",
     },
     {
       question: "How does the knowledge base work?",
-      answer: "Upload your past proposals, annual reports, impact data, and organizational documents. Our AI creates embeddings of your content and retrieves the most relevant information when generating each section. This means your proposals include real statistics, actual program descriptions, and authentic organizational voice—not generic filler.",
+      answer: "Upload your past proposals, annual reports, impact data, and organizational documents. Our AI creates embeddings of your content and retrieves the most relevant information when generating each section. Every statistic is traced back to your source documents, so you can verify exactly where each claim comes from.",
     },
     {
       question: "What types of grants does this work for?",
@@ -623,12 +623,12 @@ export default function Home() {
   ];
 
   const principles = [
-    { text: "We won't make up statistics or data", negative: true },
-    { text: "We will use your real program data", negative: false },
-    { text: "We won't use generic AI filler language", negative: true },
-    { text: "We will match your organization's voice", negative: false },
-    { text: "We won't exceed your word limits", negative: true },
-    { text: "We will cite your actual impact numbers", negative: false },
+    { text: "Made-up statistics", negative: true },
+    { text: "Your real numbers, verified & sourced", negative: false },
+    { text: "Generic AI filler language", negative: true },
+    { text: "Your voice, learned from your documents", negative: false },
+    { text: "Mystery citations you can't trace", negative: true },
+    { text: "Every claim linked to your files", negative: false },
   ];
 
   return (
@@ -728,10 +728,10 @@ export default function Home() {
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
-              { target: 50, suffix: "%", label: "Less time per proposal" },
-              { target: 10, suffix: "min", label: "To first draft" },
+              { target: 10, suffix: "x", label: "Faster first drafts" },
               { target: 100, suffix: "%", label: "Your voice & data" },
-              { target: 920, suffix: "+", label: "Grants discoverable" },
+              { target: 100, suffix: "%", label: "Claims verified" },
+              { target: 1000, suffix: "+", label: "Grants to discover" },
             ].map((stat, index) => (
               <div key={index}>
                 <AnimatedCounter target={stat.target} suffix={stat.suffix} />
@@ -755,8 +755,8 @@ export default function Home() {
           description="Upload past proposals, annual reports, and impact data. Beacon learns your organization's unique voice and pulls relevant information when writing."
           bullets={[
             "Index PDFs, Word docs, and spreadsheets",
-            "AI learns your writing style and terminology",
-            "Automatically cite your real statistics and data",
+            "AI learns your writing style from your documents",
+            "Every statistic traced back to your source files",
           ]}
           mockup={<KnowledgeBaseMockup />}
         />
@@ -766,7 +766,7 @@ export default function Home() {
           title="Find grants that match"
           description="Search Grants.gov with intelligent filtering. See match scores based on your organization's profile, eligibility, and program areas."
           bullets={[
-            "920+ federal grants searchable",
+            "1000+ federal grants searchable",
             "Match scoring based on your profile",
             "Save and track interesting opportunities",
           ]}
@@ -777,11 +777,11 @@ export default function Home() {
         <FeatureSection
           badge="AI Generation"
           title="Drafts grounded in facts"
-          description="Every sentence is grounded in your knowledge base. No hallucinations, no generic filler—just your real data in compelling prose."
+          description="Every section pulls from your knowledge base. No guesswork, no generic filler—just your real data in compelling prose, with sources you can verify."
           bullets={[
             "Section-by-section generation",
             "Real-time word count tracking",
-            "Highlights data sources used",
+            "See exactly where each claim comes from",
           ]}
           mockup={<AIGenerationMockup />}
         />
@@ -789,7 +789,7 @@ export default function Home() {
         <FeatureSection
           badge="Inline Copilot"
           title="Refine with one click"
-          description="Select any text and use the AI copilot to expand, strengthen, add data, or adjust tone. Stay within word limits automatically."
+          description="Select any text and use the AI copilot to expand, strengthen, add data, or adjust tone. Word limits tracked in real-time."
           bullets={[
             "Expand or condense sections instantly",
             "Add supporting statistics from your docs",
