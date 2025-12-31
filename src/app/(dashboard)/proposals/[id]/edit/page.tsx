@@ -25,9 +25,8 @@ import {
   Edit3,
   Shield,
   ClipboardList,
+  Eye,
   BookOpen,
-  PanelLeftClose,
-  PanelLeft,
 } from "lucide-react";
 import { formatDate, countWords } from "@/lib/utils";
 import Link from "next/link";
@@ -120,7 +119,6 @@ export default function ProposalEditPage() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<"edit" | "preview">("edit");
   const [editorMode, setEditorMode] = useState<"write" | "annotated">("write");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // Auto-collapsed by default
   const [complianceRefreshKey, setComplianceRefreshKey] = useState(0);
 
   const shouldGenerate = searchParams.get("generate") === "true";
@@ -378,161 +376,135 @@ export default function ProposalEditPage() {
 
         {/* Edit Mode */}
         <TabsContent value="edit" className="mt-4">
-          <div className={`grid gap-4 ${
-            sidebarCollapsed
-              ? (showEnforcement || showChecklist ? "lg:grid-cols-[auto_1fr_300px]" : "lg:grid-cols-[auto_1fr]")
-              : (showEnforcement || showChecklist ? "lg:grid-cols-[240px_1fr_300px]" : "lg:grid-cols-[240px_1fr]")
+          <div className={`grid gap-6 ${
+            showEnforcement || showChecklist 
+              ? "lg:grid-cols-[280px_1fr_320px]" 
+              : "lg:grid-cols-[280px_1fr]"
           }`}>
-            {/* Collapsible Sections Sidebar */}
-            <div className={`${sidebarCollapsed ? "w-12" : "w-60"} transition-all duration-200`}>
-              <Card className="h-fit">
-                <CardHeader className="p-2 flex flex-row items-center justify-between">
-                  {!sidebarCollapsed && (
-                    <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sections</CardTitle>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                  >
-                    {sidebarCollapsed ? (
-                      <PanelLeft className="h-4 w-4" />
-                    ) : (
-                      <PanelLeftClose className="h-4 w-4" />
-                    )}
-                  </Button>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="space-y-0.5 p-1">
-                    {proposal.sections.map((section, index) => {
-                      const sectionWordCount = countWords(section.content);
-                      const isOverLimit =
-                        section.wordLimit && sectionWordCount > section.wordLimit;
-                      const isActive = section.id === activeSection;
+            <Card className="h-fit">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Sections</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="space-y-1 p-2">
+                  {proposal.sections.map((section) => {
+                    const sectionWordCount = countWords(section.content);
+                    const isOverLimit =
+                      section.wordLimit && sectionWordCount > section.wordLimit;
+                    const isActive = section.id === activeSection;
 
-                      return (
-                        <button
-                          key={section.id}
-                          onClick={() => setActiveSection(section.id)}
-                          className={`w-full text-left px-2 py-1.5 rounded-md transition-colors ${
-                            isActive
-                              ? "bg-primary text-primary-foreground"
-                              : "hover:bg-gray-100"
-                          }`}
-                          title={sidebarCollapsed ? section.sectionName : undefined}
-                        >
-                          {sidebarCollapsed ? (
-                            <span className="flex items-center justify-center font-medium text-xs">
-                              {index + 1}
-                            </span>
-                          ) : (
-                            <>
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium text-xs truncate">
-                                  {section.sectionName}
-                                </span>
-                                {generatingSection === section.id && (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1 mt-0.5">
-                                <span
-                                  className={`text-[10px] ${
-                                    isActive
-                                      ? "text-primary-foreground/70"
-                                      : isOverLimit
-                                      ? "text-red-500"
-                                      : "text-gray-400"
-                                  }`}
-                                >
-                                  {sectionWordCount}{section.wordLimit && `/${section.wordLimit}`}
-                                </span>
-                                {section.isRequired && (
-                                  <Badge
-                                    variant={isActive ? "secondary" : "outline"}
-                                    className="text-[9px] py-0 px-1 h-4"
-                                  >
-                                    Req
-                                  </Badge>
-                                )}
-                              </div>
-                            </>
+                    return (
+                      <button
+                        key={section.id}
+                        onClick={() => setActiveSection(section.id)}
+                        className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-gray-100"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm truncate">
+                            {section.sectionName}
+                          </span>
+                          {generatingSection === section.id && (
+                            <Loader2 className="h-3 w-3 animate-spin" />
                           )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span
+                            className={`text-xs ${
+                              isActive
+                                ? "text-primary-foreground/70"
+                                : isOverLimit
+                                ? "text-red-500"
+                                : "text-gray-500"
+                            }`}
+                          >
+                            {sectionWordCount}
+                            {section.wordLimit && ` / ${section.wordLimit}`} words
+                          </span>
+                          {section.isRequired && (
+                            <Badge
+                              variant={isActive ? "secondary" : "outline"}
+                              className="text-xs py-0"
+                            >
+                              Required
+                            </Badge>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
 
             <div className="space-y-4">
               {currentSection && (
                 <Card>
-                  <CardHeader className="pb-0">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <CardTitle className="text-lg">{currentSection.sectionName}</CardTitle>
-                        {currentSection.description && (
-                          <p className="text-sm text-muted-foreground mt-0.5">
-                            {currentSection.description}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`text-sm ${
-                            currentSection.wordLimit && wordCount > currentSection.wordLimit
-                              ? "text-red-500 font-medium"
-                              : "text-muted-foreground"
-                          }`}
-                        >
-                          {wordCount}
-                          {currentSection.wordLimit && ` / ${currentSection.wordLimit}`} words
-                        </span>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div>
+                      <CardTitle>{currentSection.sectionName}</CardTitle>
+                      {currentSection.description && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          {currentSection.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-sm ${
+                          currentSection.wordLimit && wordCount > currentSection.wordLimit
+                            ? "text-red-500 font-medium"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        {wordCount}
+                        {currentSection.wordLimit && ` / ${currentSection.wordLimit}`} words
+                      </span>
+                      {/* Editor mode toggle */}
+                      <div className="flex items-center border rounded-md overflow-hidden">
                         <Button
-                          variant="outline"
+                          variant={editorMode === "write" ? "secondary" : "ghost"}
                           size="sm"
-                          onClick={() => generateSection(currentSection.id)}
-                          disabled={isGenerating}
+                          className="rounded-none h-8"
+                          onClick={() => setEditorMode("write")}
                         >
-                          {generatingSection === currentSection.id ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="h-4 w-4 mr-1" />
-                              {currentSection.content ? "Regenerate" : "Generate"}
-                            </>
-                          )}
+                          <Edit3 className="h-3.5 w-3.5 mr-1" />
+                          Write
+                        </Button>
+                        <Button
+                          variant={editorMode === "annotated" ? "secondary" : "ghost"}
+                          size="sm"
+                          className="rounded-none h-8"
+                          onClick={() => setEditorMode("annotated")}
+                        >
+                          <BookOpen className="h-3.5 w-3.5 mr-1" />
+                          Sources
                         </Button>
                       </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => generateSection(currentSection.id)}
+                        disabled={isGenerating}
+                      >
+                        {generatingSection === currentSection.id ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-1" />
+                            {currentSection.content ? "Regenerate" : "Generate"}
+                          </>
+                        )}
+                      </Button>
                     </div>
-                    
-                    {/* Editor mode tabs - same pattern as main view tabs */}
-                    <Tabs value={editorMode} onValueChange={(v) => setEditorMode(v as "write" | "annotated")}>
-                      <TabsList className="w-full justify-start h-9 p-0 bg-transparent border-b rounded-none">
-                        <TabsTrigger 
-                          value="write" 
-                          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4"
-                        >
-                          <Edit3 className="h-4 w-4 mr-1.5" />
-                          Write
-                        </TabsTrigger>
-                        <TabsTrigger 
-                          value="annotated"
-                          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4"
-                        >
-                          <BookOpen className="h-4 w-4 mr-1.5" />
-                          Sources & Citations
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
                   </CardHeader>
-                  <CardContent className="pt-4">
+                  <CardContent>
                     {/* Check for empty KB state first */}
                     {isEmptyKBContent(currentSection.content).isEmpty ? (
                       <EmptyKBState
