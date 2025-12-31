@@ -137,12 +137,10 @@ export function checkRetrievalSufficiency(
 
 /**
  * Generate placeholder-only content when KB is empty (AC-1.2, AC-4.4)
+ * Returns clean marker for UI to render friendly empty state
  */
 export function generatePlaceholderOnlyContent(sectionName: string, description?: string): string {
-  const placeholderId = `gen_${Date.now()}`;
-  return `[[PLACEHOLDER:MISSING_DATA:No supporting sources found for "${sectionName}". Please upload relevant documents to your knowledge base or provide this content manually.:${placeholderId}]]
-
-${description ? `Section requirement: ${description}\n\n` : ''}[[PLACEHOLDER:USER_INPUT_REQUIRED:Draft content for ${sectionName} based on your organization's actual data:${placeholderId}_content]]`;
+  return `[[EMPTY_KB:${sectionName}]]`;
 }
 
 /**

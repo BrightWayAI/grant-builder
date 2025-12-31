@@ -110,12 +110,10 @@ describe('AC-1.2: Refuse Generation or Insert Placeholder', () => {
     expect(result.metadata.usedGenericKnowledge).toBe(true);
   });
 
-  it('should generate placeholder-only content with clear labels', () => {
+  it('should generate empty KB marker for UI handling', () => {
     const content = generatePlaceholderOnlyContent('Budget Narrative', 'Explain your budget allocation');
     
-    expect(content).toContain('[[PLACEHOLDER:MISSING_DATA:');
-    expect(content).toContain('No supporting sources found');
-    expect(content).toContain('[[PLACEHOLDER:USER_INPUT_REQUIRED:');
+    expect(content).toContain('[[EMPTY_KB:');
     expect(content).toContain('Budget Narrative');
   });
 
@@ -285,14 +283,14 @@ describe('AC-5.3: Fail-Closed Behavior', () => {
 // ============ ADVERSARIAL SCENARIOS ============
 
 describe('Adversarial Scenario A: Empty KB Generation', () => {
-  it('should return placeholder-only content when KB is empty', () => {
+  it('should return empty KB marker when KB is empty', () => {
     const emptyChunks: Array<{content: string; score: number; documentId: string; filename: string; documentType: string}> = [];
     const check = checkRetrievalSufficiency(emptyChunks);
     
     expect(check.proceed).toBe(false);
     
     const content = generatePlaceholderOnlyContent('Statement of Need');
-    expect(content).toContain('[[PLACEHOLDER:');
+    expect(content).toContain('[[EMPTY_KB:');
     expect(content).not.toContain('Our organization');
   });
 });
