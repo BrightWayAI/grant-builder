@@ -46,6 +46,16 @@ const CLAIM_PATTERNS = {
   LOCATION: /\b(?:located\s+(?:in|at)|based\s+in|serving|operates?\s+in)\s+([A-Z][A-Za-z\s]+(?:County|City|District|Region|Area|Community))/gi,
 };
 
+export interface CitationData {
+  citationNumber: number;
+  documentId: string;
+  documentName: string;
+  matchedText: string;
+  similarity: number;
+  pageNumber?: number;
+  chunkId?: string;
+}
+
 export interface EnforcementResult {
   success: boolean;
   enforcedContent: string;
@@ -53,6 +63,7 @@ export interface EnforcementResult {
   metadata: GenerationEnforcementMetadata;
   paragraphs: EnforcedParagraph[];
   replacedClaims: ReplacedClaim[];
+  citations: CitationData[];
 }
 
 export interface GenerationEnforcementMetadata {
@@ -435,6 +446,78 @@ export function enforceParagraphGrounding(
 }
 
 /**
+ * Inject citation markers into text based on supporting chunks
+ * Returns text with {{cite:N}} markers and citation data array
+ */
+export function injectCitations(
+  text: string,
+  paragraphs: EnforcedParagraph[]
+): { citedText: string; citations: CitationData[] } {
+  const citations: CitationData[] = [];
+  let citationCounter = 1;
+  const usedChunkIds = new Set<string>();
+  
+  // Build a map of paragraph index to its position in the full text
+  let citedText = '';
+  
+  for (const para of paragraphs) {
+    // Skip placeholder paragraphs - no citations needed
+    if (para.status === 'PLACEHOLDER' || para.status === 'UNGROUNDED') {
+      citedText += para.enforcedText + '\n\n';
+      continue;
+    }
+    
+    let paraText = para.enforcedText;
+    
+    // Add citations at the end of sentences that have strong supporting chunks
+    if (para.supportingChunks.length > 0 && para.bestSimilarity >= 0.50) {
+      // Find the best unique chunks for this paragraph (avoid duplicates)
+      const uniqueChunks = para.supportingChunks.filter(c => {
+        const chunkKey = `${c.documentId}_${c.content.slice(0, 50)}`;
+        if (usedChunkIds.has(chunkKey)) return false;
+        usedChunkIds.add(chunkKey);
+        return true;
+      }).slice(0, 2); // Max 2 citations per paragraph
+      
+      for (const chunk of uniqueChunks) {
+        const citation: CitationData = {
+          citationNumber: citationCounter,
+          documentId: chunk.documentId,
+          documentName: chunk.filename,
+          matchedText: chunk.content.slice(0, 150) + (chunk.content.length > 150 ? '...' : ''),
+          similarity: chunk.similarity,
+        };
+        citations.push(citation);
+        
+        // Find a good place to insert the citation (end of a sentence)
+        const sentenceEndRegex = /([.!?])(\s|$)/g;
+        let lastMatch: RegExpExecArray | null = null;
+        let match: RegExpExecArray | null;
+        
+        while ((match = sentenceEndRegex.exec(paraText)) !== null) {
+          lastMatch = match;
+        }
+        
+        if (lastMatch) {
+          // Insert citation before the last period
+          const insertPos = lastMatch.index + 1;
+          paraText = paraText.slice(0, insertPos) + `{{cite:${citationCounter}}}` + paraText.slice(insertPos);
+        } else {
+          // No sentence end found, append to end
+          paraText += `{{cite:${citationCounter}}}`;
+        }
+        
+        citationCounter++;
+      }
+    }
+    
+    citedText += paraText + '\n\n';
+  }
+  
+  return { citedText: citedText.trim(), citations };
+}
+
+/**
  * Main enforcement pipeline - runs synchronously before content is shown
  */
 export async function enforceGeneration(
@@ -449,8 +532,11 @@ export async function enforceGeneration(
   // Step 2: Enforce paragraph-level grounding
   const paragraphs = enforceParagraphGrounding(claimEnforcedText, chunks);
   
-  // Step 3: Reconstruct content with enforced paragraphs
-  const enforcedContent = paragraphs.map(p => p.enforcedText).join('\n\n');
+  // Step 3: Inject citations into grounded paragraphs
+  const { citedText, citations } = injectCitations(claimEnforcedText, paragraphs);
+  
+  // Step 4: Reconstruct content with enforced paragraphs (using cited text)
+  const enforcedContent = citedText;
   
   // Step 4: Calculate metadata
   const scores = chunks.map(c => c.score);
@@ -509,6 +595,7 @@ export async function enforceGeneration(
     metadata,
     paragraphs,
     replacedClaims,
+    citations,
   };
 }
 

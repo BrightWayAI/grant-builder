@@ -12,6 +12,7 @@ import { CopilotPanel } from "@/components/editor/copilot-panel";
 import { ExportDialog } from "@/components/proposals/export-dialog";
 import { EnforcementPanel } from "@/components/editor/enforcement-panel";
 import { ChecklistPanel } from "@/components/editor/checklist-panel";
+import { SectionContentView } from "@/components/editor/section-content-view";
 import {
   ArrowLeft,
   Download,
@@ -23,6 +24,8 @@ import {
   Edit3,
   Shield,
   ClipboardList,
+  Eye,
+  BookOpen,
 } from "lucide-react";
 import { formatDate, countWords } from "@/lib/utils";
 import Link from "next/link";
@@ -114,6 +117,7 @@ export default function ProposalEditPage() {
   const [showChecklist, setShowChecklist] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<"edit" | "preview">("edit");
+  const [editorMode, setEditorMode] = useState<"write" | "annotated">("write");
   const [complianceRefreshKey, setComplianceRefreshKey] = useState(0);
 
   const shouldGenerate = searchParams.get("generate") === "true";
@@ -458,6 +462,27 @@ export default function ProposalEditPage() {
                         {wordCount}
                         {currentSection.wordLimit && ` / ${currentSection.wordLimit}`} words
                       </span>
+                      {/* Editor mode toggle */}
+                      <div className="flex items-center border rounded-md overflow-hidden">
+                        <Button
+                          variant={editorMode === "write" ? "secondary" : "ghost"}
+                          size="sm"
+                          className="rounded-none h-8"
+                          onClick={() => setEditorMode("write")}
+                        >
+                          <Edit3 className="h-3.5 w-3.5 mr-1" />
+                          Write
+                        </Button>
+                        <Button
+                          variant={editorMode === "annotated" ? "secondary" : "ghost"}
+                          size="sm"
+                          className="rounded-none h-8"
+                          onClick={() => setEditorMode("annotated")}
+                        >
+                          <BookOpen className="h-3.5 w-3.5 mr-1" />
+                          Sources
+                        </Button>
+                      </div>
                       <Button
                         variant="outline"
                         size="sm"
@@ -479,24 +504,46 @@ export default function ProposalEditPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <ProposalEditor
-                      content={currentSection.content}
-                      onChange={(content) => {
-                        setProposal((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                sections: prev.sections.map((s) =>
-                                  s.id === currentSection.id ? { ...s, content } : s
-                                ),
+                    {editorMode === "write" ? (
+                      <ProposalEditor
+                        content={currentSection.content}
+                        onChange={(content) => {
+                          setProposal((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  sections: prev.sections.map((s) =>
+                                    s.id === currentSection.id ? { ...s, content } : s
+                                  ),
                               }
                             : null
                         );
                       }}
-                      onSave={(content) => saveSection(currentSection.id, content)}
-                      onSelectionChange={setSelectedText}
-                      placeholder={`Write your ${currentSection.sectionName.toLowerCase()} here...`}
-                    />
+                        onSave={(content) => saveSection(currentSection.id, content)}
+                        onSelectionChange={setSelectedText}
+                        placeholder={`Write your ${currentSection.sectionName.toLowerCase()} here...`}
+                      />
+                    ) : (
+                      <SectionContentView
+                        sectionId={currentSection.id}
+                        sectionName={currentSection.sectionName}
+                        content={currentSection.content}
+                        proposalId={proposal.id}
+                        onContentChange={(content) => {
+                          setProposal((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  sections: prev.sections.map((s) =>
+                                    s.id === currentSection.id ? { ...s, content } : s
+                                  ),
+                                }
+                              : null
+                          );
+                        }}
+                        onSave={(content) => saveSection(currentSection.id, content)}
+                      />
+                    )}
                   </CardContent>
                 </Card>
               )}
