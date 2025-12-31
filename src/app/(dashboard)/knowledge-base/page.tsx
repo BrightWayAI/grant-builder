@@ -76,9 +76,7 @@ export default async function KnowledgeBasePage() {
       {/* Stats Row */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Semantic KB Health Score */}
-        <div className="lg:row-span-2">
-          <KBHealthCard />
-        </div>
+        <KBHealthCard />
 
         <Card>
           <CardContent className="pt-6 space-y-3">
