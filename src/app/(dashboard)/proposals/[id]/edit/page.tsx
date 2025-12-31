@@ -12,7 +12,8 @@ import { CopilotPanel } from "@/components/editor/copilot-panel";
 import { ExportDialog } from "@/components/proposals/export-dialog";
 import { EnforcementPanel } from "@/components/editor/enforcement-panel";
 import { ChecklistPanel } from "@/components/editor/checklist-panel";
-import { SectionContentView } from "@/components/editor/section-content-view";
+import { SourcesTraceabilityPanel } from "@/components/editor/sources-traceability-panel";
+import { DocumentViewerModal } from "@/components/editor/document-viewer-modal";
 import { EmptyKBState, isEmptyKBContent, hasPlaceholders } from "@/components/editor/empty-kb-state";
 import {
   ArrowLeft,
@@ -25,7 +26,6 @@ import {
   Edit3,
   Shield,
   ClipboardList,
-  Eye,
   BookOpen,
 } from "lucide-react";
 import { formatDate, countWords } from "@/lib/utils";
@@ -118,7 +118,9 @@ export default function ProposalEditPage() {
   const [showChecklist, setShowChecklist] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<"edit" | "preview">("edit");
-  const [editorMode, setEditorMode] = useState<"write" | "annotated">("write");
+  const [showSources, setShowSources] = useState(false);
+  const [viewingDocumentId, setViewingDocumentId] = useState<string | null>(null);
+  const [documentHighlightText, setDocumentHighlightText] = useState<string | undefined>();
   const [complianceRefreshKey, setComplianceRefreshKey] = useState(0);
 
   const shouldGenerate = searchParams.get("generate") === "true";
@@ -453,7 +455,7 @@ export default function ProposalEditPage() {
                           </p>
                         )}
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <span
                           className={`text-sm ${
                             currentSection.wordLimit && wordCount > currentSection.wordLimit
@@ -464,6 +466,14 @@ export default function ProposalEditPage() {
                           {wordCount}
                           {currentSection.wordLimit && ` / ${currentSection.wordLimit}`} words
                         </span>
+                        <Button
+                          variant={showSources ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setShowSources(!showSources)}
+                        >
+                          <BookOpen className="h-4 w-4 mr-1" />
+                          {showSources ? "Hide Sources" : "Show Sources"}
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -484,19 +494,6 @@ export default function ProposalEditPage() {
                         </Button>
                       </div>
                     </div>
-                    {/* Editor mode tabs - matches main view tabs pattern */}
-                    <Tabs value={editorMode} onValueChange={(v) => setEditorMode(v as "write" | "annotated")}>
-                      <TabsList>
-                        <TabsTrigger value="write" className="flex items-center gap-2">
-                          <Edit3 className="h-4 w-4" />
-                          Write
-                        </TabsTrigger>
-                        <TabsTrigger value="annotated" className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4" />
-                          Sources & Citations
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
                   </CardHeader>
                   <CardContent className="pt-4">
                     {/* Check for empty KB state first */}
@@ -504,7 +501,6 @@ export default function ProposalEditPage() {
                       <EmptyKBState
                         sectionName={currentSection.sectionName}
                         onWriteManually={() => {
-                          // Clear the empty state marker and switch to editor
                           const newContent = "";
                           setProposal((prev) =>
                             prev
@@ -518,43 +514,7 @@ export default function ProposalEditPage() {
                           );
                         }}
                       />
-                    ) : hasPlaceholders(currentSection.content) && editorMode === "write" ? (
-                      /* Auto-show annotated view when placeholders present */
-                      <div>
-                        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
-                          <p className="text-sm text-amber-800">
-                            This section contains items that need your attention. View in Sources mode to resolve them.
-                          </p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditorMode("annotated")}
-                            className="ml-4 shrink-0"
-                          >
-                            <BookOpen className="h-4 w-4 mr-1" />
-                            View Sources
-                          </Button>
-                        </div>
-                        <ProposalEditor
-                          content={currentSection.content}
-                          onChange={(content) => {
-                            setProposal((prev) =>
-                              prev
-                                ? {
-                                    ...prev,
-                                    sections: prev.sections.map((s) =>
-                                      s.id === currentSection.id ? { ...s, content } : s
-                                    ),
-                                }
-                              : null
-                          );
-                          }}
-                          onSave={(content) => saveSection(currentSection.id, content)}
-                          onSelectionChange={setSelectedText}
-                          placeholder={`Write your ${currentSection.sectionName.toLowerCase()} here...`}
-                        />
-                      </div>
-                    ) : editorMode === "write" ? (
+                    ) : (
                       <ProposalEditor
                         content={currentSection.content}
                         onChange={(content) => {
@@ -572,26 +532,6 @@ export default function ProposalEditPage() {
                         onSave={(content) => saveSection(currentSection.id, content)}
                         onSelectionChange={setSelectedText}
                         placeholder={`Write your ${currentSection.sectionName.toLowerCase()} here...`}
-                      />
-                    ) : (
-                      <SectionContentView
-                        sectionId={currentSection.id}
-                        sectionName={currentSection.sectionName}
-                        content={currentSection.content}
-                        proposalId={proposal.id}
-                        onContentChange={(content) => {
-                          setProposal((prev) =>
-                            prev
-                              ? {
-                                  ...prev,
-                                  sections: prev.sections.map((s) =>
-                                    s.id === currentSection.id ? { ...s, content } : s
-                                  ),
-                                }
-                              : null
-                          );
-                        }}
-                        onSave={(content) => saveSection(currentSection.id, content)}
                       />
                     )}
                   </CardContent>
@@ -650,6 +590,24 @@ export default function ProposalEditPage() {
                 onResult={handleCopilotResult}
                 onClose={() => setShowCopilot(false)}
               />
+            )}
+
+            {/* Sources Traceability Panel */}
+            {showSources && currentSection && (
+              <div className="fixed inset-y-0 right-0 w-96 z-40 shadow-xl">
+                <SourcesTraceabilityPanel
+                  sectionId={currentSection.id}
+                  sectionName={currentSection.sectionName}
+                  sectionContent={currentSection.content}
+                  selectedText={selectedText}
+                  proposalId={proposal.id}
+                  onViewDocument={(docId, matchedText) => {
+                    setViewingDocumentId(docId);
+                    setDocumentHighlightText(matchedText);
+                  }}
+                  onClose={() => setShowSources(false)}
+                />
+              </div>
             )}
           </div>
         </TabsContent>
@@ -713,6 +671,19 @@ export default function ProposalEditPage() {
         open={showExport}
         onOpenChange={setShowExport}
         proposal={proposal}
+      />
+
+      {/* Document Viewer Modal */}
+      <DocumentViewerModal
+        open={!!viewingDocumentId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewingDocumentId(null);
+            setDocumentHighlightText(undefined);
+          }
+        }}
+        documentId={viewingDocumentId}
+        highlightText={documentHighlightText}
       />
     </div>
   );
