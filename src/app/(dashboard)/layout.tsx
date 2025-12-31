@@ -34,7 +34,7 @@ export default async function DashboardLayout({
       )}
       <Sidebar user={user} isBeta={subscription.isBeta} />
       {/* Main content area - offset by sidebar width */}
-      <main className={`lg:pl-64 ${process.env.APP_ENV === "staging" ? "pt-16" : "pt-14"} lg:pt-0`}>
+      <main className={`lg:pl-16 ${process.env.APP_ENV === "staging" ? "pt-16" : "pt-14"} lg:pt-0 transition-all duration-200`}>
         <div className="max-w-content mx-auto px-6 md:px-8 py-8">
           {children}
         </div>

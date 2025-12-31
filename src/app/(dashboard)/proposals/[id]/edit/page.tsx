@@ -443,68 +443,62 @@ export default function ProposalEditPage() {
             <div className="space-y-4">
               {currentSection && (
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <div>
-                      <CardTitle>{currentSection.sectionName}</CardTitle>
-                      {currentSection.description && (
-                        <p className="text-sm text-gray-500 mt-1">
-                          {currentSection.description}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-sm ${
-                          currentSection.wordLimit && wordCount > currentSection.wordLimit
-                            ? "text-red-500 font-medium"
-                            : "text-gray-500"
-                        }`}
-                      >
-                        {wordCount}
-                        {currentSection.wordLimit && ` / ${currentSection.wordLimit}`} words
-                      </span>
-                      {/* Editor mode toggle */}
-                      <div className="flex items-center border rounded-md overflow-hidden">
-                        <Button
-                          variant={editorMode === "write" ? "secondary" : "ghost"}
-                          size="sm"
-                          className="rounded-none h-8"
-                          onClick={() => setEditorMode("write")}
+                  <CardHeader className="pb-0 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>{currentSection.sectionName}</CardTitle>
+                        {currentSection.description && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            {currentSection.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`text-sm ${
+                            currentSection.wordLimit && wordCount > currentSection.wordLimit
+                              ? "text-red-500 font-medium"
+                              : "text-gray-500"
+                          }`}
                         >
-                          <Edit3 className="h-3.5 w-3.5 mr-1" />
-                          Write
-                        </Button>
+                          {wordCount}
+                          {currentSection.wordLimit && ` / ${currentSection.wordLimit}`} words
+                        </span>
                         <Button
-                          variant={editorMode === "annotated" ? "secondary" : "ghost"}
+                          variant="outline"
                           size="sm"
-                          className="rounded-none h-8"
-                          onClick={() => setEditorMode("annotated")}
+                          onClick={() => generateSection(currentSection.id)}
+                          disabled={isGenerating}
                         >
-                          <BookOpen className="h-3.5 w-3.5 mr-1" />
-                          Sources
+                          {generatingSection === currentSection.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4 mr-1" />
+                              {currentSection.content ? "Regenerate" : "Generate"}
+                            </>
+                          )}
                         </Button>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => generateSection(currentSection.id)}
-                        disabled={isGenerating}
-                      >
-                        {generatingSection === currentSection.id ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-4 w-4 mr-1" />
-                            {currentSection.content ? "Regenerate" : "Generate"}
-                          </>
-                        )}
-                      </Button>
                     </div>
+                    {/* Editor mode tabs - matches main view tabs pattern */}
+                    <Tabs value={editorMode} onValueChange={(v) => setEditorMode(v as "write" | "annotated")}>
+                      <TabsList>
+                        <TabsTrigger value="write" className="flex items-center gap-2">
+                          <Edit3 className="h-4 w-4" />
+                          Write
+                        </TabsTrigger>
+                        <TabsTrigger value="annotated" className="flex items-center gap-2">
+                          <BookOpen className="h-4 w-4" />
+                          Sources & Citations
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-4">
                     {/* Check for empty KB state first */}
                     {isEmptyKBContent(currentSection.content).isEmpty ? (
                       <EmptyKBState

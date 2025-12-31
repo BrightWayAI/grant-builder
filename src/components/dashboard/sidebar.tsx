@@ -29,7 +29,7 @@ interface SidebarProps {
 
 export function Sidebar({ user, isBeta = false }: SidebarProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true); // Auto-collapsed by default for more content space
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
