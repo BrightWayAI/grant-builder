@@ -163,8 +163,13 @@ export async function indexDocument(
       where: { id: documentId },
       data: { 
         status: "INDEXED",
-        // Store extracted metadata
       },
+    });
+
+    // Invalidate KB health score cache
+    await prisma.organization.update({
+      where: { id: organizationId },
+      data: { kbScoreCachedAt: null },
     });
 
     report({ 

@@ -50,6 +50,12 @@ export async function DELETE(
       where: { id: document.id },
     });
 
+    // Invalidate KB health score cache
+    await prisma.organization.update({
+      where: { id: organizationId },
+      data: { kbScoreCachedAt: null },
+    });
+
     await auditDocumentDeleted(document.id, document.filename, organizationId, user.id, user.email || "");
 
     return NextResponse.json({ success: true });
