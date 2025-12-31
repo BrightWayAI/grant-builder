@@ -3,14 +3,14 @@ import prisma from "@/lib/db";
 import { KnowledgeBaseManager } from "@/components/documents/knowledge-base-manager";
 import { DocumentList } from "@/components/documents/document-list";
 import { AddDocumentButton } from "@/components/documents/add-document-button";
+import { KBHealthCard } from "@/components/knowledge-base/kb-health-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/primitives/card";
 import { Badge } from "@/components/primitives/badge";
 import { Progress } from "@/components/primitives/progress";
 import { formatFileSize } from "@/lib/utils";
 import { DOCUMENT_CATEGORIES } from "@/lib/document-categories";
-import { BookOpen, CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle } from "lucide-react";
 import { DocumentType } from "@prisma/client";
-import { getKnowledgeScore } from "@/lib/knowledge-score";
 
 const MAX_STORAGE_BYTES = 500 * 1024 * 1024; // 500MB
 
@@ -61,8 +61,6 @@ export default async function KnowledgeBasePage() {
     ).length;
   });
 
-  const kbScore = await getKnowledgeScore(user.organizationId);
-
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
@@ -77,31 +75,10 @@ export default async function KnowledgeBasePage() {
 
       {/* Stats Row */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${getHealthColor(kbScore.score)}`}>
-                <BookOpen className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold font-display">{kbScore.score}%</div>
-                <p className="text-sm text-text-secondary">Knowledge Score</p>
-              </div>
-            </div>
-            <div className="mt-3 text-xs text-text-secondary space-y-1">
-              <div>Coverage: {kbScore.coverage}%</div>
-              <div>Freshness: {kbScore.freshness}%</div>
-              <div>Doc quality: {kbScore.docStrength}%</div>
-            </div>
-            {kbScore.recommendations.length > 0 && (
-              <ul className="mt-3 text-xs text-text-secondary list-disc list-inside space-y-1">
-                {kbScore.recommendations.map((rec, i) => (
-                  <li key={i}>{rec}</li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+        {/* Semantic KB Health Score */}
+        <div className="lg:row-span-2">
+          <KBHealthCard />
+        </div>
 
         <Card>
           <CardContent className="pt-6 space-y-3">
@@ -164,12 +141,6 @@ export default async function KnowledgeBasePage() {
       )}
     </div>
   );
-}
-
-function getHealthColor(score: number): string {
-  if (score >= 70) return "bg-status-success/10 text-status-success";
-  if (score >= 40) return "bg-status-warning/10 text-status-warning";
-  return "bg-status-error/10 text-status-error";
 }
 
 const HIGH_VALUE_GROUPS: { label: string; types: DocumentType[] }[] = [
