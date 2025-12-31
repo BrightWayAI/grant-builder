@@ -194,9 +194,9 @@ export async function generateSectionDraft(
         });
       }
     } catch (error) {
-      console.error('Enforcement failed, using raw content with warning:', error);
-      // FAIL CLOSED: If enforcement fails, add warning and still show content
-      enforcedContent = `[BEACON WARNING: Enforcement validation could not complete. Content may contain unverified claims.]\n\n${rawContent}`;
+      console.error('Enforcement failed, using raw content:', error);
+      // FAIL CLOSED: If enforcement fails, use raw content (warning shown via UI, not inline text)
+      enforcedContent = rawContent;
       
       // Mark proposal as having enforcement failure
       try {
@@ -216,15 +216,10 @@ export async function generateSectionDraft(
     }
   }
 
-  // Step 6: Stream the enforced content
+  // Step 6: Stream the enforced content (no inline warnings - shown via UI)
   const encoder = new TextEncoder();
   return new ReadableStream({
     start(controller) {
-      // Add enforcement summary header if claims/paragraphs were modified
-      if (enforcementResult && (enforcementResult.metadata.claimsReplaced > 0 || enforcementResult.metadata.paragraphsPlaceholdered > 0)) {
-        const summary = `[BEACON ENFORCEMENT APPLIED: ${enforcementResult.metadata.claimsReplaced} unverified claims replaced, ${enforcementResult.metadata.paragraphsPlaceholdered} ungrounded paragraphs placeholdered]\n\n`;
-        controller.enqueue(encoder.encode(summary));
-      }
       controller.enqueue(encoder.encode(enforcedContent));
       controller.close();
     },
@@ -468,20 +463,10 @@ Modified text:`;
     claimsReplaced = replacedClaims.length;
   }
 
-  // Step 5: Stream the enforced content with warnings
+  // Step 5: Stream the enforced content (no inline warnings - shown via UI)
   const encoder = new TextEncoder();
   return new ReadableStream({
     start(controller) {
-      // Add warnings if applicable
-      if (policyOverride) {
-        controller.enqueue(encoder.encode("[BEACON: Some instructions were blocked by policy]\n\n"));
-      }
-      if (usedGenericKnowledge) {
-        controller.enqueue(encoder.encode("[BEACON WARNING: No supporting sources found. Content may need verification.]\n\n"));
-      }
-      if (claimsReplaced > 0) {
-        controller.enqueue(encoder.encode(`[BEACON: ${claimsReplaced} unverified claim(s) replaced with placeholders]\n\n`));
-      }
       controller.enqueue(encoder.encode(enforcedContent));
       controller.close();
     },

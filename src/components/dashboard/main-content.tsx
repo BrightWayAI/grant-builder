@@ -21,7 +21,7 @@ export function MainContent({ children, isStaging = false }: MainContentProps) {
         "lg:pt-0"
       )}
     >
-      <div className="max-w-content mx-auto px-6 md:px-8 py-8">
+      <div className="max-w-content mx-auto px-4 md:px-6 py-6">
         {children}
       </div>
     </main>
