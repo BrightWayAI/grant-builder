@@ -15,7 +15,6 @@ import { ChecklistPanel } from "@/components/editor/checklist-panel";
 import { SourcesTraceabilityPanel } from "@/components/editor/sources-traceability-panel";
 import { DocumentViewerModal } from "@/components/editor/document-viewer-modal";
 import { EmptyKBState, isEmptyKBContent } from "@/components/editor/empty-kb-state";
-import { ProposalReadinessCard } from "@/components/editor/proposal-readiness-card";
 import {
   ArrowLeft,
   Download,
@@ -540,15 +539,9 @@ export default function ProposalEditPage() {
               )}
             </div>
 
-            {/* Right Sidebar - Readiness, Enforcement & Checklist */}
+            {/* Right Sidebar - Enforcement & Checklist */}
             {(showEnforcement || showChecklist) && (
               <div className="space-y-4">
-                {/* Proposal Readiness Score */}
-                <ProposalReadinessCard
-                  proposalId={proposal.id}
-                  onSectionClick={(sectionId) => setActiveSection(sectionId)}
-                />
-
                 {showEnforcement && (
                   <Card className="overflow-hidden">
                     <CardHeader className="py-3 px-4 border-b bg-muted/30">
