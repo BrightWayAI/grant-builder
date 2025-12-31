@@ -8,6 +8,7 @@ import { Button } from "@/components/primitives/button";
 import { cn } from "@/lib/utils";
 import { FileText, FolderOpen, Home, Settings, LogOut, Plus, ChevronLeft, Menu, Compass, CreditCard } from "lucide-react";
 import { useState } from "react";
+import { useSidebar } from "./sidebar-context";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home, tourId: "dashboard" },
@@ -29,7 +30,7 @@ interface SidebarProps {
 
 export function Sidebar({ user, isBeta = false }: SidebarProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(true); // Auto-collapsed by default for more content space
+  const { collapsed, setCollapsed } = useSidebar();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
