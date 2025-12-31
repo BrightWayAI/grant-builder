@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { OrganizationSettings } from "@/components/settings/organization-settings";
 import { GrantDigestSettings } from "@/components/settings/grant-digest-settings";
 import { TeamSettings } from "@/components/settings/team-settings";
+import { VoiceProfileSettings } from "@/components/settings/voice-profile-settings";
 import { GeographicFocus } from "@/lib/geography";
 
 export default async function SettingsPage() {
@@ -51,6 +52,18 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <TeamSettings currentUserId={user.id} currentUserRole={user.role} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Voice Profile</CardTitle>
+          <CardDescription>
+            Customize your organization's writing voice for AI-generated content (AC-3.4)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <VoiceProfileSettings />
         </CardContent>
       </Card>
 

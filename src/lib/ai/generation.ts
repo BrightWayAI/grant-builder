@@ -9,6 +9,7 @@ import {
   enforceClaimVerification,
   EnforcementResult,
 } from "@/lib/enforcement/generation-enforcer";
+import { getVoiceProfile, VoiceProfileData } from "@/lib/enforcement/voice-profile";
 
 interface GenerationContext {
   organizationId: string;
@@ -132,8 +133,20 @@ export async function generateSectionDraft(
   // Step 3: Sanitize custom instructions (AC-5.1)
   const { sanitized: safeInstructions, policyOverride } = sanitizeCustomInstructions(customInstructions);
   
+  // Step 3.5: Fetch voice profile for org (AC-3.3)
+  let voiceProfile: VoiceProfileData | null = null;
+  try {
+    const profileResult = await getVoiceProfile(context.organizationId);
+    if (profileResult.exists && profileResult.status === 'READY' && profileResult.profile) {
+      voiceProfile = profileResult.profile;
+    }
+  } catch (error) {
+    console.error('Failed to fetch voice profile:', error);
+    // Continue without voice profile
+  }
+  
   const formattedContext = formatContextForPrompt(relevantChunks);
-  const systemPrompt = buildSystemPrompt(org, context);
+  const systemPrompt = buildSystemPrompt(org, context, voiceProfile);
   const userPrompt = buildUserPrompt({
     sectionName,
     description,
@@ -221,8 +234,21 @@ export async function generateSectionDraft(
 
 function buildSystemPrompt(
   org: { name: string; mission?: string | null; geography?: string | null },
-  context: GenerationContext
+  context: GenerationContext,
+  voiceProfile: VoiceProfileData | null
 ): string {
+  // Build voice guidance section (AC-3.3)
+  let voiceGuidance = '';
+  if (voiceProfile) {
+    voiceGuidance = `
+ORGANIZATIONAL VOICE PROFILE (AC-3.3 - USE THESE):
+- Tone: ${voiceProfile.toneDescriptors.join(', ') || 'Professional'}
+${voiceProfile.preferredTerms.length > 0 ? `- PREFERRED TERMS (use these when relevant): ${voiceProfile.preferredTerms.slice(0, 15).join(', ')}` : ''}
+${voiceProfile.bannedTerms.length > 0 ? `- BANNED TERMS (DO NOT USE): ${voiceProfile.bannedTerms.slice(0, 10).join(', ')}` : ''}
+${voiceProfile.samplePhrases.length > 0 ? `- Sample phrases from org docs: "${voiceProfile.samplePhrases.slice(0, 3).map(p => p.phrase).join('", "')}"` : ''}
+`;
+  }
+
   return `You are an expert grant writer helping ${org.name} write compelling grant proposals.
 
 Organization Details:
@@ -231,7 +257,7 @@ Organization Details:
 - Geography: ${org.geography || "Not specified"}
 ${context.funderName ? `- Current Funder: ${context.funderName}` : ""}
 ${context.programTitle ? `- Grant Program: ${context.programTitle}` : ""}
-
+${voiceGuidance}
 Writing Guidelines:
 1. Write in a professional, confident tone that reflects the organization's voice
 2. Use specific data, statistics, and examples from the provided context
@@ -243,6 +269,7 @@ Writing Guidelines:
    Example: [[PLACEHOLDER:USER_INPUT_REQUIRED:project start date:auto]]
 6. Match the organization's existing writing style when context is provided
 7. Focus on outcomes and impact, not just activities
+${voiceProfile ? '8. IMPORTANT: Use the preferred terms and tone from the voice profile above' : ''}
 
 FORMATTING RULES:
 - Write in clean, readable prose - NO markdown formatting
@@ -256,7 +283,8 @@ DO NOT:
 - Use generic filler language
 - Exceed specified word/character limits
 - Include information you're not confident about
-- Use any markdown syntax (**, *, #, etc.)`;
+- Use any markdown syntax (**, *, #, etc.)
+${voiceProfile?.bannedTerms.length ? `- Use any of these banned terms: ${voiceProfile.bannedTerms.slice(0, 10).join(', ')}` : ''}`;
 }
 
 function buildUserPrompt(params: {

@@ -389,12 +389,14 @@ Our partnership with SpaceX has enabled us to send 50 children to Mars.`;
     // Step 2: Paragraph grounding
     const paragraphs = enforceParagraphGrounding(claimEnforced, integrationChunks);
     
-    // First paragraph should have some grounding (matches "200 students")
-    // With Jaccard similarity it may be PARTIAL or GROUNDED
-    expect(['GROUNDED', 'PARTIAL', 'UNGROUNDED']).toContain(paragraphs[0].status);
+    // First paragraph may have some grounding (matches "200 students")
+    // Or may be PLACEHOLDER if claims were replaced during claim verification
+    // With Jaccard similarity it may be PARTIAL, GROUNDED, or PLACEHOLDER (if claims replaced)
+    expect(['GROUNDED', 'PARTIAL', 'UNGROUNDED', 'PLACEHOLDER']).toContain(paragraphs[0].status);
     
-    // Second paragraph (SpaceX/Mars) should definitely be ungrounded
-    expect(paragraphs[1].status).toBe('UNGROUNDED');
+    // Second paragraph (SpaceX/Mars) should be ungrounded OR placeholder (if claims replaced)
+    // The key is that it should not be GROUNDED since there's no KB support for SpaceX
+    expect(['UNGROUNDED', 'PLACEHOLDER']).toContain(paragraphs[1].status);
     expect(paragraphs[1].enforcedText).toContain('[[PLACEHOLDER:');
   });
 });

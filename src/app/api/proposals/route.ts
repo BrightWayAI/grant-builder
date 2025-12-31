@@ -43,6 +43,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
+    // AC-2.1: Require RFP text for funder proposals
+    // This ensures we have requirements to parse into a checklist
+    if (funderName && !rfpText) {
+      return NextResponse.json({ 
+        error: "RFP text is required for funder proposals",
+        code: "RFP_REQUIRED",
+        message: "Please upload or paste the RFP/grant guidelines to ensure all funder requirements are tracked."
+      }, { status: 400 });
+    }
+
     const proposal = await prisma.proposal.create({
       data: {
         organizationId,
