@@ -188,25 +188,25 @@ function HowItWorks() {
     {
       step: 1,
       title: "Upload your RFP",
-      description: "Drop in any grant announcement, RFP, or NOFO. Our AI extracts requirements, deadlines, and sections.",
+      description: "Drop in the grant announcement. Beacon extracts every section, requirement, and deadline automatically.",
       icon: Upload,
     },
     {
       step: 2,
-      title: "AI writes your draft",
-      description: "We generate each section using your knowledge base, in your organization's authentic voice.",
+      title: "Get your first draft",
+      description: "Each section is written using your past proposals, impact data, and organizational voice.",
       icon: Sparkles,
     },
     {
       step: 3,
-      title: "Review & refine",
-      description: "Edit inline with our AI copilot. Expand, strengthen, or adjust any section with one click.",
+      title: "Refine with AI help",
+      description: "Polish each section with your AI copilot. Add data, hit word limits, adjust tone.",
       icon: PenTool,
     },
     {
       step: 4,
-      title: "Export & submit",
-      description: "Download as a polished DOCX, ready for submission. All formatting preserved.",
+      title: "Submit with confidence",
+      description: "Export a polished DOCX after Beacon verifies all requirements are met.",
       icon: Download,
     },
   ];
@@ -533,19 +533,19 @@ function WhyBeacon() {
       icon: Clock,
       stat: "10x",
       label: "faster first drafts",
-      description: "What takes days now takes minutes",
+      description: "Reclaim your evenings and weekends",
     },
     {
       icon: Target,
       stat: "100%",
       label: "your voice",
-      description: "AI learns from your actual documents",
+      description: "Not generic AI—your proven language",
     },
     {
       icon: Zap,
       stat: "100%",
-      label: "fact-checked",
-      description: "See where every claim comes from",
+      label: "verifiable",
+      description: "Every claim traced to your sources",
     },
   ];
 
@@ -693,8 +693,8 @@ export default function Home() {
           </h1>
           
           <p className="text-xl text-text-secondary max-w-2xl mx-auto mb-8">
-            Upload an RFP. Get a complete draft. Powered by your organization&apos;s 
-            knowledge base, written in your authentic voice.
+            Upload an RFP. Get a first draft built from your past proposals, 
+            impact data, and winning language. Ready to refine, not rewrite.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -724,7 +724,7 @@ export default function Home() {
       <section className="py-12 px-6 border-y border-border bg-surface-subtle">
         <div className="max-w-5xl mx-auto">
           <p className="text-center text-text-tertiary mb-6 text-sm">
-            Built for nonprofit teams who write grants
+            Built for development teams who are tired of starting from scratch
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
@@ -751,24 +751,24 @@ export default function Home() {
       <div className="bg-surface divide-y divide-border">
         <FeatureSection
           badge="Knowledge Base"
-          title="Your documents, your voice"
-          description="Upload past proposals, annual reports, and impact data. Beacon learns your organization's unique voice and pulls relevant information when writing."
+          title="Your institutional knowledge, always on hand"
+          description="Stop digging through shared drives. Upload past proposals, annual reports, and impact data—Beacon remembers everything so your next proposal builds on your best work."
           bullets={[
-            "Index PDFs, Word docs, and spreadsheets",
-            "AI learns your writing style from your documents",
-            "Every statistic traced back to your source files",
+            "Never rewrite your mission statement again",
+            "Pull in proven language from winning proposals",
+            "New staff get up to speed instantly",
           ]}
           mockup={<KnowledgeBaseMockup />}
         />
         
         <FeatureSection
           badge="Grant Discovery"
-          title="Find grants that match"
-          description="Search Grants.gov with intelligent filtering. See match scores based on your organization's profile, eligibility, and program areas."
+          title="Stop chasing grants you won't win"
+          description="See which federal grants actually match your organization. Filter by your eligibility, program areas, and funding range—so you spend time on applications that make sense."
           bullets={[
-            "1000+ federal grants searchable",
-            "Match scoring based on your profile",
-            "Save and track interesting opportunities",
+            "Match scores show fit at a glance",
+            "Filter out grants you're not eligible for",
+            "Track deadlines in one place",
           ]}
           mockup={<GrantDiscoveryMockup />}
           reverse
@@ -776,24 +776,24 @@ export default function Home() {
         
         <FeatureSection
           badge="AI Generation"
-          title="Drafts grounded in facts"
-          description="Every section pulls from your knowledge base. No guesswork, no generic filler—just your real data in compelling prose, with sources you can verify."
+          title="First drafts that sound like you wrote them"
+          description="Beacon writes each section using your actual program data, impact numbers, and organizational voice. No generic AI fluff—just solid first drafts you can stand behind."
           bullets={[
-            "Section-by-section generation",
-            "Real-time word count tracking",
-            "See exactly where each claim comes from",
+            "Uses your real statistics, not made-up numbers",
+            "Matches the voice from your past proposals",
+            "Every claim traceable to your source documents",
           ]}
           mockup={<AIGenerationMockup />}
         />
         
         <FeatureSection
           badge="Inline Copilot"
-          title="Refine with one click"
-          description="Select any text and use the AI copilot to expand, strengthen, add data, or adjust tone. Word limits tracked in real-time."
+          title="Edit smarter, not harder"
+          description="Select any paragraph and let AI help you strengthen it—add impact data, hit word limits, or adjust the tone for different funders. Your writing partner for the final polish."
           bullets={[
-            "Expand or condense sections instantly",
-            "Add supporting statistics from your docs",
-            "Adjust formality and tone",
+            "Tighten a section that's running long",
+            "Add data points from your knowledge base",
+            "Adjust tone for corporate vs. foundation funders",
           ]}
           mockup={<CopilotMockup />}
           reverse
@@ -801,12 +801,12 @@ export default function Home() {
         
         <FeatureSection
           badge="Export"
-          title="Ready to submit"
-          description="Download your polished proposal as a professionally formatted Word document. All sections complete, all requirements met."
+          title="Submit with confidence"
+          description="Before you export, Beacon checks that all sections are complete, word limits are met, and claims are verified. Download a polished DOCX ready for any portal."
           bullets={[
-            "DOCX export with proper formatting",
-            "Automatic section organization",
-            "Ready for any submission portal",
+            "Catches missing sections before you submit",
+            "Flags unverified statistics automatically",
+            "Formatted and ready for any funder portal",
           ]}
           mockup={<ExportMockup />}
         />
@@ -819,12 +819,12 @@ export default function Home() {
       <section className="py-24 px-6 bg-surface">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16 scroll-animate float-up">
-            <Badge variant="outline" className="mb-4">Our Principles</Badge>
+            <Badge variant="outline" className="mb-4">Our Promise</Badge>
             <h2 className="text-4xl font-display font-bold mb-4">
-              AI that writes with integrity
+              AI you can trust with your reputation
             </h2>
             <p className="text-text-secondary text-lg">
-              Every proposal Beacon generates follows these rules
+              Grant writing is high stakes. We built Beacon to protect your credibility.
             </p>
           </div>
           
@@ -1066,17 +1066,17 @@ export default function Home() {
       <section className="py-24 px-6 bg-surface-subtle">
         <div className="max-w-4xl mx-auto text-center scroll-animate float-up">
           <Badge className="mb-4 bg-purple-100 text-purple-800 border-purple-200">
-            Limited beta spots available
+            Free during beta
           </Badge>
           <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
-            Join the beta today
+            Your next proposal, done faster
           </h2>
           <p className="text-xl text-text-secondary mb-10 max-w-2xl mx-auto">
-            Get full access to Beacon free while we&apos;re in beta. No credit card required.
+            Join the beta and get full access free. Start with your next deadline—we&apos;ll help you meet it.
           </p>
           <Link href="/signup">
             <Button size="lg" className="text-lg px-10 h-14">
-              Join the Beta
+              Start Writing Free
               <ArrowRight className="h-5 w-5 ml-2" />
             </Button>
           </Link>
