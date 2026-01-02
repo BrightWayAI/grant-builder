@@ -328,19 +328,24 @@ export function enforceClaimVerification(
     if (!isClaimSupported({ type: claim.type, value: claim.value, context: claim.context }, chunks)) {
       const claimId = `claim_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // More specific placeholder messages based on claim type
+      // Clean the claim value - remove colons to avoid breaking placeholder parsing
+      const cleanValue = claim.value.replace(/:/g, '').trim();
       let placeholderType = 'VERIFICATION_NEEDED';
-      let message = `Unverified ${claim.type.toLowerCase()} removed - please verify: "${claim.value}"`;
+      let message = `Verify ${cleanValue}`;
       
       if (claim.type === 'NAMED_PERSON' || claim.type === 'STAFF_NAME') {
         placeholderType = 'MISSING_DATA';
-        message = `Person name not found in knowledge base - verify this is a real team member: "${claim.value}"`;
+        message = `Add staff name`;
       } else if (claim.type === 'NAMED_ORG') {
-        placeholderType = 'VERIFICATION_NEEDED';
-        message = `Partner organization not found in knowledge base: "${claim.value}"`;
+        message = `Verify partner`;
       } else if (claim.type === 'OUTCOME') {
-        placeholderType = 'VERIFICATION_NEEDED';
-        message = `Outcome claim requires verification: "${claim.value}"`;
+        message = `Verify outcome`;
+      } else if (claim.type === 'CURRENCY') {
+        message = `Verify amount`;
+      } else if (claim.type === 'DATE') {
+        message = `Verify date`;
+      } else if (claim.type === 'NUMBER' || claim.type === 'PERCENTAGE') {
+        message = `Verify number`;
       }
       
       const placeholder = `[[PLACEHOLDER:${placeholderType}:${message}:${claimId}]]`;
@@ -421,9 +426,9 @@ export function enforceParagraphGrounding(
       status = 'PARTIAL';
     } else {
       status = 'UNGROUNDED';
-      // Replace ungrounded paragraph with placeholder
+      // Replace ungrounded paragraph with placeholder - keep message simple
       const paraId = `para_${Date.now()}_${i}`;
-      enforcedText = `[[PLACEHOLDER:MISSING_DATA:No supporting source found for this content. Original text preserved for reference - "${para.slice(0, 100)}${para.length > 100 ? '...' : ''}":${paraId}]]`;
+      enforcedText = `[[PLACEHOLDER:MISSING_DATA:Add content from KB:${paraId}]]`;
     }
     
     results.push({

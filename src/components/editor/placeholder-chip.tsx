@@ -259,11 +259,12 @@ export function PlaceholderChip({
 
 /**
  * Parse [[PLACEHOLDER:TYPE:description:id]] syntax from text
+ * ID can contain underscores and alphanumeric characters
  */
 export function parsePlaceholders(text: string): {
   segments: Array<{ type: "text" | "placeholder"; content: string; placeholder?: PlaceholderData }>;
 } {
-  const regex = /\[\[PLACEHOLDER:(\w+):([^:]+):(\w+)\]\]/g;
+  const regex = /\[\[PLACEHOLDER:(\w+):([^:\[\]]+):([\w_]+)\]\]/g;
   const segments: Array<{ type: "text" | "placeholder"; content: string; placeholder?: PlaceholderData }> = [];
   
   let lastIndex = 0;
