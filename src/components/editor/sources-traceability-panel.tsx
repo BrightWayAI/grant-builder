@@ -359,74 +359,46 @@ export function SourcesTraceabilityPanel({
                 {filteredContent.map((item, index) => {
                   const config = getStatusConfig(item.status);
                   const StatusIcon = config.icon;
-                  const isExpanded = expandedItems.has(index);
 
                   return (
-                    <div key={index} className={cn("", item.status === "ungrounded" && "bg-red-50/50")}>
-                      <button
-                        onClick={() => toggleExpanded(index)}
-                        className="w-full p-3 text-left hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-start gap-2">
-                          <StatusIcon className={cn("h-4 w-4 mt-0.5 flex-shrink-0", config.color)} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm line-clamp-2">{item.text}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="outline" className={cn("text-[10px] py-0", config.bg, config.color)}>
-                                {config.label}
-                              </Badge>
-                              {item.sources.length > 0 && (
-                                <span className="text-[10px] text-muted-foreground">
-                                  {item.sources.length} source{item.sources.length !== 1 ? "s" : ""}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {isExpanded ? (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          )}
+                    <div key={index} className={cn("p-3", item.status === "ungrounded" && "bg-red-50/50")}>
+                      {/* Paragraph text with status indicator */}
+                      <div className="flex items-start gap-2 mb-2">
+                        <StatusIcon className={cn("h-4 w-4 mt-0.5 flex-shrink-0", config.color)} />
+                        <p className="text-sm flex-1">{item.text}</p>
+                      </div>
+                      
+                      {/* Sources as compact inline chips */}
+                      {item.sources.length === 0 ? (
+                        <div className="ml-6 text-xs text-muted-foreground italic">
+                          No matching sources in KB
                         </div>
-                      </button>
-
-                      {isExpanded && (
-                        <div className="px-3 pb-3 ml-6 space-y-2">
-                          {item.sources.length === 0 ? (
-                            <p className="text-xs text-muted-foreground italic py-2">
-                              No supporting sources found in knowledge base
-                            </p>
-                          ) : (
-                            item.sources.map((source, sourceIndex) => (
-                              <div
-                                key={sourceIndex}
-                                className="p-2 rounded-md bg-muted/50 border border-transparent hover:border-border transition-colors"
-                              >
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                                    <span className="text-xs font-medium truncate">
-                                      {source.documentName}
-                                    </span>
-                                  </div>
-                                  <span className={cn("text-xs font-medium", getSimilarityColor(source.similarity))}>
-                                    {Math.round(source.similarity * 100)}%
-                                  </span>
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 italic">
-                                  "{source.matchedText}"
-                                </p>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 text-xs mt-1.5 -ml-2"
-                                  onClick={() => onViewDocument(source.documentId, source.matchedText)}
-                                >
-                                  <ExternalLink className="h-3 w-3 mr-1" />
-                                  View source
-                                </Button>
-                              </div>
-                            ))
+                      ) : (
+                        <div className="ml-6 flex flex-wrap gap-1.5">
+                          {item.sources.slice(0, 3).map((source, sourceIndex) => (
+                            <button
+                              key={sourceIndex}
+                              onClick={() => onViewDocument(source.documentId, source.matchedText)}
+                              className={cn(
+                                "inline-flex items-center gap-1 px-2 py-1 rounded text-xs",
+                                "border hover:bg-muted transition-colors",
+                                source.similarity >= 0.7 
+                                  ? "bg-green-50 border-green-200 text-green-700" 
+                                  : source.similarity >= 0.5
+                                  ? "bg-yellow-50 border-yellow-200 text-yellow-700"
+                                  : "bg-gray-50 border-gray-200 text-gray-600"
+                              )}
+                              title={`"${source.matchedText}"`}
+                            >
+                              <FileText className="h-3 w-3" />
+                              <span className="max-w-[120px] truncate">{source.documentName}</span>
+                              <span className="font-medium">{Math.round(source.similarity * 100)}%</span>
+                            </button>
+                          ))}
+                          {item.sources.length > 3 && (
+                            <span className="text-xs text-muted-foreground self-center">
+                              +{item.sources.length - 3} more
+                            </span>
                           )}
                         </div>
                       )}
