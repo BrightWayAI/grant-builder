@@ -15,14 +15,15 @@ import { RetrievedChunk } from '@/lib/ai/retrieval';
 import prisma from '@/lib/db';
 
 // Minimum similarity threshold for a chunk to be considered "relevant"
-const MIN_CHUNK_SIMILARITY = 0.65;
+// Lowered from 0.65 to allow more KB content to be used
+const MIN_CHUNK_SIMILARITY = 0.40;
 
 // Minimum chunks required to generate confident content
 const MIN_CHUNKS_FOR_GENERATION = 1;
 
 // Similarity threshold for grounded paragraphs
-const GROUNDED_THRESHOLD = 0.70;
-const PARTIAL_THRESHOLD = 0.50;
+const GROUNDED_THRESHOLD = 0.55;
+const PARTIAL_THRESHOLD = 0.35;
 
 // Regex patterns for high-risk claims (AC-1.3)
 const CLAIM_PATTERNS = {
