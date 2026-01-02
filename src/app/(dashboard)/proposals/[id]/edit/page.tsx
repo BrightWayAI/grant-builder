@@ -15,12 +15,14 @@ import { ChecklistPanel } from "@/components/editor/checklist-panel";
 import { SourcesTraceabilityPanel } from "@/components/editor/sources-traceability-panel";
 import { DocumentViewerModal } from "@/components/editor/document-viewer-modal";
 import { EmptyKBState, isEmptyKBContent } from "@/components/editor/empty-kb-state";
+import { ProposalStatusSelect } from "@/components/proposals/proposal-status-select";
+import { ProposalProgress } from "@/components/proposals/proposal-progress";
+import { DeadlineBadge } from "@/components/proposals/deadline-badge";
 import {
   ArrowLeft,
   Download,
   Sparkles,
   Loader2,
-  Calendar,
   CheckCircle,
   FileText,
   Edit3,
@@ -309,16 +311,19 @@ export default function ProposalEditPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">{proposal.title}</h1>
-            <div className="flex items-center gap-3 text-sm text-gray-500">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold">{proposal.title}</h1>
+              <ProposalStatusSelect
+                proposalId={proposal.id}
+                currentStatus={proposal.status as "DRAFT" | "IN_PROGRESS" | "SUBMITTED" | "WON" | "LOST" | "ARCHIVED"}
+                onStatusChange={(status) => setProposal(prev => prev ? { ...prev, status } : null)}
+              />
+            </div>
+            <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
               {proposal.funderName && <span>{proposal.funderName}</span>}
-              {proposal.deadline && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  Due {formatDate(proposal.deadline)}
-                </span>
-              )}
+              {proposal.deadline && <DeadlineBadge deadline={proposal.deadline} />}
               <span>{getTotalWordCount()} total words</span>
+              <ProposalProgress sections={proposal.sections} compact />
             </div>
           </div>
         </div>

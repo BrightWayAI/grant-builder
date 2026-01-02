@@ -2,20 +2,9 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { Button } from "@/components/primitives/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/primitives/card";
-import { Badge } from "@/components/primitives/badge";
-import { Plus, FileText, Calendar, DollarSign } from "lucide-react";
-import { formatDate } from "@/lib/utils";
-import { ProposalStatus } from "@prisma/client";
-
-const STATUS_CONFIG: Record<ProposalStatus, { label: string; variant: "default" | "success" | "error" | "warning" }> = {
-  DRAFT: { label: "Draft", variant: "default" },
-  IN_PROGRESS: { label: "In Progress", variant: "warning" },
-  SUBMITTED: { label: "Submitted", variant: "success" },
-  WON: { label: "Won", variant: "success" },
-  LOST: { label: "Lost", variant: "error" },
-  ARCHIVED: { label: "Archived", variant: "default" },
-};
+import { Card, CardContent } from "@/components/primitives/card";
+import { ProposalsList } from "@/components/proposals/proposals-list";
+import { Plus, FileText } from "lucide-react";
 
 export default async function ProposalsPage() {
   const user = await getCurrentUser();
@@ -26,10 +15,29 @@ export default async function ProposalsPage() {
     orderBy: { updatedAt: "desc" },
     include: {
       sections: {
-        select: { id: true },
+        select: { 
+          id: true, 
+          content: true,
+          wordLimit: true,
+          isRequired: true,
+        },
       },
     },
   });
+
+  // Transform for client component
+  const proposalsData = proposals.map(p => ({
+    id: p.id,
+    title: p.title,
+    funderName: p.funderName,
+    programTitle: p.programTitle,
+    deadline: p.deadline?.toISOString() || null,
+    fundingAmountMin: p.fundingAmountMin,
+    fundingAmountMax: p.fundingAmountMax,
+    status: p.status,
+    updatedAt: p.updatedAt.toISOString(),
+    sections: p.sections,
+  }));
 
   return (
     <div className="space-y-6">
@@ -60,56 +68,7 @@ export default async function ProposalsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {proposals.map((proposal) => {
-            const statusConfig = STATUS_CONFIG[proposal.status];
-            return (
-              <Link key={proposal.id} href={`/proposals/${proposal.id}/edit`}>
-                <Card variant="interactive">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{proposal.title}</CardTitle>
-                        <CardDescription>
-                          {proposal.funderName && `${proposal.funderName}`}
-                          {proposal.programTitle && ` - ${proposal.programTitle}`}
-                        </CardDescription>
-                      </div>
-                      <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-6 text-sm text-text-secondary">
-                      {proposal.deadline && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>Due {formatDate(proposal.deadline)}</span>
-                        </div>
-                      )}
-                      {(proposal.fundingAmountMin || proposal.fundingAmountMax) && (
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-4 w-4" />
-                          <span>
-                            {proposal.fundingAmountMax
-                              ? `Up to $${proposal.fundingAmountMax.toLocaleString()}`
-                              : `$${proposal.fundingAmountMin?.toLocaleString()}`}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1">
-                        <FileText className="h-4 w-4" />
-                        <span>{proposal.sections.length} sections</span>
-                      </div>
-                      <div className="ml-auto">
-                        Last edited {formatDate(proposal.updatedAt)}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
+        <ProposalsList initialProposals={proposalsData} />
       )}
     </div>
   );
