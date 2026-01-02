@@ -165,7 +165,7 @@
   }
 
   .prose-editor p {
-    @apply my-2 leading-relaxed;
+    @apply mb-3 leading-relaxed;
   }
 
   .prose-editor h1 {
