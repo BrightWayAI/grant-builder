@@ -16,6 +16,7 @@ import { SourcesTraceabilityPanel } from "@/components/editor/sources-traceabili
 import { DocumentViewerModal } from "@/components/editor/document-viewer-modal";
 import { EmptyKBState, isEmptyKBContent } from "@/components/editor/empty-kb-state";
 import { DeadlineBadge } from "@/components/proposals/deadline-badge";
+import { GeneratingOverlay } from "@/components/proposals/generating-overlay";
 import {
   ArrowLeft,
   Download,
@@ -112,6 +113,8 @@ export default function ProposalEditPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingSection, setGeneratingSection] = useState<string | null>(null);
+  const [completedGenerationIds, setCompletedGenerationIds] = useState<string[]>([]);
+  const [isInitialGeneration, setIsInitialGeneration] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showCopilot, setShowCopilot] = useState(false);
   const [showEnforcement, setShowEnforcement] = useState(true); // Show by default for AC-2.5
@@ -130,9 +133,13 @@ export default function ProposalEditPage() {
   }, [params.id]);
 
   useEffect(() => {
-    if (proposal && shouldGenerate && proposal.sections.length > 0) {
-      generateAllSections();
-      router.replace(`/proposals/${params.id}/edit`);
+    if (proposal && shouldGenerate && proposal.sections.length > 0 && !isInitialGeneration) {
+      setIsInitialGeneration(true);
+      setCompletedGenerationIds([]);
+      generateAllSections().then(() => {
+        setIsInitialGeneration(false);
+        router.replace(`/proposals/${params.id}/edit`);
+      });
     }
   }, [proposal?.id, shouldGenerate]);
 
@@ -239,12 +246,16 @@ export default function ProposalEditPage() {
         .join("");
       
       await saveSection(sectionId, finalHtml);
+    // Mark section as completed during initial generation
+      setCompletedGenerationIds(prev => [...prev, sectionId]);
     } catch {
       toast({
         title: "Error",
         description: "Failed to generate content",
         variant: "destructive",
       });
+      // Still mark as completed (even if failed) to continue with other sections
+      setCompletedGenerationIds(prev => [...prev, sectionId]);
     } finally {
       setGeneratingSection(null);
       setIsGenerating(false);
@@ -255,7 +266,7 @@ export default function ProposalEditPage() {
     if (!proposal) return;
 
     for (const section of proposal.sections) {
-      if (!section.content || section.content.trim() === "") {
+      if (!section.content || section.content.trim() === "" || section.content === "<p></p>") {
         await generateSection(section.id);
       }
     }
@@ -292,6 +303,18 @@ export default function ProposalEditPage() {
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  // Show generating overlay during initial generation
+  if (isInitialGeneration) {
+    return (
+      <GeneratingOverlay
+        sections={proposal.sections.map(s => ({ id: s.id, sectionName: s.sectionName }))}
+        currentSectionId={generatingSection}
+        completedSectionIds={completedGenerationIds}
+        proposalTitle={proposal.title}
+      />
     );
   }
 
