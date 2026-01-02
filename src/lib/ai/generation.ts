@@ -75,12 +75,17 @@ export async function generateSectionDraft(
 
   // Step 1: Retrieve relevant chunks from KB
   const queryText = `${sectionName} ${description || ""} for grant proposal to ${context.funderName || "funder"}`;
+  console.log(`[Generation] Retrieving chunks for section "${sectionName}", org: ${context.organizationId}`);
+  
   const relevantChunks = await retrieveRelevantChunks(queryText, context.organizationId, {
     topK: 8,
   });
+  
+  console.log(`[Generation] Retrieved ${relevantChunks.length} chunks, scores: ${relevantChunks.map(c => c.score.toFixed(2)).join(', ') || 'none'}`);
 
   // Step 2: PRE-GENERATION CHECK - Verify KB has sufficient sources (AC-4.4)
   const sufficiencyCheck = checkRetrievalSufficiency(relevantChunks);
+  console.log(`[Generation] Sufficiency check: proceed=${sufficiencyCheck.proceed}, reason=${sufficiencyCheck.reason || 'ok'}`);
   
   if (!sufficiencyCheck.proceed) {
     // KB is empty or insufficient - return placeholder-only content (AC-1.2)

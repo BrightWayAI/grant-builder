@@ -124,16 +124,18 @@ export async function retrieveRelevantChunks(
   if (useHyDE) {
     try {
       searchQuery = await generateHypotheticalChunk(query);
+      console.log(`[Retrieval] HyDE generated hypothetical chunk`);
     } catch (error) {
-      console.warn("HyDE generation failed, using original query:", error);
+      console.warn("[Retrieval] HyDE generation failed, using original query:", error);
     }
   }
 
   let queryEmbedding: number[];
   try {
     queryEmbedding = await generateEmbedding(searchQuery);
+    console.log(`[Retrieval] Embedding generated, length: ${queryEmbedding.length}`);
   } catch (error) {
-    console.error("Embedding generation failed:", error);
+    console.error("[Retrieval] Embedding generation failed:", error);
     return []; // Graceful fallback - generation will use placeholders
   }
 
@@ -156,10 +158,12 @@ export async function retrieveRelevantChunks(
   
   let results;
   try {
+    console.log(`[Retrieval] Querying Pinecone for org ${organizationId}, topK=${retrieveCount}`);
     results = await queryVectors(queryEmbedding, organizationId, retrieveCount, filter);
+    console.log(`[Retrieval] Pinecone returned ${results.length} matches`);
   } catch (error) {
     // Graceful fallback for Pinecone connection issues (DNS, network, outage)
-    console.error("Pinecone query failed - generation will proceed with placeholders:", error);
+    console.error("[Retrieval] Pinecone query failed - generation will proceed with placeholders:", error);
     return [];
   }
 
