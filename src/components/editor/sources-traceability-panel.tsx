@@ -257,7 +257,7 @@ export function SourcesTraceabilityPanel({
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          Sources
+          Grounding
         </button>
         <button
           onClick={() => setActiveTab("claims")}
@@ -277,13 +277,16 @@ export function SourcesTraceabilityPanel({
         </button>
       </div>
 
-      {/* Stats summary - Sources tab */}
+      {/* Stats summary - Grounding tab */}
       {activeTab === "sources" && (
         <div className="p-3 border-b bg-muted/30">
+          <p className="text-[10px] text-muted-foreground mb-2">
+            Each paragraph from your proposal matched against your knowledge base
+          </p>
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1">
               <CheckCircle2 className="h-3 w-3 text-green-600" />
-              <span>{stats.grounded} sourced</span>
+              <span>{stats.grounded} grounded</span>
             </div>
             <div className="flex items-center gap-1">
               <Info className="h-3 w-3 text-yellow-600" />
@@ -291,7 +294,7 @@ export function SourcesTraceabilityPanel({
             </div>
             <div className="flex items-center gap-1">
               <AlertTriangle className="h-3 w-3 text-red-600" />
-              <span>{stats.ungrounded} unsourced</span>
+              <span>{stats.ungrounded} ungrounded</span>
             </div>
           </div>
         </div>
@@ -300,6 +303,9 @@ export function SourcesTraceabilityPanel({
       {/* Stats summary - Claims tab */}
       {activeTab === "claims" && claimsSummary && (
         <div className="p-3 border-b bg-muted/30">
+          <p className="text-[10px] text-muted-foreground mb-2">
+            Numbers, dates, and statistics checked against your knowledge base
+          </p>
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1">
               <ShieldCheck className="h-3 w-3 text-green-600" />
@@ -467,8 +473,27 @@ export function SourcesTraceabilityPanel({
                         <div className="flex items-start gap-2">
                           <StatusIcon className={cn("h-4 w-4 mt-0.5 flex-shrink-0", config.color)} />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium">{claim.value}</p>
-                            <div className="flex items-center gap-2 mt-1">
+                            {/* Show claim value as a highlighted chip within context */}
+                            <p className="text-sm">
+                              <span className="text-muted-foreground">..."</span>
+                              {claim.context.split(claim.value).map((part, i, arr) => (
+                                <span key={i}>
+                                  {part}
+                                  {i < arr.length - 1 && (
+                                    <span className={cn(
+                                      "px-1.5 py-0.5 rounded font-semibold mx-0.5",
+                                      claim.status === "VERIFIED" ? "bg-green-100 text-green-800" :
+                                      claim.status === "PARTIAL" ? "bg-yellow-100 text-yellow-800" :
+                                      "bg-red-100 text-red-800"
+                                    )}>
+                                      {claim.value}
+                                    </span>
+                                  )}
+                                </span>
+                              ))}
+                              <span className="text-muted-foreground">"...</span>
+                            </p>
+                            <div className="flex items-center gap-2 mt-1.5">
                               <Badge variant="outline" className={cn("text-[10px] py-0", config.bg, config.color)}>
                                 {config.label}
                               </Badge>
