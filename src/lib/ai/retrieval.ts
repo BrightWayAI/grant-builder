@@ -129,7 +129,13 @@ export async function retrieveRelevantChunks(
     }
   }
 
-  const queryEmbedding = await generateEmbedding(searchQuery);
+  let queryEmbedding: number[];
+  try {
+    queryEmbedding = await generateEmbedding(searchQuery);
+  } catch (error) {
+    console.error("Embedding generation failed:", error);
+    return []; // Graceful fallback - generation will use placeholders
+  }
 
   // Build filter based on document type or section-specific types
   const filter: Record<string, unknown> = {};
@@ -147,7 +153,15 @@ export async function retrieveRelevantChunks(
 
   // Retrieve more candidates for reranking
   const retrieveCount = rerank ? Math.min(topK * 2, 20) : topK;
-  const results = await queryVectors(queryEmbedding, organizationId, retrieveCount, filter);
+  
+  let results;
+  try {
+    results = await queryVectors(queryEmbedding, organizationId, retrieveCount, filter);
+  } catch (error) {
+    // Graceful fallback for Pinecone connection issues (DNS, network, outage)
+    console.error("Pinecone query failed - generation will proceed with placeholders:", error);
+    return [];
+  }
 
   let chunks: RetrievedChunk[] = results.map((match) => ({
     content: (match.metadata as { content: string }).content,
