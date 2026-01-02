@@ -671,10 +671,9 @@ export default function ProposalEditPage() {
                     <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">
                       {index + 1}. {section.sectionName}
                     </h2>
-                    <div className="prose prose-gray max-w-none">
+                    <div className="prose-editor text-gray-700">
                       {section.content ? (
                         <div 
-                          className="whitespace-pre-wrap text-gray-700 leading-relaxed"
                           dangerouslySetInnerHTML={{ 
                             __html: section.content
                               // Clean up any markdown-style formatting
