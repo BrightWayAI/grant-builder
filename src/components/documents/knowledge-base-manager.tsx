@@ -670,10 +670,12 @@ function RFPDropZone({ onRFPAdded }: { onRFPAdded: (file: File) => void }) {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file && (file.type === "application/pdf" || 
-        file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-        file.type === "text/plain")) {
-      onRFPAdded(file);
+    if (file) {
+      // Check by extension as MIME types can vary
+      const ext = file.name.toLowerCase().split('.').pop();
+      if (ext === 'pdf' || ext === 'docx' || ext === 'txt' || ext === 'doc') {
+        onRFPAdded(file);
+      }
     }
   }, [onRFPAdded]);
 
@@ -704,7 +706,7 @@ function RFPDropZone({ onRFPAdded }: { onRFPAdded: (file: File) => void }) {
         <input
           ref={inputRef}
           type="file"
-          accept=".pdf,.docx,.txt"
+          accept=".pdf,.docx,.doc,.txt"
           onChange={handleFileSelect}
           className="hidden"
         />
