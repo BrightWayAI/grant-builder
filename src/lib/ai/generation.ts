@@ -262,10 +262,7 @@ Writing Guidelines:
 2. Use specific data, statistics, and examples from the provided context
 3. Be concise and impactful - every sentence should add value
 4. Follow standard grant writing best practices
-5. If you lack specific information, you MUST use this EXACT placeholder format:
-   [[PLACEHOLDER:MISSING_DATA:description of needed info:auto]]
-   Example: [[PLACEHOLDER:MISSING_DATA:annual budget amount:auto]]
-   Example: [[PLACEHOLDER:USER_INPUT_REQUIRED:project start date:auto]]
+5. If you lack specific information, write general but accurate statements that don't include unverified specifics
 6. Match the organization's existing writing style when context is provided
 7. Focus on outcomes and impact, not just activities
 ${voiceProfile ? '8. IMPORTANT: Use the preferred terms and tone from the voice profile above' : ''}
@@ -380,7 +377,7 @@ export async function runCopilotAction(
 
   switch (type) {
     case "expand":
-      instruction = "Expand this text with more detail, examples, or supporting information from the knowledge base. Approximately double the length. If you don't have supporting data, use [[PLACEHOLDER:VERIFICATION_NEEDED:specific data needed:auto]] format.";
+      instruction = "Expand this text with more detail, examples, or supporting information from the knowledge base. Approximately double the length. If you don't have supporting data, write general but accurate statements.";
       needsContext = true;
       requiresVerification = true;
       break;
@@ -388,7 +385,7 @@ export async function runCopilotAction(
       instruction = "Condense this text to be more concise while preserving the key message. Reduce by approximately 30-50%.";
       break;
     case "strengthen":
-      instruction = "Strengthen this text by adding data, evidence, or citations from the knowledge base. Make the argument more compelling. If you lack specific data, use [[PLACEHOLDER:VERIFICATION_NEEDED:specific data needed:auto]] format.";
+      instruction = "Strengthen this text by adding data, evidence, or citations from the knowledge base. Make the argument more compelling. If you lack specific data, focus on qualitative strengths.";
       needsContext = true;
       requiresVerification = true;
       break;
@@ -434,8 +431,7 @@ Return ONLY the modified text without any explanations, prefixes, or surrounding
 Maintain the same format (if it's a paragraph, return a paragraph; if it's a list, return a list).
 
 CRITICAL: Do NOT invent statistics, numbers, percentages, dates, partner names, or specific outcomes.
-If you need to add data that isn't in the provided context, use this EXACT placeholder format:
-[[PLACEHOLDER:VERIFICATION_NEEDED:description of data needed:auto]]`;
+If you need to add data that isn't in the provided context, write general but accurate statements instead.`;
 
   const userPrompt = `${instruction}
 

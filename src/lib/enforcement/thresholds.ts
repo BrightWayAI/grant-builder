@@ -11,9 +11,10 @@ export const ENFORCEMENT_THRESHOLDS = {
   COVERAGE_WARN: 50,            // Warn if overall coverage < 50%
   COVERAGE_SECTION_WARN: 40,    // Warn if any section coverage < 40%
   
-  // Attribution similarity thresholds
-  GROUNDED_SIMILARITY: 0.70,    // Paragraph is "grounded" if best chunk similarity >= 0.70
-  PARTIAL_SIMILARITY: 0.45,     // Paragraph is "partial" if best chunk similarity >= 0.45
+  // Attribution similarity thresholds (Jaccard-based text similarity)
+  // Lowered from 0.70/0.45 - Jaccard similarity is much stricter than embedding cosine similarity
+  GROUNDED_SIMILARITY: 0.35,    // Paragraph is "grounded" if best chunk similarity >= 0.35
+  PARTIAL_SIMILARITY: 0.15,     // Paragraph is "partial" if best chunk similarity >= 0.15
   
   // Claim verification
   CLAIM_VERIFY_THRESHOLD: 0.70, // Claim verified if evidence confidence >= 0.70

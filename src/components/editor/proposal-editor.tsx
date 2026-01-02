@@ -82,13 +82,27 @@ export function ProposalEditor({
     }
   }, [content, editor]);
 
+  // Save on unmount and browser navigation
   useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
+    const handleBeforeUnload = () => {
+      if (editor && saveTimeoutRef.current) {
+        // Save immediately before page unload
         clearTimeout(saveTimeoutRef.current);
+        onSave(editor.getHTML());
       }
     };
-  }, []);
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Save on component unmount (navigation within app)
+      if (editor && saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        onSave(editor.getHTML());
+      }
+    };
+  }, [editor, onSave]);
 
   if (!editor) return null;
 
