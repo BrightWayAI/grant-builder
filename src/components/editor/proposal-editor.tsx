@@ -51,7 +51,7 @@ export function ProposalEditor({
     content,
     editorProps: {
       attributes: {
-        class: "prose-editor prose max-w-none focus:outline-none min-h-[400px] p-4",
+        class: "prose-editor max-w-none focus:outline-none min-h-[400px] p-4",
       },
     },
     onUpdate: ({ editor }) => {

@@ -184,9 +184,33 @@ export function ExportDialog({ open, onOpenChange, proposal }: ExportDialogProps
     }
   };
 
+  // Convert HTML to plain text while preserving paragraph structure
+  const htmlToPlainText = (html: string): string => {
+    return html
+      // Add double newlines for block elements
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<\/h[1-6]>/gi, '\n\n')
+      .replace(/<\/div>/gi, '\n\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      // Add bullet points for list items
+      .replace(/<li[^>]*>/gi, '• ')
+      // Remove remaining HTML tags
+      .replace(/<[^>]*>/g, '')
+      // Decode HTML entities
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      // Clean up excessive whitespace
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  };
+
   const copySection = async (section: Section) => {
     try {
-      const plainText = section.content.replace(/<[^>]*>/g, "");
+      const plainText = htmlToPlainText(section.content);
       await navigator.clipboard.writeText(plainText);
       setCopiedSection(section.id);
       setTimeout(() => setCopiedSection(null), 2000);
@@ -207,7 +231,7 @@ export function ExportDialog({ open, onOpenChange, proposal }: ExportDialogProps
     try {
       const text = proposal.sections
         .map((s) => {
-          const plainText = s.content.replace(/<[^>]*>/g, "");
+          const plainText = htmlToPlainText(s.content);
           return `## ${s.sectionName}\n\n${plainText}`;
         })
         .join("\n\n---\n\n");
