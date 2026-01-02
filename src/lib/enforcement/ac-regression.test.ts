@@ -76,7 +76,8 @@ describe('AC-1.1: Paragraph Traceability', () => {
     
     expect(result.length).toBe(1);
     expect(result[0].status).toBe('UNGROUNDED');
-    expect(result[0].enforcedText).toContain('[[PLACEHOLDER:MISSING_DATA:');
+    // Text is preserved (no inline replacement) - status tracked for compliance panel
+    expect(result[0].enforcedText).toBe(text);
   });
 
   it('should preserve existing placeholders without modification', () => {
@@ -148,11 +149,12 @@ describe('AC-1.3: No Invented Metrics', () => {
     expect(claims.some(c => c.type === 'CURRENCY')).toBe(true);
   });
 
-  it('should replace unverified numbers with placeholders', () => {
+  it('should track unverified numbers for compliance panel', () => {
     const text = 'We served 1,200 youth last year.';
     const { enforcedText, replacedClaims } = enforceClaimVerification(text, mockChunks);
     
-    expect(enforcedText).toContain('[[PLACEHOLDER:VERIFICATION_NEEDED:');
+    // Text is preserved (no inline replacement) - tracked for compliance panel
+    expect(enforcedText).toBe(text);
     expect(replacedClaims.length).toBeGreaterThan(0);
     expect(replacedClaims[0].type).toBe('NUMBER');
   });
@@ -300,13 +302,13 @@ describe('Adversarial Scenario B: Fabricated Statistics', () => {
     { content: 'We served 100 people last year.', score: 0.9, documentId: 'doc1', filename: 'report.pdf', documentType: 'IMPACT_REPORT' },
   ];
 
-  it('should replace fabricated numbers with placeholders', () => {
+  it('should track fabricated numbers for compliance panel', () => {
     const fabricatedText = 'We served 5,000 youth with a 99% success rate.';
     const { enforcedText, replacedClaims } = enforceClaimVerification(fabricatedText, mockChunks);
     
-    // 5,000 is not in KB, should be replaced
+    // Text preserved, unverified claims tracked for compliance panel
     expect(replacedClaims.length).toBeGreaterThan(0);
-    expect(enforcedText).toContain('[[PLACEHOLDER:VERIFICATION_NEEDED:');
+    expect(enforcedText).toBe(fabricatedText);
   });
 });
 
@@ -338,15 +340,16 @@ describe('Adversarial Scenario D: Ungrounded Paragraphs', () => {
     { content: 'We are a nonprofit serving the local community.', score: 0.8, documentId: 'doc1', filename: 'about.pdf', documentType: 'ORG_OVERVIEW' },
   ];
 
-  it('should replace completely ungrounded paragraphs with placeholders', () => {
+  it('should mark completely ungrounded paragraphs with UNGROUNDED status', () => {
     const ungroundedText = `NASA has partnered with our organization to develop space programs for underserved youth.
 
 Our revolutionary approach has been recognized by the United Nations and featured in major publications.`;
 
     const result = enforceParagraphGrounding(ungroundedText, mockChunks);
     
+    // Text preserved, status tracked for compliance panel
     expect(result.some(p => p.status === 'UNGROUNDED')).toBe(true);
-    expect(result.some(p => p.enforcedText.includes('[[PLACEHOLDER:'))).toBe(true);
+    expect(result.every(p => !p.enforcedText.includes('[[PLACEHOLDER:'))).toBe(true);
   });
 });
 
@@ -392,9 +395,9 @@ Our partnership with SpaceX has enabled us to send 50 children to Mars.`;
     // With Jaccard similarity it may be PARTIAL, GROUNDED, or PLACEHOLDER (if claims replaced)
     expect(['GROUNDED', 'PARTIAL', 'UNGROUNDED', 'PLACEHOLDER']).toContain(paragraphs[0].status);
     
-    // Second paragraph (SpaceX/Mars) should be ungrounded OR placeholder (if claims replaced)
+    // Second paragraph (SpaceX/Mars) should be ungrounded
     // The key is that it should not be GROUNDED since there's no KB support for SpaceX
+    // Text is preserved (no inline replacement) - status tracked for compliance panel
     expect(['UNGROUNDED', 'PLACEHOLDER']).toContain(paragraphs[1].status);
-    expect(paragraphs[1].enforcedText).toContain('[[PLACEHOLDER:');
   });
 });

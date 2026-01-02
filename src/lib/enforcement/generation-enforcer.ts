@@ -328,30 +328,8 @@ export function enforceClaimVerification(
     if (!isClaimSupported({ type: claim.type, value: claim.value, context: claim.context }, chunks)) {
       const claimId = `claim_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Clean the claim value - remove colons to avoid breaking placeholder parsing
-      const cleanValue = claim.value.replace(/:/g, '').trim();
-      let placeholderType = 'VERIFICATION_NEEDED';
-      let message = `Verify ${cleanValue}`;
-      
-      if (claim.type === 'NAMED_PERSON' || claim.type === 'STAFF_NAME') {
-        placeholderType = 'MISSING_DATA';
-        message = `Add staff name`;
-      } else if (claim.type === 'NAMED_ORG') {
-        message = `Verify partner`;
-      } else if (claim.type === 'OUTCOME') {
-        message = `Verify outcome`;
-      } else if (claim.type === 'CURRENCY') {
-        message = `Verify amount`;
-      } else if (claim.type === 'DATE') {
-        message = `Verify date`;
-      } else if (claim.type === 'NUMBER' || claim.type === 'PERCENTAGE') {
-        message = `Verify number`;
-      }
-      
-      const placeholder = `[[PLACEHOLDER:${placeholderType}:${message}:${claimId}]]`;
-      
-      enforcedText = enforcedText.slice(0, claim.start) + placeholder + enforcedText.slice(claim.end);
-      
+      // Track unverified claims for compliance panel, but DON'T replace inline
+      // This keeps the generated text readable while still flagging issues
       replacedClaims.push({
         id: claimId,
         type: claim.type,
@@ -426,9 +404,8 @@ export function enforceParagraphGrounding(
       status = 'PARTIAL';
     } else {
       status = 'UNGROUNDED';
-      // Replace ungrounded paragraph with placeholder - keep message simple
-      const paraId = `para_${Date.now()}_${i}`;
-      enforcedText = `[[PLACEHOLDER:MISSING_DATA:Add content from KB:${paraId}]]`;
+      // Track as ungrounded but DON'T replace - let content through
+      // Ungrounded status shows in compliance panel instead
     }
     
     results.push({
