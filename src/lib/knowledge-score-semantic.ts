@@ -95,6 +95,7 @@ export interface CategoryScore {
   topChunks: {
     content: string;
     documentName: string;
+    documentType: string;
     similarity: number;
   }[];
   recommendation?: string;
@@ -178,7 +179,7 @@ export async function getSemanticKBScore(organizationId: string): Promise<Semant
   for (const category of GRANT_QUESTION_CATEGORIES) {
     // Test all questions in this category
     const questionScores: number[] = [];
-    const allChunks: { content: string; documentName: string; similarity: number }[] = [];
+    const allChunks: { content: string; documentName: string; documentType: string; similarity: number }[] = [];
     
     for (const question of category.questions) {
       try {
@@ -192,10 +193,11 @@ export async function getSemanticKBScore(organizationId: string): Promise<Semant
           
           // Collect top chunks (deduplicated later)
           for (const match of results.slice(0, 2)) {
-            const metadata = match.metadata as { content: string; filename: string };
+            const metadata = match.metadata as { content: string; filename: string; documentType?: string };
             allChunks.push({
               content: metadata.content?.slice(0, 200) + "...",
               documentName: metadata.filename || "Unknown",
+              documentType: metadata.documentType || "OTHER",
               similarity: match.score || 0,
             });
           }

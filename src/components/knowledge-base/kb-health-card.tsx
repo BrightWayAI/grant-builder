@@ -27,6 +27,7 @@ interface CategoryScore {
   topChunks: {
     content: string;
     documentName: string;
+    documentType: string;
     similarity: number;
   }[];
   recommendation?: string;
@@ -53,6 +54,24 @@ function getConfidenceIcon(confidence: string) {
     default:
       return { icon: XCircle, color: "text-status-error" };
   }
+}
+
+function formatDocType(type: string): string {
+  const labels: Record<string, string> = {
+    PROPOSAL: "Proposal",
+    ORG_OVERVIEW: "Org Overview",
+    PROGRAM_DESCRIPTION: "Program",
+    IMPACT_REPORT: "Impact",
+    LOGIC_MODEL: "Logic Model",
+    AUDITED_FINANCIALS: "Financials",
+    FORM_990: "990",
+    ANNUAL_REPORT: "Annual Report",
+    STAFF_BIOS: "Staff",
+    BOARD_BIOS: "Board",
+    BOILERPLATE: "Boilerplate",
+    OTHER: "Other",
+  };
+  return labels[type] || type.replace(/_/g, " ");
 }
 
 export function KBHealthCard() {
@@ -135,12 +154,18 @@ export function KBHealthCard() {
 
                 {isExpanded && (
                   <div className="ml-6 mb-2 space-y-1.5">
+                    <p className="text-[10px] text-text-tertiary">
+                      Best matches for "{category.label}" questions:
+                    </p>
                     {category.topChunks.length > 0 ? (
                       category.topChunks.slice(0, 2).map((chunk, idx) => (
                         <div key={idx} className="text-xs p-2 bg-surface-subtle rounded border border-border">
                           <div className="flex items-center gap-1 text-text-tertiary mb-1">
                             <FileText className="h-3 w-3" />
                             <span className="truncate flex-1">{chunk.documentName}</span>
+                            <Badge variant="outline" className="text-[9px] px-1 py-0">
+                              {formatDocType(chunk.documentType)}
+                            </Badge>
                             <span>{Math.round(chunk.similarity * 100)}%</span>
                           </div>
                           <p className="text-text-secondary line-clamp-2">{chunk.content}</p>
