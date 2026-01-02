@@ -101,6 +101,31 @@ function htmlToReadableText(html: string): string {
     .trim();
 }
 
+// Convert generated text to HTML - preserve existing HTML tags, wrap plain text in paragraphs
+function convertToHtml(content: string): string {
+  if (!content) return "";
+  
+  // If content already has HTML block tags, assume it's formatted
+  const hasHtmlTags = /<(p|h[1-6]|ul|ol|li|strong|em|br)\b/i.test(content);
+  
+  if (hasHtmlTags) {
+    // Content has HTML - clean up any stray newlines and return
+    return content
+      .replace(/\n{2,}/g, '</p><p>')  // Double newlines become paragraph breaks
+      .replace(/\n/g, ' ')             // Single newlines become spaces
+      .replace(/<p>\s*<\/p>/g, '')     // Remove empty paragraphs
+      .replace(/<\/p>\s*<p>/g, '</p><p>') // Clean up paragraph spacing
+      .trim();
+  }
+  
+  // Plain text - convert to HTML paragraphs
+  return content
+    .split("\n\n")
+    .filter(p => p.trim())
+    .map(p => `<p>${p.trim().replace(/\n/g, '<br>')}</p>`)
+    .join("");
+}
+
 export default function ProposalEditPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -219,12 +244,8 @@ export default function ProposalEditPage() {
         if (done) break;
         content += decoder.decode(value, { stream: true });
         
-        // Convert plain text to simple HTML paragraphs for the editor
-        const htmlContent = content
-          .split("\n\n")
-          .filter(p => p.trim())
-          .map(p => `<p>${p.trim()}</p>`)
-          .join("");
+        // Convert to HTML - preserve existing HTML tags, wrap plain text in paragraphs
+        const htmlContent = convertToHtml(content);
         
         setProposal((prev) =>
           prev
@@ -239,11 +260,7 @@ export default function ProposalEditPage() {
       }
 
       // Final save with proper HTML formatting
-      const finalHtml = content
-        .split("\n\n")
-        .filter(p => p.trim())
-        .map(p => `<p>${p.trim()}</p>`)
-        .join("");
+      const finalHtml = convertToHtml(content);
       
       await saveSection(sectionId, finalHtml);
     // Mark section as completed during initial generation

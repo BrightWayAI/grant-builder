@@ -267,12 +267,14 @@ Writing Guidelines:
 7. Focus on outcomes and impact, not just activities
 ${voiceProfile ? '8. IMPORTANT: Use the preferred terms and tone from the voice profile above' : ''}
 
-FORMATTING RULES:
-- Write in clean, readable prose - NO markdown formatting
-- Do NOT use ** for bold, * for italic, or # for headers
-- Use plain paragraphs separated by blank lines
-- For lists, use simple dashes (-) or numbers (1. 2. 3.)
-- Write as if for a formal printed document
+FORMATTING RULES (use HTML tags):
+- Wrap each paragraph in <p>...</p> tags
+- Use <strong>...</strong> for important terms or emphasis
+- Use <h3>...</h3> for subheadings within the section (NOT for the main section title)
+- Use <ul><li>...</li></ul> for bullet lists
+- Use <ol><li>...</li></ol> for numbered lists
+- Do NOT use markdown (**, *, #) - only HTML tags
+- Keep formatting clean and professional
 
 DO NOT:
 - Make up statistics or specific numbers not in the context
