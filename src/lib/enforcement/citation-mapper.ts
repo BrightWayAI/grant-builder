@@ -2,16 +2,16 @@
  * Citation Mapper
  * 
  * Maps generated paragraphs to source chunks from retrieval.
- * Uses text similarity to determine attribution scores.
+ * Uses embedding-based cosine similarity for accurate semantic matching.
  * 
- * Since we don't store embeddings for generated content,
- * we use a combination of:
- * 1. Retrieval scores from the original query
- * 2. Text overlap analysis between paragraph and chunks
+ * Flow:
+ * 1. Generate embeddings for each paragraph
+ * 2. Query Pinecone to find semantically similar KB chunks
+ * 3. Use cosine similarity scores for grounding determination
  */
 
 import prisma from '@/lib/db';
-import { generateEmbedding } from '@/lib/ai/openai';
+import { generateEmbedding, generateEmbeddings } from '@/lib/ai/openai';
 import { queryVectors } from '@/lib/ai/pinecone';
 import {
   AttributedParagraph,
@@ -117,20 +117,23 @@ export class CitationMapper {
 
     const attributedParagraphs: AttributedParagraph[] = [];
 
-    // If we have retrieved chunks, use them for attribution
-    if (retrievedChunks.length > 0) {
-      for (let i = 0; i < paragraphTexts.length; i++) {
-        const paraText = paragraphTexts[i];
-        const attributed = await this.attributeParagraph(
-          paraText, 
-          i, 
-          sectionId, 
-          retrievedChunks
-        );
-        attributedParagraphs.push(attributed);
-      }
-    } else {
-      // No chunks available - try to retrieve for this section
+    // Process paragraphs with embedding-based similarity
+    // The retrieved chunks are passed as fallback, but primary attribution uses Pinecone queries
+    for (let i = 0; i < paragraphTexts.length; i++) {
+      const paraText = paragraphTexts[i];
+      const attributed = await this.attributeParagraph(
+        paraText, 
+        i, 
+        sectionId, 
+        retrievedChunks,
+        organizationId
+      );
+      attributedParagraphs.push(attributed);
+    }
+    
+    // If no chunks and attribution failed, try retrieving fresh chunks
+    const hasFailures = attributedParagraphs.some(p => p.status === 'FAILED' || p.status === 'UNGROUNDED');
+    if (retrievedChunks.length === 0 && hasFailures) {
       try {
         const freshChunks = await this.retrieveChunksForSection(
           section.sectionName,
@@ -138,15 +141,18 @@ export class CitationMapper {
           organizationId
         );
         
-        for (let i = 0; i < paragraphTexts.length; i++) {
-          const paraText = paragraphTexts[i];
-          const attributed = await this.attributeParagraph(
-            paraText, 
-            i, 
-            sectionId, 
-            freshChunks
-          );
-          attributedParagraphs.push(attributed);
+        // Re-attribute paragraphs that failed
+        for (let i = 0; i < attributedParagraphs.length; i++) {
+          if (attributedParagraphs[i].status === 'FAILED' || attributedParagraphs[i].status === 'UNGROUNDED') {
+            const paraText = paragraphTexts[i];
+            attributedParagraphs[i] = await this.attributeParagraph(
+              paraText, 
+              i, 
+              sectionId, 
+              freshChunks,
+              organizationId
+            );
+          }
         }
       } catch (error) {
         console.error('Failed to retrieve chunks for attribution:', error);
@@ -179,32 +185,79 @@ export class CitationMapper {
   }
 
   /**
-   * Attribute a single paragraph to source chunks
+   * Attribute a single paragraph to source chunks using embedding similarity
    */
   private async attributeParagraph(
     paragraphText: string,
     index: number,
     sectionId: string,
-    chunks: RetrievedChunkForAttribution[]
+    chunks: RetrievedChunkForAttribution[],
+    organizationId: string
   ): Promise<AttributedParagraph> {
     const supportingChunks: ChunkAttribution[] = [];
     let bestScore = 0;
 
-    // Calculate similarity for each chunk
-    for (const chunk of chunks) {
-      const similarity = this.calculateTextSimilarity(paragraphText, chunk.text);
+    // Skip very short paragraphs (likely formatting artifacts)
+    if (paragraphText.trim().length < 20) {
+      return {
+        id: generateId(),
+        sectionId,
+        index,
+        text: paragraphText,
+        supportingChunks: [],
+        attributionScore: 1, // Don't penalize short content
+        status: 'GROUNDED',
+        flags: []
+      };
+    }
+
+    try {
+      // Generate embedding for this paragraph and query Pinecone for similar chunks
+      const embedding = await generateEmbedding(paragraphText);
+      const similarChunks = await queryVectors(embedding, organizationId, 5);
       
-      if (similarity >= ENFORCEMENT_THRESHOLDS.PARTIAL_SIMILARITY) {
-        supportingChunks.push({
-          chunkId: chunk.id,
-          documentId: chunk.documentId,
-          documentName: chunk.documentName,
-          similarity,
-          matchedSpan: this.findBestMatchingSpan(paragraphText, chunk.text)
-        });
+      // Map Pinecone results to chunk attributions
+      for (const result of similarChunks) {
+        const metadata = result.metadata as { 
+          content?: string; 
+          filename?: string; 
+          documentId?: string;
+          chunkId?: string;
+        };
+        const similarity = result.score || 0;
         
-        if (similarity > bestScore) {
-          bestScore = similarity;
+        if (similarity >= ENFORCEMENT_THRESHOLDS.PARTIAL_SIMILARITY) {
+          supportingChunks.push({
+            chunkId: metadata.chunkId || result.id,
+            documentId: metadata.documentId || '',
+            documentName: metadata.filename || 'Unknown',
+            similarity,
+            matchedSpan: this.extractMatchedSpan(metadata.content || '', paragraphText)
+          });
+          
+          if (similarity > bestScore) {
+            bestScore = similarity;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[CitationMapper] Embedding-based attribution failed, falling back to text similarity:', error);
+      // Fallback to text similarity if embedding fails
+      for (const chunk of chunks) {
+        const similarity = this.calculateTextSimilarity(paragraphText, chunk.text);
+        
+        if (similarity >= ENFORCEMENT_THRESHOLDS.PARTIAL_SIMILARITY) {
+          supportingChunks.push({
+            chunkId: chunk.id,
+            documentId: chunk.documentId,
+            documentName: chunk.documentName,
+            similarity,
+            matchedSpan: this.extractMatchedSpan(chunk.text, paragraphText)
+          });
+          
+          if (similarity > bestScore) {
+            bestScore = similarity;
+          }
         }
       }
     }
@@ -227,6 +280,30 @@ export class CitationMapper {
       status,
       flags
     };
+  }
+
+  /**
+   * Extract a relevant span from the chunk that matches the paragraph
+   */
+  private extractMatchedSpan(chunkText: string, paragraphText: string): string {
+    if (!chunkText) return '';
+    
+    // Find overlapping keywords to locate relevant section
+    const paraWords = paragraphText.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+    const chunkLower = chunkText.toLowerCase();
+    
+    // Find first matching significant word
+    for (const word of paraWords.slice(0, 10)) {
+      const idx = chunkLower.indexOf(word);
+      if (idx >= 0) {
+        const start = Math.max(0, idx - 30);
+        const end = Math.min(chunkText.length, idx + 120);
+        return (start > 0 ? '...' : '') + chunkText.slice(start, end).trim() + (end < chunkText.length ? '...' : '');
+      }
+    }
+    
+    // Return first 150 chars if no keyword match
+    return chunkText.slice(0, 150).trim() + (chunkText.length > 150 ? '...' : '');
   }
 
   /**
@@ -295,26 +372,6 @@ export class CitationMapper {
       .replace(/[^\w\s]/g, ' ')
       .split(/\s+/)
       .filter(w => w.length > 2); // Ignore very short words
-  }
-
-  /**
-   * Find the best matching span in the chunk for the paragraph
-   */
-  private findBestMatchingSpan(paragraph: string, chunkText: string): string {
-    const paraWords = paragraph.toLowerCase().split(/\s+/).slice(0, 5);
-    const searchPhrase = paraWords.join(' ');
-    
-    const chunkLower = chunkText.toLowerCase();
-    const idx = chunkLower.indexOf(searchPhrase.slice(0, 20));
-    
-    if (idx >= 0) {
-      const start = Math.max(0, idx - 20);
-      const end = Math.min(chunkText.length, idx + 100);
-      return chunkText.slice(start, end) + '...';
-    }
-    
-    // Return first 100 chars if no match found
-    return chunkText.slice(0, 100) + '...';
   }
 
   /**
