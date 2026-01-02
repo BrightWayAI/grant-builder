@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/primitives/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/primitives/card";
 import { Badge } from "@/components/primitives/badge";
 import { Button } from "@/components/primitives/button";
 import { Progress } from "@/components/primitives/progress";
@@ -27,7 +26,7 @@ interface CategoryScore {
   topChunks: {
     content: string;
     documentName: string;
-    documentType: string;
+    documentType?: string;
     similarity: number;
   }[];
   recommendation?: string;
@@ -56,7 +55,8 @@ function getConfidenceIcon(confidence: string) {
   }
 }
 
-function formatDocType(type: string): string {
+function formatDocType(type?: string): string {
+  if (!type) return "Doc";
   const labels: Record<string, string> = {
     PROPOSAL: "Proposal",
     ORG_OVERVIEW: "Org Overview",
