@@ -69,22 +69,22 @@ export function ProposalStatusSelect({
   if (compact) {
     return (
       <Select value={status} onValueChange={(v) => handleStatusChange(v as ProposalStatus)}>
-        <SelectTrigger className="w-[130px] h-8">
+        <SelectTrigger className="w-[140px] h-8">
           {isUpdating ? (
             <Loader2 className="h-3 w-3 animate-spin" />
           ) : (
             <SelectValue>
-              <Badge variant={config.variant} className="text-xs">
+              <Badge variant={config.variant} className="text-xs whitespace-nowrap">
                 {config.label}
               </Badge>
             </SelectValue>
           )}
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="min-w-[160px]">
           {Object.entries(STATUS_CONFIG).map(([key, value]) => (
             <SelectItem key={key} value={key}>
               <div className="flex items-center gap-2">
-                <Badge variant={value.variant} className="text-xs">
+                <Badge variant={value.variant} className="text-xs whitespace-nowrap">
                   {value.label}
                 </Badge>
               </div>

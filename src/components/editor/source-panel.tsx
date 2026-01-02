@@ -101,8 +101,8 @@ export function SourcePanel({
             <Badge 
               variant="outline"
               className={cn(
-                coverageScore >= 80 ? "bg-green-50 text-green-700 border-green-200" :
-                coverageScore >= 50 ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
+                coverageScore >= 60 ? "bg-green-50 text-green-700 border-green-200" :
+                coverageScore >= 40 ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
                 "bg-red-50 text-red-700 border-red-200"
               )}
             >

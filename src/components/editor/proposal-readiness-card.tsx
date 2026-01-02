@@ -101,20 +101,20 @@ export function ProposalReadinessCard({
   }
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-600";
-    if (score >= 60) return "text-yellow-600";
+    if (score >= 60) return "text-green-600";
+    if (score >= 40) return "text-yellow-600";
     return "text-red-600";
   };
 
   const getScoreBg = (score: number) => {
-    if (score >= 80) return "bg-green-100";
-    if (score >= 60) return "bg-yellow-100";
+    if (score >= 60) return "bg-green-100";
+    if (score >= 40) return "bg-yellow-100";
     return "bg-red-100";
   };
 
   const getProgressColor = (score: number) => {
-    if (score >= 80) return "bg-green-500";
-    if (score >= 60) return "bg-yellow-500";
+    if (score >= 60) return "bg-green-500";
+    if (score >= 40) return "bg-yellow-500";
     return "bg-red-500";
   };
 
@@ -136,9 +136,9 @@ export function ProposalReadinessCard({
             <div>
               <h3 className="font-semibold text-sm">Proposal Readiness</h3>
               <p className="text-xs text-muted-foreground">
-                {readiness.overallScore >= 80
+                {readiness.overallScore >= 60
                   ? "Ready for export"
-                  : readiness.overallScore >= 60
+                  : readiness.overallScore >= 40
                   ? "Needs attention"
                   : "Not ready"}
               </p>

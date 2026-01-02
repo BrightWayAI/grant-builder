@@ -204,7 +204,7 @@ export function EnforcementPanel({ proposalId, onSectionClick }: EnforcementPane
             {getConfidenceIcon(status.overallConfidence)}
             <div className="flex-1">
               <div className="font-semibold">{status.overallScore}%</div>
-              <div className="text-xs opacity-80">{status.overallConfidence} Confidence</div>
+              <div className="text-xs opacity-80">{getConfidenceLabel(status.overallConfidence)} Match</div>
             </div>
           </div>
         </div>
