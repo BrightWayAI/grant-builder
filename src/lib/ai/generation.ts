@@ -269,10 +269,10 @@ ${voiceProfile ? '8. IMPORTANT: Use the preferred terms and tone from the voice 
 
 FORMATTING RULES (use HTML tags):
 - Wrap each paragraph in <p>...</p> tags
-- Use <strong>...</strong> for important terms or emphasis
-- Use <h3>...</h3> for subheadings within the section (NOT for the main section title)
-- Use <ul><li>...</li></ul> for bullet lists
-- Use <ol><li>...</li></ol> for numbered lists
+- Use <strong>...</strong> for important terms or key phrases (sparingly)
+- Use <ul><li>...</li></ul> for bullet lists when appropriate
+- Use <ol><li>...</li></ol> for numbered lists when appropriate
+- Do NOT add subheadings within sections - write flowing paragraphs
 - Do NOT use markdown (**, *, #) - only HTML tags
 - Keep formatting clean and professional
 
