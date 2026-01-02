@@ -58,10 +58,10 @@ export interface ComplianceStatus {
 
 function getConfidenceLevel(coverageScore: number | null): ComplianceStatus['overallConfidence'] {
   if (coverageScore === null) return 'UNKNOWN';
-  if (coverageScore >= 80) return 'HIGH';
-  if (coverageScore >= 50) return 'MEDIUM';
-  if (coverageScore >= 30) return 'LOW';
-  return 'CRITICAL';
+  if (coverageScore >= 60) return 'HIGH';      // 60%+ = well-grounded in KB
+  if (coverageScore >= 40) return 'MEDIUM';    // 40-59% = partially grounded
+  if (coverageScore >= 25) return 'LOW';       // 25-39% = weakly grounded
+  return 'CRITICAL';                            // <25% = needs KB content
 }
 
 function countPlaceholders(content: string): number {

@@ -36,6 +36,32 @@ interface EnforcementPanelProps {
 // Polling interval for compliance updates (20 seconds)
 const POLL_INTERVAL = 20000;
 
+// User-friendly confidence labels and tooltips
+function getConfidenceLabel(level: string): string {
+  switch (level) {
+    case "HIGH": return "Strong";
+    case "MEDIUM": return "Moderate";
+    case "LOW": return "Weak";
+    case "CRITICAL": return "Very Weak";
+    default: return "Unknown";
+  }
+}
+
+function getConfidenceTooltip(level: string): string {
+  switch (level) {
+    case "HIGH": 
+      return "Strong match (60%+): This content closely matches your uploaded documents.";
+    case "MEDIUM": 
+      return "Moderate match (40-59%): Some content matches your documents, but portions may need verification.";
+    case "LOW": 
+      return "Weak match (25-39%): Limited connection to your uploaded documents. Consider adding more source materials.";
+    case "CRITICAL": 
+      return "Very weak match (<25%): Most content is not supported by your documents. Upload relevant documents to improve.";
+    default: 
+      return "Source matching has not been calculated yet.";
+  }
+}
+
 export function EnforcementPanel({ proposalId, onSectionClick }: EnforcementPanelProps) {
   const [status, setStatus] = useState<ComplianceStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -356,16 +382,19 @@ function SectionStatusItem({
         
         {/* Coverage Badge */}
         {section.coverageScore !== null && (
-          <span className={cn(
-            "text-xs px-1.5 py-0.5 rounded font-medium",
-            section.coverageScore >= 80
-              ? "bg-green-100 text-green-700"
-              : section.coverageScore >= 50
-              ? "bg-yellow-100 text-yellow-700"
-              : section.coverageScore >= 30
-              ? "bg-orange-100 text-orange-700"
-              : "bg-red-100 text-red-700"
-          )}>
+          <span 
+            className={cn(
+              "text-xs px-1.5 py-0.5 rounded font-medium cursor-help",
+              section.coverageScore >= 60
+                ? "bg-green-100 text-green-700"
+                : section.coverageScore >= 40
+                ? "bg-yellow-100 text-yellow-700"
+                : section.coverageScore >= 25
+                ? "bg-orange-100 text-orange-700"
+                : "bg-red-100 text-red-700"
+            )}
+            title={`${section.coverageScore}% of this section matches your uploaded documents`}
+          >
             {section.coverageScore}%
           </span>
         )}
@@ -404,8 +433,11 @@ function SectionStatusItem({
                 )}
               </div>
             </div>
-            <div className="bg-background rounded p-1.5">
-              <div className="text-muted-foreground">Confidence</div>
+            <div 
+              className="bg-background rounded p-1.5 cursor-help"
+              title={getConfidenceTooltip(section.confidenceLevel)}
+            >
+              <div className="text-muted-foreground">Source Match</div>
               <div className={cn(
                 "font-medium",
                 section.confidenceLevel === "HIGH" && "text-green-600",
@@ -413,7 +445,7 @@ function SectionStatusItem({
                 section.confidenceLevel === "LOW" && "text-orange-600",
                 section.confidenceLevel === "CRITICAL" && "text-red-600"
               )}>
-                {section.confidenceLevel}
+                {getConfidenceLabel(section.confidenceLevel)}
               </div>
             </div>
           </div>
