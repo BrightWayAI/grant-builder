@@ -1,6 +1,13 @@
 import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 import { DocumentType } from "@prisma/client";
+import { 
+  TextractClient, 
+  StartDocumentTextDetectionCommand,
+  GetDocumentTextDetectionCommand,
+} from "@aws-sdk/client-textract";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { v4 as uuidv4 } from "uuid";
 
 export interface ProcessedDocument {
   text: string;
@@ -38,15 +45,176 @@ const KEY_TERMS = [
   "evidence-based", "best practices", "theory of change",
 ];
 
+// Initialize AWS clients (lazy)
+let textractClient: TextractClient | null = null;
+let s3Client: S3Client | null = null;
+
+function getTextractClient(): TextractClient {
+  if (!textractClient) {
+    textractClient = new TextractClient({
+      region: process.env.AWS_REGION || "us-east-1",
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+      },
+    });
+  }
+  return textractClient;
+}
+
+function getS3Client(): S3Client {
+  if (!s3Client) {
+    s3Client = new S3Client({
+      region: process.env.AWS_REGION || "us-east-1",
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+      },
+    });
+  }
+  return s3Client;
+}
+
+/**
+ * Extract text from PDF using AWS Textract (OCR)
+ * Uses async API with S3 for multi-page document support
+ */
+async function extractWithTextract(buffer: Buffer): Promise<string> {
+  const bucket = process.env.AWS_S3_BUCKET;
+  if (!bucket) {
+    throw new Error("AWS_S3_BUCKET not configured for OCR");
+  }
+
+  const textract = getTextractClient();
+  const s3 = getS3Client();
+  const tempKey = `temp-ocr/${uuidv4()}.pdf`;
+
+  try {
+    // Upload PDF to S3 temporarily
+    await s3.send(new PutObjectCommand({
+      Bucket: bucket,
+      Key: tempKey,
+      Body: buffer,
+      ContentType: "application/pdf",
+    }));
+
+    // Start async text detection
+    const startResponse = await textract.send(new StartDocumentTextDetectionCommand({
+      DocumentLocation: {
+        S3Object: {
+          Bucket: bucket,
+          Name: tempKey,
+        },
+      },
+    }));
+
+    const jobId = startResponse.JobId;
+    if (!jobId) {
+      throw new Error("Failed to start Textract job");
+    }
+
+    // Poll for completion (max 60 seconds)
+    let status = "IN_PROGRESS";
+    let attempts = 0;
+    const maxAttempts = 30;
+    let allBlocks: { BlockType?: string; Text?: string }[] = [];
+
+    while (status === "IN_PROGRESS" && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      attempts++;
+
+      const getResponse = await textract.send(new GetDocumentTextDetectionCommand({
+        JobId: jobId,
+      }));
+
+      status = getResponse.JobStatus || "FAILED";
+
+      if (status === "SUCCEEDED") {
+        // Collect blocks from first response
+        if (getResponse.Blocks) {
+          allBlocks.push(...getResponse.Blocks);
+        }
+
+        // Handle pagination
+        let nextToken = getResponse.NextToken;
+        while (nextToken) {
+          const pageResponse = await textract.send(new GetDocumentTextDetectionCommand({
+            JobId: jobId,
+            NextToken: nextToken,
+          }));
+          if (pageResponse.Blocks) {
+            allBlocks.push(...pageResponse.Blocks);
+          }
+          nextToken = pageResponse.NextToken;
+        }
+      }
+    }
+
+    if (status !== "SUCCEEDED") {
+      throw new Error(`Textract job ${status === "IN_PROGRESS" ? "timed out" : "failed"}`);
+    }
+
+    // Extract text from LINE blocks
+    const lines = allBlocks
+      .filter(block => block.BlockType === "LINE")
+      .map(block => block.Text || "")
+      .filter(text => text.length > 0);
+
+    return lines.join("\n");
+  } finally {
+    // Clean up temp file
+    try {
+      await s3.send(new DeleteObjectCommand({
+        Bucket: bucket,
+        Key: tempKey,
+      }));
+    } catch (cleanupError) {
+      console.warn("Failed to delete temp OCR file:", cleanupError);
+    }
+  }
+}
+
 /**
  * Extract text from PDF with metadata
+ * Falls back to AWS Textract OCR for scanned documents
  */
-export async function extractFromPDF(buffer: Buffer): Promise<{ text: string; pageCount: number }> {
+export async function extractFromPDF(buffer: Buffer): Promise<{ text: string; pageCount: number; usedOCR: boolean }> {
   const data = await pdfParse(buffer);
-  return {
-    text: data.text,
-    pageCount: data.numpages,
-  };
+  
+  // Check if we got sufficient text (at least 50 chars of actual content)
+  const textContent = data.text?.trim() || "";
+  const hasExtractableText = textContent.length >= 50;
+  
+  if (hasExtractableText) {
+    return {
+      text: data.text,
+      pageCount: data.numpages,
+      usedOCR: false,
+    };
+  }
+
+  // Fall back to Textract OCR for scanned PDFs
+  console.log("PDF has no extractable text, using AWS Textract OCR...");
+  
+  try {
+    const ocrText = await extractWithTextract(buffer);
+    
+    if (ocrText.length < 50) {
+      throw new Error("OCR could not extract sufficient text from document");
+    }
+    
+    return {
+      text: ocrText,
+      pageCount: data.numpages,
+      usedOCR: true,
+    };
+  } catch (error) {
+    console.error("Textract OCR failed:", error);
+    throw new Error(
+      "Document contains no extractable text and OCR failed. " +
+      "Please ensure the PDF contains readable text or try a different format."
+    );
+  }
 }
 
 /**
