@@ -111,11 +111,11 @@ export interface SemanticKBScore {
   lastUpdated: Date | null;
 }
 
-// Thresholds for confidence levels
+// Thresholds for confidence levels (based on normalized 0-100 scores)
 const CONFIDENCE_THRESHOLDS = {
-  high: 0.75,
-  medium: 0.55,
-  low: 0.35,
+  high: 70,
+  medium: 50,
+  low: 30,
 };
 
 function getConfidence(score: number): "high" | "medium" | "low" | "none" {
@@ -123,6 +123,20 @@ function getConfidence(score: number): "high" | "medium" | "low" | "none" {
   if (score >= CONFIDENCE_THRESHOLDS.medium) return "medium";
   if (score >= CONFIDENCE_THRESHOLDS.low) return "low";
   return "none";
+}
+
+// Normalize raw embedding similarity scores to a more intuitive 0-100 range
+// Raw cosine similarity typically ranges 0.30-0.85 for relevant content
+// This maps: 0.30 → 0%, 0.50 → 50%, 0.75+ → 100%
+function normalizeScore(rawScore: number): number {
+  const MIN_SCORE = 0.30; // Below this = no real match
+  const MAX_SCORE = 0.75; // Above this = excellent match
+  
+  if (rawScore <= MIN_SCORE) return 0;
+  if (rawScore >= MAX_SCORE) return 100;
+  
+  // Linear interpolation between min and max
+  return Math.round(((rawScore - MIN_SCORE) / (MAX_SCORE - MIN_SCORE)) * 100);
 }
 
 function generateRecommendation(category: typeof GRANT_QUESTION_CATEGORIES[0], score: number): string | undefined {
@@ -198,7 +212,7 @@ export async function getSemanticKBScore(organizationId: string): Promise<Semant
               content: metadata.content?.slice(0, 200) + "...",
               documentName: metadata.filename || "Unknown",
               documentType: metadata.documentType || "OTHER",
-              similarity: match.score || 0,
+              similarity: normalizeScore(match.score || 0) / 100, // Store as 0-1 for display consistency
             });
           }
         } else {
@@ -210,10 +224,11 @@ export async function getSemanticKBScore(organizationId: string): Promise<Semant
       }
     }
     
-    // Average score for this category (normalized to 0-100)
-    const avgScore = questionScores.length > 0
-      ? (questionScores.reduce((a, b) => a + b, 0) / questionScores.length) * 100
+    // Average raw score for this category, then normalize to intuitive 0-100
+    const avgRawScore = questionScores.length > 0
+      ? questionScores.reduce((a, b) => a + b, 0) / questionScores.length
       : 0;
+    const avgScore = normalizeScore(avgRawScore);
     
     // Deduplicate and sort chunks
     const uniqueChunks = allChunks
@@ -317,8 +332,8 @@ export async function getRFPSpecificReadiness(
           id: `req-${i}`,
           text: req,
           category: categorizeRequirement(req),
-          score: Math.round((results[0].score || 0) * 100),
-          confidence: getConfidence(results[0].score || 0),
+          score: normalizeScore(results[0].score || 0),
+          confidence: getConfidence(normalizeScore(results[0].score || 0)),
           matchedContent: metadata.content?.slice(0, 150) + "...",
           documentName: metadata.filename,
         });
