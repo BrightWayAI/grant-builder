@@ -36,6 +36,20 @@ function getRiskLevel(type: string): "HIGH" | "MEDIUM" | "LOW" {
   return "LOW";
 }
 
+// Strip HTML tags and decode entities for clean text extraction
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function extractClaims(text: string): Omit<ExtractedClaim, "status" | "evidence">[] {
   const claims: Omit<ExtractedClaim, "status" | "evidence">[] = [];
   let claimIndex = 0;
@@ -143,9 +157,10 @@ export async function GET(
     }
 
     const content = section.content || "";
+    const cleanContent = stripHtml(content);
     
-    // Extract claims
-    const extractedClaims = extractClaims(content);
+    // Extract claims from clean text (no HTML)
+    const extractedClaims = extractClaims(cleanContent);
     
     // Verify each claim against KB
     const verifiedClaims = await Promise.all(

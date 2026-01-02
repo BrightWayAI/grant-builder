@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   RefreshCw,
   Mic,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ComplianceStatus, ComplianceIssue, SectionComplianceStatus } from "@/app/api/proposals/[id]/compliance/route";
@@ -194,8 +195,21 @@ export function EnforcementPanel({ proposalId, onSectionClick }: EnforcementPane
       <div className="p-4 space-y-4">
         {/* Overall Confidence Score (AC-4.3) */}
         <div className="space-y-2">
-          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Source Confidence
+            <div className="relative group">
+              <Info className="h-3.5 w-3.5 cursor-help" />
+              <div className="absolute left-0 top-full mt-1 w-64 p-3 bg-popover border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 text-xs font-normal normal-case tracking-normal">
+                <p className="font-medium mb-2">How source matching works:</p>
+                <ul className="space-y-1.5 text-muted-foreground">
+                  <li><span className="text-green-600 font-medium">Strong (60%+):</span> Content closely matches your uploaded documents</li>
+                  <li><span className="text-yellow-600 font-medium">Moderate (40-59%):</span> Some content matches, but portions may need verification</li>
+                  <li><span className="text-orange-600 font-medium">Weak (25-39%):</span> Limited connection to your documents</li>
+                  <li><span className="text-red-600 font-medium">Very Weak (&lt;25%):</span> Most content not supported by your documents</li>
+                </ul>
+                <p className="mt-2 text-muted-foreground">Upload more relevant documents to improve this score.</p>
+              </div>
+            </div>
           </div>
           <div className={cn(
             "flex items-center gap-2 p-3 rounded-lg",
