@@ -16,10 +16,15 @@ import { ParsedRFP, RFPSection, getDefaultSections } from "@/lib/ai/rfp-parser";
 
 type Step = "upload" | "requirements" | "generating";
 
+// Extended type to include rfpText from API response
+interface ParsedRFPWithText extends ParsedRFP {
+  rfpText?: string;
+}
+
 export default function NewProposalPage() {
   const [step, setStep] = useState<Step>("upload");
   const [title, setTitle] = useState("");
-  const [parsedRFP, setParsedRFP] = useState<ParsedRFP | null>(null);
+  const [parsedRFP, setParsedRFP] = useState<ParsedRFPWithText | null>(null);
   const [sections, setSections] = useState<RFPSection[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -66,6 +71,7 @@ export default function NewProposalPage() {
           eligibility: parsedRFP?.eligibility || [],
           attachments: parsedRFP?.attachments || [],
           submissionInstructions: parsedRFP?.submissionInstructions,
+          rfpText: parsedRFP?.rfpText,
           sections,
         }),
       });
