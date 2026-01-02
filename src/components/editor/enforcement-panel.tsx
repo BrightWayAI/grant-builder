@@ -197,11 +197,20 @@ export function EnforcementPanel({ proposalId, onSectionClick }: EnforcementPane
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Source Confidence
-            <span 
-              title={"Source Matching Guide:\n\n• Strong (60%+): Content closely matches your uploaded documents\n• Moderate (40-59%): Some content matches, but portions may need verification\n• Weak (25-39%): Limited connection to your documents\n• Very Weak (<25%): Most content not supported by your documents\n\nUpload more relevant documents to improve this score."}
-            >
+            <div className="relative group/tooltip">
               <Info className="h-3.5 w-3.5 cursor-help" />
-            </span>
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-[9999] pointer-events-none">
+                <div className="font-medium mb-2">Source Matching Guide:</div>
+                <ul className="space-y-1">
+                  <li><span className="text-green-400">Strong (60%+):</span> Closely matches your documents</li>
+                  <li><span className="text-yellow-400">Moderate (40-59%):</span> Some content matches</li>
+                  <li><span className="text-orange-400">Weak (25-39%):</span> Limited connection</li>
+                  <li><span className="text-red-400">Very Weak (&lt;25%):</span> Not supported</li>
+                </ul>
+                <div className="mt-2 text-gray-300 text-[10px]">Upload more documents to improve.</div>
+                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+              </div>
+            </div>
           </div>
           <div className={cn(
             "flex items-center gap-2 p-3 rounded-lg",
