@@ -159,23 +159,31 @@ export default async function DashboardPage() {
             <CardDescription>Your latest grant proposal drafts</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-2">
               {proposals.map((proposal) => (
                 <Link
                   key={proposal.id}
                   href={`/proposals/${proposal.id}/edit`}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors duration-normal"
+                  className="flex items-center justify-between p-3 rounded-lg border border-border hover:border-brand hover:bg-surface-hover transition-all cursor-pointer group"
                 >
-                  <div>
-                    <div className="font-medium text-text-primary">{proposal.title}</div>
-                    <div className="text-sm text-text-secondary">
-                      {proposal.funderName && `${proposal.funderName} • `}
-                      Last edited {formatDate(proposal.updatedAt)}
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-surface-muted flex items-center justify-center group-hover:bg-brand/10 transition-colors">
+                      <FileText className="h-4 w-4 text-text-tertiary group-hover:text-brand transition-colors" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-text-primary group-hover:text-brand transition-colors">{proposal.title}</div>
+                      <div className="text-sm text-text-secondary">
+                        {proposal.funderName && `${proposal.funderName} • `}
+                        Last edited {formatDate(proposal.updatedAt)}
+                      </div>
                     </div>
                   </div>
-                  <Badge variant={proposal.status === "DRAFT" ? "default" : "success"}>
-                    {proposal.status.toLowerCase()}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={proposal.status === "DRAFT" ? "default" : "success"}>
+                      {proposal.status.toLowerCase()}
+                    </Badge>
+                    <ArrowRight className="h-4 w-4 text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </Link>
               ))}
             </div>
