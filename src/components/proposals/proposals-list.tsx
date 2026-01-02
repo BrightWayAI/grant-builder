@@ -15,7 +15,7 @@ import {
 import { Progress } from "@/components/primitives/progress";
 import { ProposalStatusSelect } from "./proposal-status-select";
 import { DeadlineBadge } from "./deadline-badge";
-import { FileText, DollarSign, Search, SortAsc, Filter, CheckCircle2, Circle } from "lucide-react";
+import { FileText, DollarSign, Search, SortAsc, Filter } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 type ProposalStatus = "DRAFT" | "IN_PROGRESS" | "SUBMITTED" | "WON" | "LOST" | "ARCHIVED";
@@ -181,65 +181,54 @@ export function ProposalsList({ initialProposals }: ProposalsListProps) {
           const completedSections = proposal.sections.filter(s => countWords(s.content) > 50).length;
 
           return (
-            <Card key={proposal.id} variant="interactive" className="group">
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-4">
-                  <Link href={`/proposals/${proposal.id}/edit`} className="flex-1 min-w-0">
-                    <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                      {proposal.title}
-                    </CardTitle>
-                    <CardDescription className="truncate">
-                      {proposal.funderName && `${proposal.funderName}`}
-                      {proposal.programTitle && ` - ${proposal.programTitle}`}
-                    </CardDescription>
-                  </Link>
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <ProposalStatusSelect
-                      proposalId={proposal.id}
-                      currentStatus={proposal.status}
-                      onStatusChange={(status) => handleStatusChange(proposal.id, status)}
-                      compact
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-6 text-sm text-text-secondary">
-                  {/* Deadline with urgency */}
-                  {proposal.deadline && (
-                    <DeadlineBadge deadline={proposal.deadline} />
-                  )}
-
-                  {/* Funding amount */}
-                  {(proposal.fundingAmountMin || proposal.fundingAmountMax) && (
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-4 w-4" />
-                      <span>
-                        {proposal.fundingAmountMax
-                          ? `Up to $${proposal.fundingAmountMax.toLocaleString()}`
-                          : `$${proposal.fundingAmountMin?.toLocaleString()}`}
-                      </span>
+            <Link key={proposal.id} href={`/proposals/${proposal.id}/edit`}>
+              <Card variant="interactive">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg">{proposal.title}</CardTitle>
+                      <CardDescription className="truncate">
+                        {proposal.funderName && `${proposal.funderName}`}
+                        {proposal.programTitle && ` - ${proposal.programTitle}`}
+                      </CardDescription>
                     </div>
-                  )}
-
-                  {/* Section completion */}
-                  <div className="flex items-center gap-2">
-                    {completionPercent === 100 ? (
-                      <CheckCircle2 className="h-4 w-4 text-status-success" />
-                    ) : (
-                      <Circle className="h-4 w-4 text-text-tertiary" />
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <ProposalStatusSelect
+                        proposalId={proposal.id}
+                        currentStatus={proposal.status}
+                        onStatusChange={(status) => handleStatusChange(proposal.id, status)}
+                        compact
+                      />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4 text-sm text-text-secondary">
+                    {proposal.deadline && (
+                      <DeadlineBadge deadline={proposal.deadline} />
                     )}
-                    <span>{completedSections}/{proposal.sections.length} sections</span>
-                    <Progress value={completionPercent} className="h-1.5 w-16" />
+                    {(proposal.fundingAmountMin || proposal.fundingAmountMax) && (
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="h-4 w-4" />
+                        <span>
+                          {proposal.fundingAmountMax
+                            ? `$${proposal.fundingAmountMax.toLocaleString()}`
+                            : `$${proposal.fundingAmountMin?.toLocaleString()}`}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <span>{completedSections}/{proposal.sections.length} sections</span>
+                      <Progress value={completionPercent} className="h-1.5 w-12" />
+                    </div>
+                    <span className="ml-auto text-text-tertiary">
+                      {formatDate(proposal.updatedAt)}
+                    </span>
                   </div>
-
-                  {/* Last updated */}
-                  <div className="ml-auto text-text-tertiary">
-                    Updated {formatDate(proposal.updatedAt)}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           );
         })}
 
