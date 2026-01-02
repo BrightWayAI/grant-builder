@@ -605,28 +605,27 @@ export function KnowledgeBaseManager({
                         </div>
                       </div>
 
-                      {/* Add RFP button for proposals */}
+                      {/* Add RFP drop zone for proposals */}
                       {isProposalCategory && 
                        fileWithMeta.status === "pending" && 
                        !fileWithMeta.isRfp && (
-                        <div className="mt-3 pt-3 border-t border-border">
-                          <p className="text-xs text-text-tertiary mb-2">
-                            Have the RFP/grant announcement for this proposal?
-                          </p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              toast({
-                                title: "Add RFP",
-                                description: "Drop the RFP file above - it will be linked to this proposal",
-                              });
-                            }}
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Add Matching RFP
-                          </Button>
-                        </div>
+                        <RFPDropZone 
+                          onRFPAdded={(rfpFile) => {
+                            const newRfpFile: FileWithMeta = {
+                              file: rfpFile,
+                              documentType: "PROPOSAL",
+                              isRfp: true,
+                              funderType: fileWithMeta.funderType,
+                              status: "pending",
+                              progress: 0,
+                            };
+                            setFiles((prev) => [...prev, newRfpFile]);
+                            toast({
+                              title: "RFP added",
+                              description: "The RFP will be uploaded with your proposal",
+                            });
+                          }}
+                        />
                       )}
                     </div>
                   );
@@ -658,6 +657,64 @@ export function KnowledgeBaseManager({
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+
+// Mini drop zone for adding an RFP to a proposal
+function RFPDropZone({ onRFPAdded }: { onRFPAdded: (file: File) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file && (file.type === "application/pdf" || 
+        file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        file.type === "text/plain")) {
+      onRFPAdded(file);
+    }
+  }, [onRFPAdded]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onRFPAdded(file);
+    }
+  };
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border">
+      <p className="text-xs text-text-tertiary mb-2">
+        Have the RFP/grant announcement for this proposal?
+      </p>
+      <div
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
+        onClick={() => inputRef.current?.click()}
+        className={cn(
+          "border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors",
+          isDragging 
+            ? "border-brand bg-brand-light" 
+            : "border-border hover:border-text-tertiary"
+        )}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".pdf,.docx,.txt"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+        <div className="flex items-center justify-center gap-2 text-sm">
+          <Plus className="h-4 w-4 text-text-tertiary" />
+          <span className={isDragging ? "text-brand" : "text-text-secondary"}>
+            {isDragging ? "Drop RFP here" : "Drop RFP or click to select"}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

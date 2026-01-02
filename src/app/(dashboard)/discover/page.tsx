@@ -23,7 +23,9 @@ import {
   Sparkles,
   Filter,
   X,
+  FileText,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { formatDate } from "@/lib/utils";
 
 interface Grant {
@@ -120,6 +122,7 @@ export default function DiscoverPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(true);
+  const [startingProposal, setStartingProposal] = useState<string | null>(null);
   
   // Filter state
   const [selectedOrgType, setSelectedOrgType] = useState<string>("");
@@ -127,6 +130,7 @@ export default function DiscoverPage() {
   const [orgProfile, setOrgProfile] = useState<OrgProfile | null>(null);
   
   const { toast } = useToast();
+  const router = useRouter();
 
   // Load org profile on mount
   useEffect(() => {
