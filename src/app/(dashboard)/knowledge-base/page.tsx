@@ -9,21 +9,53 @@ import { Badge } from "@/components/primitives/badge";
 import { formatFileSize } from "@/lib/utils";
 import { DOCUMENT_CATEGORIES } from "@/lib/document-categories";
 import { Circle } from "lucide-react";
-import { DocumentType } from "@prisma/client";
+import { DocumentType, SubscriptionStatus } from "@prisma/client";
+import { PLAN_LIMITS } from "@/lib/subscription";
+
+function getStorageLimitMB(status: SubscriptionStatus): number {
+  switch (status) {
+    case "BETA": return PLAN_LIMITS.beta.maxStorageMB;
+    case "TRIAL": return PLAN_LIMITS.trial.maxStorageMB;
+    case "ACTIVE": return PLAN_LIMITS.individual.maxStorageMB; // Default to individual, could be enhanced
+    default: return PLAN_LIMITS.trial.maxStorageMB;
+  }
+}
+
+const DOC_TYPE_LABELS: Record<DocumentType, string> = {
+  PROPOSAL: "Proposals",
+  ORG_OVERVIEW: "Org Overview",
+  PROGRAM_DESCRIPTION: "Programs",
+  IMPACT_REPORT: "Impact",
+  EVALUATION_REPORT: "Evaluations",
+  LOGIC_MODEL: "Logic Model",
+  AUDITED_FINANCIALS: "Financials",
+  FORM_990: "990s",
+  ANNUAL_REPORT: "Annual Reports",
+  STAFF_BIOS: "Staff Bios",
+  BOARD_BIOS: "Board Bios",
+  BOILERPLATE: "Boilerplate",
+  OTHER: "Other",
+};
 
 export default async function KnowledgeBasePage() {
   const user = await getCurrentUser();
   if (!user?.organizationId) return null;
 
-  const documents = await prisma.document.findMany({
-    where: { organizationId: user.organizationId },
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: {
-        select: { chunks: true },
+  const [documents, organization] = await Promise.all([
+    prisma.document.findMany({
+      where: { organizationId: user.organizationId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: {
+          select: { chunks: true },
+        },
       },
-    },
-  });
+    }),
+    prisma.organization.findUnique({
+      where: { id: user.organizationId },
+      select: { subscriptionStatus: true },
+    }),
+  ]);
 
   const docsWithChunks = documents.map((doc) => ({
     ...doc,
@@ -31,7 +63,14 @@ export default async function KnowledgeBasePage() {
   }));
 
   const totalSize = documents.reduce((sum, doc) => sum + doc.fileSize, 0);
+  const storageLimitMB = getStorageLimitMB(organization?.subscriptionStatus || "TRIAL");
   const lastUpload = documents.length ? documents[0].createdAt : null;
+  
+  // Count documents by type
+  const docTypeCounts: Partial<Record<DocumentType, number>> = {};
+  documents.forEach((doc) => {
+    docTypeCounts[doc.documentType] = (docTypeCounts[doc.documentType] || 0) + 1;
+  });
 
   const stats = {
     total: documents.length,
@@ -91,6 +130,22 @@ export default async function KnowledgeBasePage() {
               </div>
             </div>
             
+            {/* Document type breakdown */}
+            {Object.keys(docTypeCounts).length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {Object.entries(docTypeCounts)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([type, count]) => (
+                    <span 
+                      key={type}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-surface-secondary text-text-secondary"
+                    >
+                      {count} {DOC_TYPE_LABELS[type as DocumentType]}
+                    </span>
+                  ))}
+              </div>
+            )}
+            
             {/* Missing high-value types */}
             {HIGH_VALUE_GROUPS.filter((_, idx) => !highValueProgressStates[idx]).length > 0 && (
               <div className="space-y-2">
@@ -111,7 +166,7 @@ export default async function KnowledgeBasePage() {
             
             {/* Storage & last upload */}
             <div className="flex items-center justify-between text-xs text-text-tertiary pt-2 border-t">
-              <span>{formatFileSize(totalSize)} used</span>
+              <span>{formatFileSize(totalSize)} of {storageLimitMB >= 1024 ? `${(storageLimitMB / 1024).toFixed(0)} GB` : `${storageLimitMB} MB`}</span>
               {lastUpload && (
                 <span>Last upload: {new Date(lastUpload).toLocaleDateString()}</span>
               )}
