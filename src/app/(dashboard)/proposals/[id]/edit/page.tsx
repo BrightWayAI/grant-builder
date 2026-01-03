@@ -629,7 +629,7 @@ export default function ProposalEditPage() {
 
             {/* Sources Traceability Panel */}
             {showSources && currentSection && (
-              <div className="fixed inset-y-0 right-0 w-96 z-40 shadow-xl">
+              <div className="fixed inset-y-0 right-0 w-96 z-50 shadow-xl bg-background">
                 <SourcesTraceabilityPanel
                   sectionId={currentSection.id}
                   sectionName={currentSection.sectionName}
