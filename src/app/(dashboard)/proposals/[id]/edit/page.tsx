@@ -574,9 +574,28 @@ export default function ProposalEditPage() {
               )}
             </div>
 
-            {/* Right Sidebar - Enforcement & Checklist */}
+            {/* Right Sidebar - Checklist & Enforcement */}
             {(showEnforcement || showChecklist) && (
               <div className="space-y-4">
+                {showChecklist && (
+                  <Card>
+                    <CardHeader className="py-3 px-4 border-b bg-muted/30">
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <ClipboardList className="h-4 w-4" />
+                        RFP Checklist
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 max-h-[400px] overflow-y-auto">
+                      <ChecklistPanel
+                        proposalId={proposal.id}
+                        sections={proposal.sections.map(s => ({ id: s.id, name: s.sectionName }))}
+                        onSectionClick={(sectionId) => setActiveSection(sectionId)}
+                        onMappingChange={() => setComplianceRefreshKey(k => k + 1)}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+                
                 {showEnforcement && (
                   <Card className="overflow-hidden">
                     <CardHeader className="py-3 px-4 border-b bg-muted/30">
@@ -594,25 +613,6 @@ export default function ProposalEditPage() {
                         onSectionClick={(sectionId) => setActiveSection(sectionId)}
                       />
                     </div>
-                  </Card>
-                )}
-                
-                {showChecklist && (
-                  <Card>
-                    <CardHeader className="py-3 px-4 border-b bg-muted/30">
-                      <CardTitle className="text-sm font-medium flex items-center gap-2">
-                        <ClipboardList className="h-4 w-4" />
-                        RFP Checklist
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 max-h-[400px] overflow-y-auto">
-                      <ChecklistPanel
-                        proposalId={proposal.id}
-                        sections={proposal.sections.map(s => ({ id: s.id, name: s.sectionName }))}
-                        onSectionClick={(sectionId) => setActiveSection(sectionId)}
-                        onMappingChange={() => setComplianceRefreshKey(k => k + 1)}
-                      />
-                    </CardContent>
                   </Card>
                 )}
               </div>
