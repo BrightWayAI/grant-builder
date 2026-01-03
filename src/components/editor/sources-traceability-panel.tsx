@@ -363,9 +363,9 @@ export function SourcesTraceabilityPanel({
                   return (
                     <div key={index} className={cn("p-3", item.status === "ungrounded" && "bg-red-50/50")}>
                       {/* Paragraph text with status indicator */}
-                      <div className="flex items-start gap-2 mb-2">
-                        <StatusIcon className={cn("h-4 w-4 mt-0.5 flex-shrink-0", config.color)} />
-                        <p className="text-sm flex-1">{item.text}</p>
+                      <div className="flex items-start gap-2 mb-1.5">
+                        <StatusIcon className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0", config.color)} />
+                        <p className="text-xs flex-1 leading-relaxed">{item.text}</p>
                       </div>
                       
                       {/* Sources as compact inline chips */}
@@ -440,20 +440,20 @@ export function SourcesTraceabilityPanel({
                     >
                       <button
                         onClick={() => toggleClaimExpanded(claim.id)}
-                        className="w-full p-3 text-left hover:bg-muted/50 transition-colors"
+                        className="w-full p-2.5 text-left hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex items-start gap-2">
-                          <StatusIcon className={cn("h-4 w-4 mt-0.5 flex-shrink-0", config.color)} />
+                          <StatusIcon className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0", config.color)} />
                           <div className="flex-1 min-w-0">
                             {/* Show claim value as a highlighted chip within context */}
-                            <p className="text-sm">
+                            <p className="text-xs leading-relaxed">
                               <span className="text-muted-foreground">..."</span>
                               {claim.context.split(claim.value).map((part, i, arr) => (
                                 <span key={i}>
                                   {part}
                                   {i < arr.length - 1 && (
                                     <span className={cn(
-                                      "px-1.5 py-0.5 rounded font-semibold mx-0.5",
+                                      "px-1 py-0.5 rounded font-semibold mx-0.5 text-[11px]",
                                       claim.status === "VERIFIED" ? "bg-green-100 text-green-800" :
                                       claim.status === "PARTIAL" ? "bg-yellow-100 text-yellow-800" :
                                       "bg-red-100 text-red-800"
@@ -465,25 +465,32 @@ export function SourcesTraceabilityPanel({
                               ))}
                               <span className="text-muted-foreground">"...</span>
                             </p>
-                            <div className="flex items-center gap-2 mt-1.5">
-                              <Badge variant="outline" className={cn("text-[10px] py-0", config.bg, config.color)}>
+                            <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                              <span className={cn(
+                                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border",
+                                claim.status === "VERIFIED" 
+                                  ? "bg-green-50 border-green-200 text-green-700"
+                                  : claim.status === "PARTIAL"
+                                  ? "bg-yellow-50 border-yellow-200 text-yellow-700"
+                                  : "bg-red-50 border-red-200 text-red-700"
+                              )}>
                                 {config.label}
-                              </Badge>
-                              <Badge variant="outline" className="text-[10px] py-0">
-                                <Hash className="h-2.5 w-2.5 mr-0.5" />
+                              </span>
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] bg-gray-50 border border-gray-200 text-gray-600">
+                                <Hash className="h-2.5 w-2.5" />
                                 {getClaimTypeLabel(claim.type)}
-                              </Badge>
+                              </span>
                               {claim.riskLevel === "HIGH" && claim.status !== "VERIFIED" && (
-                                <Badge variant="outline" className="text-[10px] py-0 text-red-600 border-red-200">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-red-50 border border-red-200 text-red-600">
                                   High Risk
-                                </Badge>
+                                </span>
                               )}
                             </div>
                           </div>
                           {isExpanded ? (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                           ) : (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                           )}
                         </div>
                       </button>

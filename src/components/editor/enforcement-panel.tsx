@@ -199,16 +199,15 @@ export function EnforcementPanel({ proposalId, onSectionClick }: EnforcementPane
             Source Confidence
             <div className="relative group/tooltip">
               <Info className="h-3.5 w-3.5 cursor-help" />
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-[9999] pointer-events-none">
-                <div className="font-medium mb-2">Source Matching Guide:</div>
-                <ul className="space-y-1">
-                  <li><span className="text-green-400">Strong (60%+):</span> Closely matches your documents</li>
-                  <li><span className="text-yellow-400">Moderate (40-59%):</span> Some content matches</li>
-                  <li><span className="text-orange-400">Weak (25-39%):</span> Limited connection</li>
-                  <li><span className="text-red-400">Very Weak (&lt;25%):</span> Not supported</li>
+              <div className="absolute left-0 top-full mt-1.5 w-56 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-[9999] pointer-events-none">
+                <div className="font-medium mb-1.5">Source Matching:</div>
+                <ul className="space-y-0.5">
+                  <li><span className="text-green-400">Strong (60%+)</span> - Closely matches</li>
+                  <li><span className="text-yellow-400">Moderate (40-59%)</span> - Some matches</li>
+                  <li><span className="text-orange-400">Weak (25-39%)</span> - Limited</li>
+                  <li><span className="text-red-400">Very Weak (&lt;25%)</span> - Not supported</li>
                 </ul>
-                <div className="mt-2 text-gray-300 text-[10px]">Upload more documents to improve.</div>
-                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                <div className="absolute left-3 bottom-full w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900"></div>
               </div>
             </div>
           </div>
