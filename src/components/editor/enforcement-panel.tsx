@@ -197,18 +197,11 @@ export function EnforcementPanel({ proposalId, onSectionClick }: EnforcementPane
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Source Confidence
-            <div className="relative group/tooltip">
-              <Info className="h-3.5 w-3.5 cursor-help" />
-              <div className="absolute left-0 top-full mt-1.5 w-56 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-[9999] pointer-events-none">
-                <div className="font-medium mb-1.5">Source Matching:</div>
-                <ul className="space-y-0.5">
-                  <li><span className="text-green-400">Strong (60%+)</span> - Closely matches</li>
-                  <li><span className="text-yellow-400">Moderate (40-59%)</span> - Some matches</li>
-                  <li><span className="text-orange-400">Weak (25-39%)</span> - Limited</li>
-                  <li><span className="text-red-400">Very Weak (&lt;25%)</span> - Not supported</li>
-                </ul>
-                <div className="absolute left-3 bottom-full w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900"></div>
-              </div>
+            <div 
+              className="inline-flex cursor-help"
+              title="Source Matching:&#10;&#10;Strong (60%+) - Closely matches&#10;Moderate (40-59%) - Some matches&#10;Weak (25-39%) - Limited&#10;Very Weak (<25%) - Not supported"
+            >
+              <Info className="h-3.5 w-3.5" />
             </div>
           </div>
           <div className={cn(
