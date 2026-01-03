@@ -113,10 +113,10 @@ export interface SemanticKBScore {
 
 // Thresholds for confidence levels (based on normalized 0-100 scores)
 const CONFIDENCE_THRESHOLDS = {
-  high: 70,
-  medium: 50,
-  low: 30,
-};
+  high: 60,    // 60%+ = green checkmark
+  medium: 25,  // 25%+ = yellow checkmark  
+  low: 10,     // 10%+ = orange warning
+};             // <10% = empty circle
 
 function getConfidence(score: number): "high" | "medium" | "low" | "none" {
   if (score >= CONFIDENCE_THRESHOLDS.high) return "high";
