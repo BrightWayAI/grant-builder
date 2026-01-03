@@ -184,19 +184,9 @@ export function KBHealthCard() {
           })}
         </div>
 
-        {/* Summary badges */}
-        <div className="flex items-center gap-2 pt-1">
-          {score.strongAreas.length > 0 && (
-            <Badge variant="success" className="text-[10px]">
-              {score.strongAreas.length} strong
-            </Badge>
-          )}
-          {score.weakAreas.length > 0 && (
-            <Badge variant="error" className="text-[10px]">
-              {score.weakAreas.length} gaps
-            </Badge>
-          )}
-          <span className="text-xs text-text-tertiary ml-auto">{score.documentCount} docs</span>
+        {/* Document count */}
+        <div className="flex items-center justify-end pt-1">
+          <span className="text-xs text-text-tertiary">{score.documentCount} documents analyzed</span>
         </div>
 
         {/* Top recommendation */}
