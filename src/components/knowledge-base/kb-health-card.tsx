@@ -101,7 +101,7 @@ export function KBHealthCard() {
     return (
       <Card className="h-full">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-lg font-medium">Knowledge Health</CardTitle>
+          <CardTitle className="text-lg font-medium">Beacon Readiness Index</CardTitle>
           <FolderOpen className="h-5 w-5 text-text-tertiary" />
         </CardHeader>
         <CardContent>
@@ -117,7 +117,7 @@ export function KBHealthCard() {
   return (
     <Card className="h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg font-medium">Knowledge Health</CardTitle>
+        <CardTitle className="text-lg font-medium">Beacon Readiness Index</CardTitle>
         <FolderOpen className="h-5 w-5 text-text-tertiary" />
       </CardHeader>
       <CardContent className="space-y-4">

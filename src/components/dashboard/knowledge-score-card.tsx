@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import useSWR from "swr";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/primitives/card";
-import { Badge } from "@/components/primitives/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/primitives/card";
 import { Progress } from "@/components/primitives/progress";
-import { FolderOpen, CheckCircle2, AlertCircle, XCircle, ArrowRight } from "lucide-react";
+import { FolderOpen, CheckCircle2, AlertCircle, Circle, ArrowRight } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -15,15 +14,13 @@ export function KnowledgeScoreCard() {
   if (error) return null;
 
   const score = data?.overallScore ?? 0;
-  const strongCount = data?.strongAreas?.length ?? 0;
-  const weakCount = data?.weakAreas?.length ?? 0;
   const docCount = data?.documentCount ?? 0;
   const topCategories = data?.categoryScores?.slice(0, 3) ?? [];
 
   return (
     <Card className="h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg font-medium">Knowledge Health</CardTitle>
+        <CardTitle className="text-lg font-medium">Beacon Readiness Index</CardTitle>
         <FolderOpen className="h-5 w-5 text-text-tertiary" />
       </CardHeader>
       <CardContent className="space-y-3">
@@ -39,35 +36,30 @@ export function KnowledgeScoreCard() {
         <div className="space-y-1">
           {topCategories.map((cat: { id: string; label: string; score: number; confidence: string }) => {
             const Icon = cat.confidence === "high" ? CheckCircle2 
-              : cat.confidence === "none" ? XCircle 
-              : AlertCircle;
+              : cat.confidence === "medium" ? CheckCircle2
+              : cat.confidence === "low" ? AlertCircle 
+              : Circle;
             const color = cat.confidence === "high" ? "text-status-success" 
-              : cat.confidence === "none" ? "text-status-error" 
-              : "text-status-warning";
+              : cat.confidence === "medium" ? "text-yellow-500"
+              : cat.confidence === "low" ? "text-orange-500" 
+              : "text-border";
             return (
-              <div key={cat.id} className="flex items-center gap-2 text-sm">
+              <div key={cat.id} className="flex items-center gap-2 text-xs">
                 <Icon className={`h-3.5 w-3.5 ${color}`} />
-                <span className="text-text-primary flex-1 truncate">{cat.label}</span>
-                <span className="text-xs text-text-tertiary">{cat.score}%</span>
+                <span className="text-text-secondary flex-1 truncate">{cat.label}</span>
+                <span className="text-[10px] text-text-tertiary">{cat.score}%</span>
               </div>
             );
           })}
         </div>
 
-        {/* Summary */}
-        <div className="flex items-center gap-2 pt-1">
-          {strongCount > 0 && (
-            <Badge variant="success" className="text-[10px]">{strongCount} strong</Badge>
-          )}
-          {weakCount > 0 && (
-            <Badge variant="error" className="text-[10px]">{weakCount} gaps</Badge>
-          )}
-          <span className="text-xs text-text-tertiary ml-auto">{docCount} docs</span>
+        {/* Document count */}
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-xs text-text-tertiary">{docCount} documents</span>
+          <Link href="/knowledge-base" className="text-brand text-xs hover:underline inline-flex items-center">
+            Manage <ArrowRight className="h-3 w-3 ml-0.5" />
+          </Link>
         </div>
-
-        <Link href="/knowledge-base" className="text-brand text-sm hover:underline inline-flex items-center">
-          Manage KB <ArrowRight className="h-3 w-3 ml-1" />
-        </Link>
       </CardContent>
     </Card>
   );

@@ -6,13 +6,10 @@ import { AddDocumentButton } from "@/components/documents/add-document-button";
 import { KBHealthCard } from "@/components/knowledge-base/kb-health-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/primitives/card";
 import { Badge } from "@/components/primitives/badge";
-import { Progress } from "@/components/primitives/progress";
 import { formatFileSize } from "@/lib/utils";
 import { DOCUMENT_CATEGORIES } from "@/lib/document-categories";
-import { CheckCircle2, Circle } from "lucide-react";
+import { Circle } from "lucide-react";
 import { DocumentType } from "@prisma/client";
-
-const MAX_STORAGE_BYTES = 500 * 1024 * 1024; // 500MB
 
 export default async function KnowledgeBasePage() {
   const user = await getCurrentUser();
@@ -34,8 +31,6 @@ export default async function KnowledgeBasePage() {
   }));
 
   const totalSize = documents.reduce((sum, doc) => sum + doc.fileSize, 0);
-  const usagePercent = Math.round((totalSize / MAX_STORAGE_BYTES) * 100);
-  const avgSize = documents.length ? totalSize / documents.length : 0;
   const lastUpload = documents.length ? documents[0].createdAt : null;
 
   const stats = {
@@ -73,45 +68,54 @@ export default async function KnowledgeBasePage() {
         <AddDocumentButton organizationId={user.organizationId} />
       </div>
 
-      {/* Stats Row */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Semantic KB Health Score */}
+      {/* Stats Row - 2 Cards */}
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Beacon Readiness Index */}
         <KBHealthCard />
 
+        {/* Documents Card */}
         <Card>
-          <CardContent className="pt-6 space-y-3">
+          <CardContent className="pt-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold font-display">{existingTypes.length}</div>
-                <p className="text-sm text-text-secondary">Document types</p>
+                <div className="text-2xl font-bold font-display">{stats.total}</div>
+                <p className="text-sm text-text-secondary">documents uploaded</p>
               </div>
-              <Badge variant="outline" className="text-[11px]">{stats.indexed} ready</Badge>
+              <div className="text-right">
+                <Badge variant={stats.indexed === stats.total ? "success" : "outline"} className="text-[11px]">
+                  {stats.indexed} indexed
+                </Badge>
+                {stats.processing > 0 && (
+                  <p className="text-xs text-text-tertiary mt-1">{stats.processing} processing</p>
+                )}
+              </div>
             </div>
-            <Progress value={highValueProgress} className="h-1" />
-            <div className="grid grid-cols-2 gap-2 text-xs text-text-secondary">
-              {HIGH_VALUE_GROUPS.map((group, idx) => (
-                <div key={group.label} className="flex items-center gap-2">
-                  {highValueProgressStates[idx] ? (
-                    <CheckCircle2 className="h-4 w-4 text-status-success" />
-                  ) : (
-                    <Circle className="h-4 w-4 text-border" />
-                  )}
-                  <span>{group.label}</span>
+            
+            {/* Missing high-value types */}
+            {HIGH_VALUE_GROUPS.filter((_, idx) => !highValueProgressStates[idx]).length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-text-tertiary">Recommended to add:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {HIGH_VALUE_GROUPS.filter((_, idx) => !highValueProgressStates[idx]).map((group) => (
+                    <span 
+                      key={group.label}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs bg-yellow-50 border border-yellow-200 text-yellow-700"
+                    >
+                      <Circle className="h-3 w-3" />
+                      {group.label}
+                    </span>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6 space-y-2">
-            <div className="text-2xl font-bold font-display">{formatFileSize(totalSize)}</div>
-            <p className="text-sm text-text-secondary">of {formatFileSize(MAX_STORAGE_BYTES)} used</p>
-            <Progress value={usagePercent} className="h-1" />
-            <p className="text-xs text-text-secondary">Avg file: {formatFileSize(avgSize)}</p>
-            {lastUpload && (
-              <p className="text-xs text-text-secondary">Last upload: {new Date(lastUpload).toLocaleDateString()}</p>
+              </div>
             )}
+            
+            {/* Storage & last upload */}
+            <div className="flex items-center justify-between text-xs text-text-tertiary pt-2 border-t">
+              <span>{formatFileSize(totalSize)} used</span>
+              {lastUpload && (
+                <span>Last upload: {new Date(lastUpload).toLocaleDateString()}</span>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
