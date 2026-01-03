@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/primitives/button";
@@ -44,12 +44,16 @@ export default function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [checkingOrg, setCheckingOrg] = useState(true);
   const router = useRouter();
-  const { data: session, update } = useSession();
+  const { data: session, status, update } = useSession();
   const { toast } = useToast();
+  const hasCheckedOrg = useRef(false);
 
-  // Check if user already has an organization (invited user)
+  // Check if user already has an organization (returning user or invited user)
   useEffect(() => {
     async function checkExistingOrg() {
+      if (hasCheckedOrg.current) return;
+      hasCheckedOrg.current = true;
+      
       try {
         const res = await fetch("/api/organizations");
         if (res.ok) {
@@ -63,12 +67,18 @@ export default function OnboardingPage() {
       setCheckingOrg(false);
     }
     
-    if (session?.user) {
-      checkExistingOrg();
-    } else {
-      setCheckingOrg(false);
+    // Wait for session to be fully loaded before checking
+    if (status === "loading") {
+      return;
     }
-  }, [session, router]);
+    
+    if (status === "authenticated" && session?.user) {
+      checkExistingOrg();
+    } else if (status === "unauthenticated") {
+      // Not logged in, redirect to login
+      router.replace("/login");
+    }
+  }, [status, session, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -53,7 +53,8 @@ function LoginForm() {
   };
 
   const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl });
+    // Always go to onboarding first - it will redirect to dashboard if user has an org
+    signIn("google", { callbackUrl: "/onboarding" });
   };
 
   return (
