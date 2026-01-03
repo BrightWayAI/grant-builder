@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import {
   CheckCircle2,
   AlertCircle,
-  XCircle,
+  Circle,
   ChevronDown,
   ChevronRight,
   Loader2,
@@ -47,11 +47,11 @@ function getConfidenceIcon(confidence: string) {
     case "high":
       return { icon: CheckCircle2, color: "text-status-success" };
     case "medium":
-      return { icon: AlertCircle, color: "text-status-warning" };
+      return { icon: CheckCircle2, color: "text-yellow-500" };
     case "low":
-      return { icon: AlertCircle, color: "text-status-warning" };
+      return { icon: AlertCircle, color: "text-orange-500" };
     default:
-      return { icon: XCircle, color: "text-status-error" };
+      return { icon: Circle, color: "text-border" };
   }
 }
 
@@ -143,12 +143,12 @@ export function KBHealthCard() {
                   className="w-full py-1.5 flex items-center gap-2 text-left hover:bg-surface-subtle rounded transition-colors"
                 >
                   <Icon className={cn("h-4 w-4 flex-shrink-0", color)} />
-                  <span className="text-sm text-text-primary flex-1 truncate">{category.label}</span>
-                  <span className="text-xs text-text-tertiary w-8 text-right">{category.score}%</span>
+                  <span className="text-xs text-text-secondary flex-1 truncate">{category.label}</span>
+                  <span className="text-[10px] text-text-tertiary w-8 text-right">{category.score}%</span>
                   {isExpanded ? (
-                    <ChevronDown className="h-3.5 w-3.5 text-text-tertiary" />
+                    <ChevronDown className="h-3 w-3 text-text-tertiary" />
                   ) : (
-                    <ChevronRight className="h-3.5 w-3.5 text-text-tertiary" />
+                    <ChevronRight className="h-3 w-3 text-text-tertiary" />
                   )}
                 </button>
 
